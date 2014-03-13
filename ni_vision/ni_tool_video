@@ -1,0 +1,2 @@
+#!/bin/bash
+rosrun ni_tools ni_video_tool -path ~/ZZZZ/ -file bbb.avi -mode 0 -ext tif -fox 0 -foy 17 -fow 292 -foh 220 -fstart 0 -fend 720
