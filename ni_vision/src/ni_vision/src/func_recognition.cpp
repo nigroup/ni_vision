@@ -128,6 +128,85 @@ void CalcDeltaScaleOri(std::vector<int> input_idx, std::vector<double> vnDeltaSc
 
 
 
+
+
+void SwapMemory (std::vector<bool> &vbProtoCand, std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoMemoryCnt, std::vector<int> &vnProtoStableCnt, std::vector<int> &vnProtoDisapCnt, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx,
+                 std::vector<std::vector<int> > &mnProtoRCenter, std::vector<std::vector<float> > &mnProtoCCenter, std::vector<std::vector<int> > &mnProtoRect, std::vector<std::vector<float> > &mnProtoCubic,
+                 std::vector<std::vector<float> > &mnProtoClrHist, std::vector<int> &vnProtoLength, std::vector<int> &vnProtoFound, int nProtoCnt, std::vector<std::vector<float> > &vnTmpProtoDiff)
+{
+    std::vector<std::vector<float> > vnTmpProtoDiff2 = vnTmpProtoDiff;
+    std::sort(vnTmpProtoDiff[0].begin(), vnTmpProtoDiff[0].end());
+    std::vector<int> vTmpIdx(nProtoCnt, 0);
+    for (int i = 0; i < nProtoCnt; i++) {
+        for (int j = 0; j < nProtoCnt; j++) {
+            if (vnTmpProtoDiff[0][i] == vnTmpProtoDiff2[0][j]) vTmpIdx[i] = j;
+        }
+    }
+
+
+    std::vector<bool> vbAaaProtoCand = vbProtoCand;
+    std::vector<int> vnAaaProtoIdx = vnProtoIdx;
+    std::vector<int> vnAaaProtoMemoryCnt = vnProtoMemoryCnt;
+    std::vector<int> vnAaaProtoStableCnt = vnProtoStableCnt;
+    std::vector<int> vnAaaProtoDisapCnt = vnProtoDisapCnt;
+    std::vector<int> vnAaaProtoPtsCnt = vnProtoPtsCnt;
+    std::vector<std::vector<int> > mnAaaProtoPtsIdx = mnProtoPtsIdx;
+    std::vector<std::vector<int> > mnAaaProtoCenter = mnProtoRCenter;
+    std::vector<std::vector<float> > mnAaaProtoRCenter = mnProtoCCenter;
+    std::vector<std::vector<int> > mnAaaProtoRect = mnProtoRect;
+    std::vector<std::vector<float> > mnAaaProtoCubic = mnProtoCubic;
+    std::vector<std::vector<float> > mnAaaProtoClrHist = mnProtoClrHist;
+    std::vector<int> vnAaaProtoLength = vnProtoLength;
+    std::vector<int> vnAaaProtoFound = vnProtoFound;
+
+    for (int i = 0; i < nProtoCnt; i++) {
+        vbProtoCand[i] = vbAaaProtoCand[vTmpIdx[i]];
+        vnProtoIdx[i] = vnAaaProtoIdx[vTmpIdx[i]];
+        vnProtoPtsCnt[i] = vnAaaProtoPtsCnt[vTmpIdx[i]];
+        vnProtoMemoryCnt[i] = vnAaaProtoMemoryCnt[vTmpIdx[i]];
+        vnProtoStableCnt[i] = vnAaaProtoStableCnt[vTmpIdx[i]];
+        vnProtoDisapCnt[i] = vnAaaProtoDisapCnt[vTmpIdx[i]];
+        mnProtoPtsIdx[i] = mnAaaProtoPtsIdx[vTmpIdx[i]];
+        mnProtoRCenter[i] = mnAaaProtoCenter[vTmpIdx[i]];
+        mnProtoCCenter[i] = mnAaaProtoRCenter[vTmpIdx[i]];
+        mnProtoRect[i] = mnAaaProtoRect[vTmpIdx[i]];
+        mnProtoCubic[i] = mnAaaProtoCubic[vTmpIdx[i]];
+        mnProtoClrHist[i] = mnAaaProtoClrHist[vTmpIdx[i]];
+        vnProtoLength[i] = vnAaaProtoLength[vTmpIdx[i]];
+        vnProtoFound[i] = vnAaaProtoFound[vTmpIdx[i]];
+    }
+}
+
+
+
+void ResetMemory (int nObjsNrLimit, int nTrackHistoBin_max, int nRecogRtNr,
+                  std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoMemoryCnt, std::vector<int> &vnProtoStableCnt, std::vector<int> &vnProtoDisapCnt, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx,
+                  std::vector<std::vector<int> > &mnProtoRCenter, std::vector<std::vector<float> > &mnProtoCCenter, std::vector<std::vector<int> > &mnProtoRect, std::vector<std::vector<float> > &mnProtoCubic,
+                  std::vector<std::vector<float> > &mnProtoClrHist, std::vector<int> &vnProtoLength, std::vector<int> &vnProtoFound, int &nProtoCnt, int &nProtoNr, int &nFoundCnt, int &nFoundNr, std::vector<int> &vnRecogRating)
+{
+    vnProtoIdx.assign(nObjsNrLimit, 0);
+    vnProtoMemoryCnt.assign(nObjsNrLimit, 0);
+    vnProtoStableCnt.assign(nObjsNrLimit, 0);
+    vnProtoDisapCnt.assign(nObjsNrLimit, 0);
+    vnProtoPtsCnt.assign(nObjsNrLimit, 0);
+    mnProtoPtsIdx.assign(nObjsNrLimit, std::vector<int>(0, 0));
+    mnProtoRCenter.assign(nObjsNrLimit, std::vector<int>(2, 0));
+    mnProtoCCenter.assign(nObjsNrLimit, std::vector<float>(3, 0));
+    mnProtoRect.assign(nObjsNrLimit, std::vector<int>(4, 0));
+    mnProtoCubic.assign(nObjsNrLimit, std::vector<float>(6, 0));
+    mnProtoClrHist.assign(nObjsNrLimit, std::vector<float>(nTrackHistoBin_max, 0));
+    vnProtoLength.assign(nObjsNrLimit, 0);
+    vnProtoFound.assign(nObjsNrLimit, 0);
+
+    nProtoCnt = 0;
+    nProtoNr = 0;
+    nFoundCnt = 0;
+    nFoundNr = 0;
+    vnRecogRating.assign(nRecogRtNr, 0);
+}
+
+
+
 void SelRecognition_Pre (int nProtoCnt, std::vector<bool> vbProtoCand, std::vector<int> &vProtoFound, int &nCandID) {
 
     for (int i = 0; i < nProtoCnt; i++) {

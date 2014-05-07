@@ -5,7 +5,6 @@
 
 
 ////////// System Paramters ///////////////////////////////////////
-bool bDepthCalib = false, bDepthCalib_default = false;
 bool bDepthDispMode = false, bDepthDispMode_default = false;
 double nDLimit = 0, nDLimit_default = 3;
 
@@ -123,8 +122,8 @@ cv::Scalar c_violet(255, 0, 127);
 ////////// ID of Tasks //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct TaskID {
     int nRgbOrg, nRgbDs, nDepth, nInfo, nRecVideo, nSnap;
-    int nSegmentation, nDSegm, nGSegm, nTrack, nProto, nMat, nRecSegm;
-    int nRecognition, nRecogOrg, nRecogDs, nSIFT, nRecRecog;
+    int nSegmentation, nDSegm, nGSegm, nTrack, nProto, nMat;
+    int nRecognition, nRecogOrg, nRecogDs, nSIFT;
     int nRecTime, nRstTime, nPrmInfo, nPrmSett, nPrmSegm, nPrmRecog, nRstPrm;
 };
 struct TaskID stTID;
@@ -285,8 +284,6 @@ void BuildFlannIndex (int libnr, std::string sLibFileName) {   //Read the librar
 
 // initialize parameters
 void InitParameter (int argc, char** argv) {
-    terminal_tools::parse_argument (argc, argv, "-calib", bDepthCalib);
-    if(bDepthCalib == 0) bDepthCalib = 0; bDepthCalib_default = bDepthCalib;
     terminal_tools::parse_argument (argc, argv, "-ddmod", bDepthDispMode);
     if(bDepthDispMode == 0) bDepthDispMode = 0; bDepthDispMode_default = bDepthDispMode;
     terminal_tools::parse_argument (argc, argv, "-dlim", nDLimit);
@@ -471,7 +468,6 @@ void InitParameter (int argc, char** argv) {
 
 
 void ResetParameter () {
-    bDepthCalib = bDepthCalib_default;
     bDepthDispMode = bDepthDispMode_default;
     nDLimit = nDLimit_default;
 
@@ -538,7 +534,7 @@ void ResetParameter () {
 
     if (vbFlagWnd[stTID.nPrmSegm]) {
         cvSetTrackbarPos(vsTrackbarName[20].data(), vsWndName[stTID.nPrmSegm].data(), nTrackMode);
-        cvSetTrackbarPos(vsTrackbarName[21].data(), vsWndName[stTID.nPrmSegm].data(), nTrackClrMode);
+        //cvSetTrackbarPos(vsTrackbarName[21].data(), vsWndName[stTID.nPrmSegm].data(), nTrackClrMode);
         cvSetTrackbarPos(vsTrackbarName[22].data(), vsWndName[stTID.nPrmSegm].data(), nTrackDPos*100);
         cvSetTrackbarPos(vsTrackbarName[23].data(), vsWndName[stTID.nPrmSegm].data(), nTrackDSize*100);
         cvSetTrackbarPos(vsTrackbarName[24].data(), vsWndName[stTID.nPrmSegm].data(), nTrackDClr*100);
@@ -591,8 +587,8 @@ void InitVariables () {
     cv::namedWindow(sTitle); cvMoveWindow(sTitle.data(), 80, 20);
 
     stTID.nRgbOrg = 0, stTID.nRgbDs = 1, stTID.nDepth = 2, stTID.nInfo = 3, stTID.nRecVideo = 7, stTID.nSnap = 8;
-    stTID.nSegmentation = 10, stTID.nDSegm = 12, stTID.nGSegm = 13, stTID.nTrack = 15, stTID.nProto = 16, stTID.nMat = 17, stTID.nRecSegm = 19;
-    stTID.nRecognition = 20, stTID.nRecogOrg = 21, stTID.nRecogDs = 22, stTID.nSIFT = 23, stTID.nRecRecog = 29;
+    stTID.nSegmentation = 10, stTID.nDSegm = 12, stTID.nGSegm = 13, stTID.nTrack = 15, stTID.nProto = 16;
+    stTID.nRecognition = 20, stTID.nRecogOrg = 21, stTID.nRecogDs = 22, stTID.nSIFT = 23;
     stTID.nRecTime = 31, stTID.nRstTime = 33, stTID.nPrmInfo = 34, stTID.nPrmSett = 35, stTID.nPrmSegm = 36, stTID.nPrmRecog = 37, stTID.nRstPrm = 38;
 
     vsWndName[stTID.nRgbOrg] = "Original RGB";
@@ -618,13 +614,10 @@ void InitVariables () {
     vsBtnName[stTID.nDSegm] = "Segmts";
     vsBtnName[stTID.nTrack] = "Track";
     vsBtnName[stTID.nProto] = "Objects";
-    vsBtnName[stTID.nMat] = "mat";
     vsBtnName[stTID.nRecognition] = "Recognition";
     vsBtnName[stTID.nRecogOrg] = "Rec Org";
     vsBtnName[stTID.nRecogDs] = "Rec DS";
     vsBtnName[stTID.nSIFT] = "SIFT W";
-    vsBtnName[stTID.nRecSegm] = "Record";
-    vsBtnName[stTID.nRecRecog] = "Record";
     vsBtnName[stTID.nRecVideo] = "REC";
     vsBtnName[stTID.nSnap] = "Snapshot";
     vsBtnName[stTID.nRecTime] = "Rec Time";
@@ -742,8 +735,6 @@ void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, i
     nTaskNr = stTID.nDepth; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecY += nBtnH + nBtnOffset;
     nPadSecX = nBtnOffset;
-    nTaskNr = stTID.nRecSegm; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
-    nPadSecX += nBtnW + nBtnOffset;
     nTaskNr = stTID.nGSegm; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecY += nBtnH + 3*nBtnOffset;
 
@@ -764,8 +755,6 @@ void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, i
     nTaskNr = stTID.nRecogDs; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecY += nBtnH + nBtnOffset;
     nPadSecX = nBtnOffset;
-    nTaskNr = stTID.nRecRecog; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
-    nPadSecX += nBtnW + nBtnOffset;
     nTaskNr = stTID.nSIFT; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecY += nBtnH + 4*nBtnOffset;
 

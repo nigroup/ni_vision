@@ -16,10 +16,10 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/common/io.h>  //for getFieldIndex()
+#include <pcl/common/io.h>      //for getFieldIndex()
 
 
-// Fast SIFT Library
+// Fast SIFT and FLANN Library
 #include "siftfast/siftfast.h"
 #include "flann/flann.h"
 
@@ -49,7 +49,6 @@
 #include "func_recognition.cpp"
 #include "func_etc.cpp"
 
-//#include "/opt/ros/electric/stacks/perception_pcl/flann/include/flann/flann.h"
 
 
 namespace enc = sensor_msgs::image_encodings;
@@ -77,14 +76,13 @@ cv::Mat cvm_image_camera;
 
 ///// temp ////
 int nCropX = 1, nCropY = 17, nCropW = 292, nCropH = 220;
-int nCalibX = nCropX-1, nCalibY = nCropY-1, nCalibW = nCropW+4, nCalibH = nCropH+2;
 std::vector<std::vector<int> > mnTimeMeas1;
 std::vector<std::vector<float> > mnTimeMeas2;
 std::vector<std::vector<float> > mnTimeMeas3;
 
 std::vector<float> mnTimeMeasGbSegm;
 std::vector<std::vector<float> > mnTimeMeasSiftWhole;
-bool bRtGbSegm = false, bRtSiftW = true;
+bool bRtGbSegm = false, bRtSiftW = false;
 int nMeasCounter = 0;
 
 
@@ -105,10 +103,11 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
                      std::vector<int> vnProtoPtsCnt, std::vector<std::vector<int> > mnProtoPtsIdx, std::vector<std::vector<int> > mnProtoRect, std::vector<int> &vnProtoFound,
                      std::vector<int> vnProtoLength, std::vector<int> vnProtoDisapCnt, int nTrackCntDisap, int &nCandCnt, std::vector<std::vector<float> > vnTmpProtoDiff, int &nFoundCnt, int &nFoundNr, int &nFoundFrame,
                      int &nCandKeyCnt, int &nCandRX, int &nCandRY, int &nCandRW, int &nCandRH,
-                     struct timespec t_rec_found_start, struct timespec t_rec_found_end, bool bSwitchRecordTime, int nRecogRtNr, std::vector<int> &vnRecogRating_tmp, int nModeRecord, cv::Mat cvm_cand) {
+                     struct timespec t_rec_found_start, struct timespec t_rec_found_end, bool bSwitchRecordTime, int nRecogRtNr, std::vector<int> &vnRecogRating_tmp, cv::Mat cvm_cand) {
                      //std::vector<std::vector<float> > mnProtoClrHist, std::vector<std::vector<int> > mnProtoCenter) {
 
     nCandCnt++;
+    // Initialize
     if (vnProtoFound[nCandID] < 1) vnProtoFound[nCandID] = 2;
     else vnProtoFound[nCandID] = 3;
 
@@ -117,7 +116,7 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
     ////////////** Extracting SIFT key-points **////////////////////////////////////////////////////////
     struct timespec t_sift_start, t_sift_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_sift_start); bTimeSift = true;
 
-    /////** Extracting object surface from original image **//////////////////////////////
+    //////*  Extracting object surface from original image  */////////////////////////
     cvm_cand = cv::Scalar(0, 0, 0);
     std::vector<int> vnIdxTmp(vnProtoPtsCnt[nCandID]*nImgScale*nImgScale, 0);
 
@@ -131,32 +130,13 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
 //    printf("\n");
 
 
-    /////** Estimating histogram-distance **//////////////////////////////
+    //////** 1. Estimating histogram-distance **//////////////////////////////
     float nColorDistMaskOrg = 0;
     if (bRecogClrMask) {
+        ///// Calc3DColorHistogram computes the same color models but it is more robust ///////
         std::vector<float> vnHistTmp(nTrackHistoBin_max, 0);
-        // Calc3DColorHistogram computes the same color models but it is more robust
-
         Calc3DColorHistogram (cvm_rgb_org, vnIdxTmp, nTrackHistoBin, vnHistTmp);
-
         //else Calc3DColorHistogram (cvm_rgb_ds, mnProtoPtsIdx[nCandID], nTrackClrMode, nTrackHistoBin, vnHistTmp);
-
-
-        // Histogram_view code
-//        if(nStatCounter < 10) {
-//            stringstream ss_puffer;
-//            ss_puffer << nStatCounter;
-//            stringstream ss_puffer2;
-//            ss_puffer2 << nTrackClrMode;
-//            cv::FileStorage fs("/home/ni/ros_overlays/Histograms/histo_Mode" + ss_puffer2.str() + "_Obj" +ss_puffer.str() +".yaml", cv::FileStorage::WRITE);
-//            cv::Mat cvm_puffer(nTrackHistoBin*nTrackHistoBin*nTrackHistoBin, 1, cv::DataType<float>::type);
-//            for(int i = 0; i < nTrackHistoBin*nTrackHistoBin*nTrackHistoBin; i++) {
-//                cvm_puffer.at<float>(i,0) = vnHistTmp[i];
-//            }
-//            fs << "TestObjectFeatureVectors" << cvm_puffer;
-//            fs.release();
-//        }
-
 
         for (int i = 0; i< nTrackHistoBin_max; i++) {
             if (mnColorHistY_lib.size() == 1) nColorDistMaskOrg += fabs(mnColorHistY_lib[0][i] - vnHistTmp[i]);
@@ -164,24 +144,23 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
         }
         nColorDistMaskOrg = nColorDistMaskOrg/2;
     }
+    //////////////////////* End of the estimating histogram-distance *////////////////////////
 
 
-    /////** SIFT extraction from the object surface **//////////////////////////////
+    //////** 2. SIFT extraction from the object surface **//////////////////////////////////////////
+
+    ///////// Calculating rectangle coordinates of the candidate in high-resolution 2D image from the rectangle on downsampled image
     int x_min_org = mnProtoRect[nCandID][0] * nImgScale;
     int y_min_org = mnProtoRect[nCandID][1] * nImgScale - nImgScale+1;
     int x_max_org = mnProtoRect[nCandID][2] * nImgScale + nImgScale-1;
     int y_max_org = mnProtoRect[nCandID][3] * nImgScale;
-    if (x_min_org < 0) x_min_org = 0;
-    if (x_max_org > cvm_rgb_org.cols - 1) x_min_org = cvm_rgb_org.cols;
-    if (y_min_org < 0) y_min_org = 0;
-    if (y_max_org > cvm_rgb_org.cols - 1) y_max_org = cvm_rgb_org.cols;
+    if (x_min_org < 0) x_min_org = 0; if (x_max_org > cvm_rgb_org.cols - 1) x_min_org = cvm_rgb_org.cols;
+    if (y_min_org < 0) y_min_org = 0; if (y_max_org > cvm_rgb_org.cols - 1) y_max_org = cvm_rgb_org.cols;
 
     nCandRX = x_min_org;
     nCandRY = y_min_org;
     nCandRW = x_max_org - x_min_org + 1;
     nCandRH = y_max_org - y_min_org + 1;
-
-    //cv::imshow("aaaaaaaa", cvm_cand);
 
     Keypoint keypts, keypts_tmp;
     GetSiftKeypoints(cvm_cand, nSiftScales, nSiftInitSigma, nSiftPeakThrs, nCandRX, nCandRY, nCandRW, nCandRH, keypts);
@@ -256,7 +235,7 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
 
 
 
-    if (vbFlagTask[stTID.nRecogOrg] || (vbFlagTask[stTID.nRecVideo] && nRecordMode) || nModeRecord == 2 || nModeRecord == 3) {
+    if (vbFlagTask[stTID.nRecogOrg] || (vbFlagTask[stTID.nRecVideo] && nRecordMode)) {
         cv::rectangle(cvm_rec_org, cv::Point(x_min_org, y_min_org), cv::Point(x_max_org, y_max_org), c_red, 3);
 
 //        if(nStatCounter < 10) {
@@ -278,6 +257,7 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
         nKeyptsCnt = 0;
         while(keypts) {
             if(vbSiftTP[nKeyptsCnt]) {
+                cv::rectangle(cvm_rec_org, cv::Point(keypts->row + x_min_org - 2, keypts->col + y_min_org - 2), cv::Point(keypts->row + x_min_org + 2, keypts->col + y_min_org + 2), c_white, 1);
                 cv::rectangle(cvm_rec_org, cv::Point(keypts->row + x_min_org - 3, keypts->col + y_min_org - 3), cv::Point(keypts->row + x_min_org + 3, keypts->col + y_min_org + 3), c_blue, 1);
                 cv::rectangle(cvm_rec_org, cv::Point(keypts->row + x_min_org - 1, keypts->col + y_min_org - 1), cv::Point(keypts->row + x_min_org + 1, keypts->col + y_min_org + 1), c_blue, 1);
             }
@@ -321,7 +301,7 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
         }
     }
 
-    if (vbFlagTask[stTID.nRecogDs] || ((vbFlagTask[stTID.nRecogOrg] || vbFlagTask[stTID.nRecVideo]) && nRecordMode) || nModeRecord == 2 || nModeRecord == 3) {
+    if (vbFlagTask[stTID.nRecogDs] || ((vbFlagTask[stTID.nRecogOrg] || vbFlagTask[stTID.nRecVideo]) && nRecordMode)) {
         for (int j = 0; j < vnProtoPtsCnt[nCandID]; j++) {
             cvm_rec_ds.data[mnProtoPtsIdx[nCandID][j]*3] = 0;
             cvm_rec_ds.data[mnProtoPtsIdx[nCandID][j]*3+1] = 0;
@@ -361,67 +341,65 @@ void updateImage() {
 
     ros::Duration d (0.001);
 
-    bool bPointRgb;
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////                                                                                        /////////////////////////////////
+    ////////////////                    Declartion and initialization of veriables                          /////////////////////////////////
+    ////////////////                                                                                        /////////////////////////////////
+    ////////////////----------------------------------------------------------------------------------------/////////////////////////////////
+
     //std::vector<sensor_msgs::PointField> fields;
+    bool bPointRgb;                                         // Flag whether point-cloud is in colored or monochrome
 
     InitVariables();
     cv::setMouseCallback(sTitle, MouseHandler, NULL);
 
-
-    std::vector<int> vnBtnProp(nTaskNrMax, 0);
+    std::vector<int> vnBtnProp(nTaskNrMax, 0);              // Setting button properties
     vnBtnProp[stTID.nSegmentation] = 20; vnBtnProp[stTID.nRecognition] = 20;
 
-
-    int nPadOver, nPadCol1, nPadCol2, nPadHeight;
+    int nPadOver, nPadCol1, nPadCol2, nPadHeight;           // Setting Gui-control pad properties
     SetPad(nBtnSize, mnBtnPos, nPadOver, nPadCol1, nPadCol2, nPadHeight);
 
-    int nBorderThickness = 2, nTabThickness = 20;
+    int nBorderThickness = 2, nTabThickness = 20;           // Setting window and image sizes and properties
     cv::Size size_org = cvm_image_camera.size();
     cv::Size size_ds = cv::Size(nCvWidth, nCvHeight);
     cv::Size size_total = cv::Size(size_org.width + size_ds.width + 3*nBorderThickness, size_org.height + 2*nBorderThickness);
-
-    int nTimeRatio = 1000000;
-    int nObjsNrLimit = 1000;
     int nImgScale = size_org.width / size_ds.width;
 
-    int nSegNr = 0, nCandCnt = 0;
+    int nTabWidth = nPadCol1 + 3*nBtnSize -13 + 360;
+    cv::Mat cvm_main(nPadHeight, nTabWidth, CV_8UC3);       // Image buffer for gui-pad
 
-    cv::Mat cvm_rgb_org(size_org, CV_8UC3);
-    cv::Mat cvm_rgb_ds(size_ds, CV_8UC3);
-    cv::Mat cvm_depth(size_ds, CV_8UC3);
-    cv::Mat cvm_depth_smooth(size_ds, CV_8UC3);
-    cv::Mat cvm_segment(size_ds, CV_8UC3);
-    cv::Mat cvm_segment_tmp(size_ds, CV_8UC3);
-    cv::Mat cvm_gbsegm(size_ds, CV_8UC3);
-    cv::Mat cvm_track(size_ds, CV_8UC3);
-    cv::Mat cvm_rec_org(size_org, CV_8UC3);
-    cv::Mat cvm_rec_ds(size_ds, CV_8UC3);
-    cv::Mat cvm_att(size_org, CV_8UC3);
-    cv::Mat cvm_sift(size_org, CV_8UC3);
+    cv::Mat cvm_rgb_org(size_org, CV_8UC3);                 // Image buffer for RGB image, original
+    cv::Mat cvm_rgb_ds(size_ds, CV_8UC3);                   // Image buffer for RGB image, down-sampled
+    cv::Mat cvm_depth(size_ds, CV_8UC3);                    // Image buffer for depth map
+    cv::Mat cvm_segment(size_ds, CV_8UC3);                  // Image buffer for Segmentation, segment map
+    cv::Mat cvm_segment_raw(size_ds, CV_8UC3);              // Image buffer for Segmentation, segment map before post-processing
+    cv::Mat cvm_track(size_ds, CV_8UC3);                    // Image buffer for Tracking
+    cv::Mat cvm_att(size_org, CV_8UC3);                     // Image buffer for Attention
+    cv::Mat cvm_rec_org(size_org, CV_8UC3);                 // Image buffer for Recognition
+    cv::Mat cvm_rec_ds(size_ds, CV_8UC3);                   // Image buffer for Recognition, down-sampled
 
-    cv::Mat cvm_cand(size_org, CV_8UC3);
-    cv::Mat cvm_record_rec(size_total, CV_8UC3);
-    cv::Mat cvm_record_ds(nCvHeight, nCvWidth*2 , CV_8UC3);
+    cv::Mat cvm_dgradx(size_ds, CV_8UC3);                   // Image buffer for depth-gradient map, horisontal
+    cv::Mat cvm_dgrady(size_ds, CV_8UC3);                   // Image buffer for depth-gradient map, vertical
+    cv::Mat cvm_dgrady_blur(size_ds, CV_8UC3);              // Image buffer for depth-gradient map, vertical, blurring
+    cv::Mat cvm_dgrady_smth(size_ds, CV_8UC3);              // Image buffer for depth-gradient map, vertical, smoothing, finally processed
+    cv::Mat cvm_depth_process(nCvHeight*2, nCvWidth*2, CV_8UC3);    // Image buffer for presentation of the depth processing
 
-    cv::Mat cvm_dgradx(size_ds, CV_8UC3);
-    cv::Mat cvm_dgrady(size_ds, CV_8UC3);
-    cv::Mat cvm_dgrady_blur(size_ds, CV_8UC3);
-    cv::Mat cvm_dgrady_smth(size_ds, CV_8UC3);
+    cv::Mat cvm_cand(size_org, CV_8UC3);                    // Image buffer for actual candidate object
+    cv::Mat cvm_record_rec(size_total, CV_8UC3);            // Image buffer for recording
+    cv::Mat cvm_record_ds(nCvHeight, nCvWidth*2 , CV_8UC3); // Image buffer for recording, compact
 
-    cv::Mat cvm_depth_process(nCvHeight*2, nCvWidth*2, CV_8UC3);
-    cv::Mat cvm_set_seg(50, 400, CV_8UC3);
-    cv::Mat cvm_set_rec(50, 400, CV_8UC3);
-    cv::Mat cvm_hist(300, 550, CV_8UC3);
+    cv::Mat cvm_gbsegm(size_ds, CV_8UC3);                   // Image buffer for graph-based segmentation
+    cv::Mat cvm_sift(size_org, CV_8UC3);                    // Image buffer for SIFT on the whole image
+
+    cv::Mat cvm_set_seg(50, 400, CV_8UC3);                  // Image buffer for settings, for Segmentation
+    cv::Mat cvm_set_rec(50, 400, CV_8UC3);                  // Image buffer for settings, for Recognition
+    //cv::Mat cvm_hist(300, 550, CV_8UC3);
 
 
-    cv::VideoWriter writer_track;
+    cv::VideoWriter writer_track;                           // Vidwo recording buffers
     cv::VideoWriter writer_rec_org, writer_rec_ds, writer_total;
 
-
-    int nTabWidth = nPadCol1 + 3*nBtnSize -13 + 360;
-    cv::Mat cvm_main(nPadHeight, nTabWidth, CV_8UC3);
-
-
+    ///////// Color tabs /////////////
     std::vector<cv::Scalar> mnColorTab(50000, cv::Scalar(0, 0, 0));
     mnColorTab[0] = c_blue; mnColorTab[1] = c_green; mnColorTab[2] = c_red;
     mnColorTab[3] = c_cyan; mnColorTab[4] = c_lemon; mnColorTab[5] = c_magenta;
@@ -432,12 +410,12 @@ void updateImage() {
         mnColorTab[i] = cv::Scalar(rand()%255+1, rand()%255+1, rand()%255+1);
         if (mnColorTab[i][0] < 40 && mnColorTab[i][1] < 40 && mnColorTab[i][2] < 40) {if(i) i--; else i = 0;}
     }
-    /////////////////////////////////////////////////////////////////////////
 
 
 
 
-    //** for the Tracking **////////////////////////////////////////////////////////////
+    ////////////** for Tracking **////////////////////////////////////////////////////////////
+    int nObjsNrLimit = 1000;
     int nTrackHistoBin_max = nTrackHistoBin*nTrackHistoBin*nTrackHistoBin;
 
     std::vector<int> vnProtoIdx(nObjsNrLimit, 0);
@@ -452,20 +430,18 @@ void updateImage() {
     std::vector<std::vector<float> > mnProtoCubic(nObjsNrLimit, std::vector<float>(6, 0));
     std::vector<int> vnProtoLength(nObjsNrLimit, 0);
     std::vector<std::vector<float> > mnProtoClrHist(nObjsNrLimit, std::vector<float>(nTrackHistoBin_max, 0));
+    //////////////////////////////////////////////////////////////////////////////////////////
 
+
+    ////////////** for Recognition **/////////////////////////////////////////////////////////
     std::vector<int> vnProtoFound(nObjsNrLimit, 0);
     int nProtoCnt = 0;
-    ////////////////////////////////////////////////////////////////////////////////////
-
     int nFoundCnt = 0, nFoundNr = 0, nFoundFrame = 0;
     int nRecogRtNr = 10; std::vector<int> vnRecogRating(nRecogRtNr, 0), vnRecogRating_tmp(nRecogRtNr, 0);
 
     float nDGradNan = 1000;
 
 
-    bool bSwitchRecordRec = false;
-    std::string sRecordSegDir; std::string sRecordSegDirPref = sDataDir + "/" + "NI_Record Segmemtation_";
-    std::string sRecordRecDir; std::string sRecordRecDirPref = sDataDir + "/" + "NI_Record Recognition_";
     std::string sSnapDir; std::string sSnapDirPref = sDataDir + "/" + "NI_Snapshots_";
     std::string sVideoDir; std::string sVideoDirPref = sDataDir + "/" + "NI_Videos_";
     std::string sTimeDir; std::string sTimeDirPref = sDataDir + "/" + "NI_Time Measuring_";
@@ -476,7 +452,6 @@ void updateImage() {
     bool bSwitchDSegm = false;
     bool bSwitchRecog = false;
     bool bSwitchRecogNewCyc = true;
-    bool bSwitchRecordSegm = false;
     bool bSwitchRecordTime = false;
     bool bSwitchRecordVideo = false;
 
@@ -491,11 +466,12 @@ void updateImage() {
     }
 
 
+    int nTimeRatio = 1000000;
+    int nCandCnt = 0;
     nTimeRecCycle = 0;
 
     struct timespec t_reccyc_start, t_reccyc_end;
     struct timespec t_rec_found_start, t_rec_found_end;
-
 
 
     double nTimeTotal_prev = 0;
@@ -503,10 +479,18 @@ void updateImage() {
     struct timespec t_total_origin;
     clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_origin);
     int nTmpAttKeyCnt = 0, nTmpAttWidth = 0, nTmpAttHeight = 0;
+
+    //////////////--------------------------------------------------------------------------------------/////////////////////////////////////
+    //////////////                                                                                      /////////////////////////////////////
+    //////////////                End of Declartion and initialization of veriables                     /////////////////////////////////////
+    //////////////                                                                                      /////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
     while (true) {
 
         d.sleep ();
-        //if(bFlagEnd) break;         // finish the program
+        //if(bFlagEnd) break;               // finish the program
         if(bFlagEnd) printf("%d", 1/0);   // finish the program
 
         if (!cloud_) continue;
@@ -519,11 +503,14 @@ void updateImage() {
         m.unlock ();
 
 
-        //////////////////////////////////////////////////////////////////////////////////////////////////
-        //              Pre-Process
-        ////////////*******************///////////////////////////////////////////////////////////////////
-
         struct timespec t_total_start, t_total_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_start);
+
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////                                                                                      /////////////////////////
+        //////////////////                            Pre-Setting for the loop                                  /////////////////////////
+        //////////////////                                                                                      /////////////////////////
+        //////////////////--------------------------------------------------------------------------------------/////////////////////////
         struct timespec t_pre_start, t_pre_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_pre_start);
 
 
@@ -535,29 +522,19 @@ void updateImage() {
         bTimeGbSegm = false; bTimeSiftWhole = false;
 
         cvm_main = cv::Scalar(0, 0, 0);
-        cvm_set_seg = cv::Scalar(0, 0, 0);
-        cvm_set_rec = cv::Scalar(0, 0, 0);
-        cvm_rgb_org = cv::Scalar(0, 0, 0);
-        cvm_rgb_ds = cv::Scalar(0, 0, 0);
-        cvm_depth = cv::Scalar(0, 0, 0);
-        cvm_depth_smooth = cv::Scalar(0, 0, 0);
-        cvm_segment = cv::Scalar(0, 0, 0);
-        cvm_segment_tmp = cv::Scalar(0, 0, 0);
-        cvm_gbsegm = cv::Scalar(0, 0, 0);
+        cvm_set_seg = cv::Scalar(0, 0, 0); cvm_set_rec = cv::Scalar(0, 0, 0);
+        cvm_rgb_org = cv::Scalar(0, 0, 0); cvm_rgb_ds = cv::Scalar(0, 0, 0);
+        cvm_depth = cv::Scalar(0, 0, 0); cvm_dgradx = cv::Scalar(0, 0, 0); cvm_dgrady = cv::Scalar(0, 0, 0);
+        cvm_segment = cv::Scalar(0, 0, 0); cvm_segment_raw = cv::Scalar(0, 0, 0);
         cvm_track = cv::Scalar(0, 0, 0);
-        cvm_att = cv::Scalar(0, 0, 0);
-        cvm_rec_org = cv::Scalar(0, 0, 0);
-        cvm_rec_ds = cv::Scalar(0, 0, 0);
-        cvm_sift = cv::Scalar(0, 0, 0);
-        cvm_cand = cv::Scalar(0, 0, 0);
-        cvm_record_rec = cv::Scalar(0, 0, 0);
-        cvm_depth_process = cv::Scalar(0, 0, 0);
-        cvm_dgradx = cv::Scalar(0, 0, 0);
-        cvm_dgrady = cv::Scalar(0, 0, 0);
-        cvm_dgrady_blur = cv::Scalar(0, 0, 0);
-        cvm_dgrady_smth = cv::Scalar(0, 0, 0);
+        cvm_att = cv::Scalar(0, 0, 0); cvm_cand = cv::Scalar(0, 0, 0);
+        cvm_rec_org = cv::Scalar(0, 0, 0); cvm_rec_ds = cv::Scalar(0, 0, 0);
 
-        cvm_record_ds = cv::Scalar(0, 0, 0);
+        cvm_record_rec = cv::Scalar(0, 0, 0); cvm_record_ds = cv::Scalar(0, 0, 0);
+        cvm_dgrady_blur = cv::Scalar(0, 0, 0); cvm_dgrady_smth = cv::Scalar(0, 0, 0); cvm_depth_process = cv::Scalar(0, 0, 0);
+
+        cvm_gbsegm = cv::Scalar(0, 0, 0); cvm_sift = cv::Scalar(0, 0, 0);
+
 
         for (int i = 0; i < nTaskNrMax; i++) if (!vbFlagTask[i]) CloseWindow(i);
 
@@ -571,11 +548,6 @@ void updateImage() {
         case 7: nTrackHistoBin_tmp = nTrackHistoBin*nTrackHistoBin; break;
         }
 
-        ///// Setting recording mode //////////////////
-        int nModeRecord = 0;
-        if (vbFlagTask[stTID.nRecSegm] && vbFlagTask[stTID.nSegmentation] && !vbFlagTask[stTID.nRecognition]) nModeRecord = 1;
-        else if (vbFlagTask[stTID.nRecRecog] && vbFlagTask[stTID.nSegmentation] && vbFlagTask[stTID.nRecognition]) nModeRecord = 2;
-        else if (vbFlagTask[stTID.nRecSegm] && vbFlagTask[stTID.nRecRecog] && vbFlagTask[stTID.nSegmentation] && vbFlagTask[stTID.nRecognition]) nModeRecord = 3;
 
         ///// Setting snapshot format ////////////////
         switch (nSnapFormat) {case 0: sImgExt = ".bmp"; break; case 1: sImgExt = ".tif"; break; case 2: sImgExt = ".jpg"; break;}
@@ -584,7 +556,7 @@ void updateImage() {
 
 
 
-        /////////////** Copying original RGB image and generating downsampled image **///////////
+        //////*  Copying original RGB image and generating downsampled image  *//////
         cvm_image_camera.copyTo(cvm_rgb_org);
         for(size_t i = 0; i < nCvSize; i++) {
             int xx, yy;
@@ -594,7 +566,7 @@ void updateImage() {
 
 
 
-        /////////////** copy point cloud **///////////
+        //////*  copy point cloud  *///////////
         pcl::PointCloud<pcl::PointXYZ> cloud_Input;
         pcl::PointCloud<pcl::PointXYZRGB> cloud_Input_rgb;
         //pcl::transformPointCloud (cloud_xyz_rgb, cloud_rotated_rgb_tmp, T_vpt);
@@ -603,27 +575,38 @@ void updateImage() {
         else pcl::copyPointCloud (cloud_xyz, cloud_Input);
 
 
-        //// Set an indices for cloud ///////////////
+        //////*  Set an indices for cloud  *///////////////
         std::vector<int> vnCloudIdx(nCvSize);
         for (int i = 0; i < nCvSize; ++i) vnCloudIdx[i] = i;
 
-        clock_gettime(CLOCK_MONOTONIC_RAW, &t_pre_end); nTimePre = double(timespecDiff(&t_pre_end, &t_pre_start)/nTimeRatio);
-
-
-
+        //////*  Show RBG image  *//////////////////////
         if (vbFlagTask[stTID.nRgbOrg]) OpenWindow(stTID.nRgbOrg);
         if (vbFlagTask[stTID.nRgbDs]) OpenWindow(stTID.nRgbDs);
 
 
+        clock_gettime(CLOCK_MONOTONIC_RAW, &t_pre_end); nTimePre = double(timespecDiff(&t_pre_end, &t_pre_start)/nTimeRatio);
+        //////////////////--------------------------------------------------------------------------------------/////////////////////////
+        //////////////////                                                                                      /////////////////////////
+        //////////////////                               End of Pre-Setting                                     /////////////////////////
+        //////////////////                                                                                      /////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        /////////** Create Depth Image **////////////////////////////////////////////////////
-        std::vector<float> vnX(nCvSize, 0), vnY(nCvSize, 0), vnZ(nCvSize, 0);
-        std::vector<int> vnCloudIdx_d(nCvSize, 0);
 
-        std::vector<float> vnDGradX(nCvSize, nDGradNan);
-        std::vector<float> vnDGradY(nCvSize, nDGradNan);
-        std::vector<float> vnDGradY_blur(nCvSize, nDGradNan);
-        std::vector<float> vnDGradY_smth(nCvSize, nDGradNan);
+
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////                  Pre-Processing for the Segmentation                     //////////////////////
+        //////////////////                  Generation of depth-gradient map                        //////////////////////
+        //////////////////--------------------------------------------------------------------------//////////////////////
+
+        std::vector<float> vnX(nCvSize, 0), vnY(nCvSize, 0), vnZ(nCvSize, 0);   // vnZ: Depth Map
+        std::vector<int> vnCloudIdx_d(nCvSize, 0);                              // valid Point Cloud indices
+
+        std::vector<float> vnDGradX(nCvSize, nDGradNan);                        // Depth-Gradient Map, horizontal
+        std::vector<float> vnDGradY(nCvSize, nDGradNan);                        // Depth-Gradient Map, vertical
+        std::vector<float> vnDGradY_blur(nCvSize, nDGradNan);                   // Depth-Gradient Map, vertical, blured
+        std::vector<float> vnDGradY_smth(nCvSize, nDGradNan);                   // Depth-Gradient Map, vertical, smoothen
+        std::vector<float> vnDGradY_pre(nCvSize, nDGradNan);                    // Depth-Gradient Map, vertical, finally processed
 
         float nDRange = 6;
         int nDIdxCntTmp = 0;
@@ -634,31 +617,27 @@ void updateImage() {
         if (vbFlagTask[stTID.nSegmentation] || vbFlagTask[stTID.nDepth]) {
             struct timespec t_depth_start, t_depth_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_depth_start); bTimeDepth = true;
 
-            /////// Making depth map: store coordinates from point cloud //////////////
-            if (bPointRgb) MakeDepthMap (cloud_Input_rgb, bDepthCalib, nCalibX, nCalibY, nCalibW, nCalibH, nCvSize, nCvWidth, nCvHeight, nDMax, nDMin, nDIdxCntTmp, vnCloudIdx_d, vnX, vnY, vnZ);
-            else MakeDepthMap (cloud_Input, bDepthCalib, nCalibX, nCalibY, nCalibW, nCalibH, nCvSize, nCvWidth, nCvHeight, nDMax, nDMin, nDIdxCntTmp, vnCloudIdx_d, vnX, vnY, vnZ);
-            ////////////////////////////////////////////////////////////////////
+            //////*  Making depth map: storing coordinates from point cloud  *////////////
+            if (bPointRgb) MakeDepthMap (cloud_Input_rgb, nCvSize, nCvWidth, nCvHeight, nDMax, nDMin, nDIdxCntTmp, vnCloudIdx_d, vnX, vnY, vnZ);
+            else MakeDepthMap (cloud_Input, nCvSize, nCvWidth, nCvHeight, nDMax, nDMin, nDIdxCntTmp, vnCloudIdx_d, vnX, vnY, vnZ);
 
+            //////*  Making depth-gradient map  *////////////
             MakeDGradMap (vnZ, vnCloudIdx_d, nDIdxCntTmp, nDGradConst, nDSegmDThres, nDGradNan, nCvWidth, nDGradXMin, nDGradXMax, nDGradYMin, nDGradYMax, vnDGradX, vnDGradY);
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_depth_end); nTimeDepth = double(timespecDiff(&t_depth_end, &t_depth_start)/nTimeRatio);
 
 
-
-            /////// Processing depth gradient map ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //////*  Processing depth gradient map  */////////////////////////////////////////////////////////
             struct timespec t_blur_start, t_blur_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_blur_start); bTimeBlur = true;
 
             vnDGradY_blur = vnDGradY; vnDGradY_smth = vnDGradY;
-            //DSegm_SmoothDepthGrad (vnDGradY, vnCloudIdx_d, size_ds, nDSegmDThres, -nDSegmDThres, nDGradNan, nDGradFilterMode, nDGradFilterSize, nDGradSmthMode, nDGradSmthCenter, nDGradSmthBnd1, nDGradSmthFac, vnDGradY_blur, vnDGradY_smth);
-            DSegm_SmoothDepthGrad (vnDGradY, vnCloudIdx_d, size_ds, nDSegmDThres, -nDSegmDThres, nDGradNan, nDGradFilterMode, nDGradFilterSize, nDGradSmthMode, nDGradSmthCenter, nDGradSmthBnd1+1, nDGradSmthBnd2, nDGradSmthFac, vnDGradY_blur, vnDGradY_smth);
-            //vnDGradY_smth = vnDGradY_blur;
-            //DrawDepthGrad (vnDGradY_blur, vnCloudIdx_d, bDepthDispMode, nDSegmDThres, -nDSegmDThres, nDGradNan, cvm_dgrady_blur);
-            //DrawDepthGrad (vnDGradY_smth, vnCloudIdx_d, bDepthDispMode, nDSegmDThres, -nDSegmDThres, nDGradNan, cvm_dgrady_smth);
-            for (int i = 0; i < nDIdxCntTmp; i++) {if (vnDGradX[vnCloudIdx_d[i]] > nDGradNan*0.8 || vnDGradY[vnCloudIdx_d[i]] > nDGradNan*0.8) vnDGradY_smth[vnCloudIdx_d[i]] = nDGradNan;}
+            DSegm_SmoothDepthGrad (vnDGradY, vnCloudIdx_d, size_ds, nDSegmDThres, -nDSegmDThres, nDGradNan, nDGradFilterMode, nDGradFilterSize, nDGradSmthMode, nDGradSmthCenter, nDGradSmthBnd1, nDGradSmthBnd2, nDGradSmthFac, vnDGradY_blur, vnDGradY_smth);
+            vnDGradY_pre = vnDGradY_smth;
+            for (int i = 0; i < nDIdxCntTmp; i++) {if (vnDGradX[vnCloudIdx_d[i]] > nDGradNan*0.8 || vnDGradY[vnCloudIdx_d[i]] > nDGradNan*0.8) vnDGradY_pre[vnCloudIdx_d[i]] = nDGradNan;}
 
-            /////// Visualizing depth and its variations /////////////////////////
-            if (vbFlagTask[stTID.nDepth] || nModeRecord == 1 || nModeRecord == 3) {
+            //////*  Visualizing depth and its variations  */////////////////////////
+            if (vbFlagTask[stTID.nDepth]) {
                 if (vbFlagTask[stTID.nDepth]) {
-                    if(!vbFlagWnd[stTID.nDepth]) {
+                    if (!vbFlagWnd[stTID.nDepth]) {
                         vbFlagWnd[stTID.nDepth] = true;
                         cv::namedWindow(vsWndName[stTID.nDepth]);
                         cvMoveWindow(vsWndName[stTID.nDepth].data(), mWndPos[stTID.nDepth][0], mWndPos[stTID.nDepth][1]);
@@ -674,89 +653,120 @@ void updateImage() {
 
                 DrawDepthGrad (vnDGradY, vnCloudIdx_d, bDepthDispMode, nDSegmDThres, -nDSegmDThres, nDGradNan, cvm_dgrady);
                 DrawDepthGrad (vnDGradX, vnCloudIdx_d, bDepthDispMode, nDSegmDThres, -nDSegmDThres, nDGradNan, cvm_dgradx);
+                DrawDepthGrad (vnDGradY_blur, vnCloudIdx_d, bDepthDispMode, nDSegmDThres, -nDSegmDThres, nDGradNan, cvm_dgrady_blur);
+                DrawDepthGrad (vnDGradY_smth, vnCloudIdx_d, bDepthDispMode, nDSegmDThres, -nDSegmDThres, nDGradNan, cvm_dgrady_smth);
             }
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_blur_end); nTimeBlur = double(timespecDiff(&t_blur_end, &t_blur_start)/nTimeRatio);
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         }
+        //////////////////--------------------------------------------------------------------------//////////////////////
+        //////////////////             End of the Pre-Process for the Segmentation                  //////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 
-        nSegNr = 0;
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////                                                                                      /////////////////////////
+        //////////////////                          SEGMENTATION & TRACKING                                     /////////////////////////
+        //////////////////                                                                                      /////////////////////////
+        //////////////////--------------------------------------------------------------------------------------/////////////////////////
+
+        int nSegCnt = 0, nTrkSegCnt = 0;
         if (vbFlagTask[stTID.nSegmentation]){
 
-            // Trigger
+            /////*  Trigger  *///////////
             if (!bSwitchDSegm) {bSwitchDSegm = true; nTimeTotal_acc = 0; nTimeTotal_avr = 0; nCntFrame_tmp = 0; nTimeFrame_acc = 0; nTimeFrame_avr = 0;}
 
-
-
-            ////////////////////** Segmantation **////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //////////////////                                                                                  /////////////////////////
+            //////////////////                             SEGMENTATION                                         /////////////////////////
+            //////////////////                                                                                  /////////////////////////
+            //////////////////----------------------------------------------------------------------------------/////////////////////////
             struct timespec t_segm_start, t_segm_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_segm_start); bTimeSegm = true;
 
             std::vector<int> vnSegmMap(nCvSize, 0);
             std::vector<int> vnSegmMap_tmp = vnSegmMap;
-            DSegmentation(vnDGradY_smth, vnCloudIdx_d, nDSegmSizeThres, nDSegmGradDist, nDGradNan, nCvWidth, nCvSize, 0, nCvWidth, 0, nCvHeight, vnSegmMap_tmp, vnSegmMap, nSegNr);
-            nSegNr++;
+            DSegmentation(vnDGradY_pre, vnCloudIdx_d, nDSegmSizeThres, nDSegmGradDist, nDGradNan, nCvWidth, nCvSize, 0, nCvWidth, 0, nCvHeight, vnSegmMap_tmp, vnSegmMap, nSegCnt);
+            nSegCnt++;
 
-            // Making Segments Point Indices
-            std::vector<int> vnTmpPtsCnt(nSegNr, 0);
-            std::vector<std::vector<int> > mnTmpPtsIdx(nSegNr, std::vector<int>(nCvSize, 0));
-            Map2Objects(vnSegmMap, nSegNr, nCvSize, mnTmpPtsIdx, vnTmpPtsCnt);
+            //////*  Making Segments Point Indices  *//////////////////////
+            std::vector<int> vnTmpPtsCnt(nSegCnt, 0);
+            std::vector<std::vector<int> > mnTmpPtsIdx(nSegCnt, std::vector<int>(nCvSize, 0));
+            Map2Objects(vnSegmMap, nSegCnt, nCvSize, mnTmpPtsIdx, vnTmpPtsCnt);
 
-            // Show Segmentation
-            if (vbFlagTask[stTID.nDSegm] || nModeRecord == 1 || nModeRecord == 3){
+            //////*  Visualizing Segmentation  *///////////////////////////
+            if (vbFlagTask[stTID.nDSegm]){
                 if (vbFlagTask[stTID.nDSegm]) OpenWindow(stTID.nDSegm);
                 for (int i = 0; i < nCvSize; i++) {
-                    if (vnDGradX[i] > nDGradNan*0.8 || vnDGradY[i] > nDGradNan*0.8) {
+                    if (!vnSegmMap[i]) {
                         //AssignColor(i, mnColorTab[0], cvm_dgrady_blur);
                         //cvm_dgrady_blur.data[i*3] = 0; cvm_dgrady_blur.data[i*3+1] = 0; cvm_dgrady_blur.data[i*3+2] = 0;
                         continue;
                     }
                     //AssignColor(i, mnColorTab[vnSegmMap[i]], cvm_segment);
                     cvm_segment.data[i*3] = mnColorTab[vnSegmMap[i]][0]; cvm_segment.data[i*3+1] = mnColorTab[vnSegmMap[i]][1]; cvm_segment.data[i*3+2] = mnColorTab[vnSegmMap[i]][2];
-                    //AssignColor(i, mnColorTab[vnSegmMap_tmp[i]], cvm_segment_tmp);
-                    cvm_segment_tmp.data[i*3] = mnColorTab[vnSegmMap_tmp[i]][0]; cvm_segment_tmp.data[i*3+1] = mnColorTab[vnSegmMap_tmp[i]][1]; cvm_segment_tmp.data[i*3+2] = mnColorTab[vnSegmMap_tmp[i]][2];
+                    //AssignColor(i, mnColorTab[vnSegmMap_tmp[i]], cvm_segment_raw);
+                    cvm_segment_raw.data[i*3] = mnColorTab[vnSegmMap_tmp[i]][0]; cvm_segment_raw.data[i*3+1] = mnColorTab[vnSegmMap_tmp[i]][1]; cvm_segment_raw.data[i*3+2] = mnColorTab[vnSegmMap_tmp[i]][2];
                 }
             }
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_segm_end); nTimeSegm = double(timespecDiff(&t_segm_end, &t_segm_start)/nTimeRatio);
+            //////////////////----------------------------------------------------------------------------------/////////////////////////
+            //////////////////                                                                                  /////////////////////////
+            //////////////////                          End of the SEGMENTATION                                 /////////////////////////
+            //////////////////                                                                                  /////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 
-            ///////////////////////** Tracking **/////////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //////////////////                                                                                  /////////////////////////
+            //////////////////                               TRACKING                                           /////////////////////////
+            //////////////////                                                                                  /////////////////////////
+            //////////////////----------------------------------------------------------------------------------/////////////////////////
             struct timespec t_track_start, t_track_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_track_start); bTimeTrack = true;
 
-            std::vector<std::vector<int> > mnTmpRect(nSegNr, std::vector<int>(4,0));
-            std::vector<std::vector<int> > mnTmpRCenter(nSegNr, std::vector<int>(2,0));
-            std::vector<std::vector<float> > mnTmpCubic(nSegNr, std::vector<float>(6,0));
-            std::vector<std::vector<float> > mnTmpCCenter(nSegNr, std::vector<float>(3,0));
-            std::vector<int> vnTmpLength(nSegNr, 0);
-            std::vector<std::vector<float> > mnTmpClrHist(nSegNr, std::vector<float> (nTrackHistoBin_max, 0));
-            std::vector<int> vnTmpMemoryCnt(nSegNr, 0);
-            std::vector<int> vnTmpStableCnt(nSegNr, 0);
-            std::vector<int> vnTmpDisapCnt(nSegNr, 0);
+            std::vector<std::vector<int> > mnTmpRect(nSegCnt, std::vector<int>(4,0));
+            std::vector<std::vector<int> > mnTmpRCenter(nSegCnt, std::vector<int>(2,0));
+            std::vector<std::vector<float> > mnTmpCubic(nSegCnt, std::vector<float>(6,0));
+            std::vector<std::vector<float> > mnTmpCCenter(nSegCnt, std::vector<float>(3,0));
+            std::vector<int> vnTmpLength(nSegCnt, 0);
+            std::vector<std::vector<float> > mnTmpClrHist(nSegCnt, std::vector<float> (nTrackHistoBin_max, 0));
+            std::vector<int> vnTmpMemoryCnt(nSegCnt, 0);
+            std::vector<int> vnTmpStableCnt(nSegCnt, 0);
+            std::vector<int> vnTmpDisapCnt(nSegCnt, 0);
 
-            TrackingPre (nDSegmCutSize, nCvWidth, nCvHeight, vnX, vnY, vnZ, cvm_rgb_ds, nTrackClrMode, nTrackHistoBin, nTrackCntMem, nTrackCntStable, nTrackCntDisap,
-                         vnTmpPtsCnt, mnTmpPtsIdx, mnTmpRect, mnTmpRCenter, mnTmpCubic, mnTmpCCenter, vnTmpLength, mnTmpClrHist, vnTmpMemoryCnt, vnTmpStableCnt, vnTmpDisapCnt, nSegNr);
-            Tracking (nSegNr, nObjsNrLimit, nDiagonal, nTrackMode,
+            TrackingPre (nSegCnt, nDSegmCutSize, nCvWidth, nCvHeight, vnX, vnY, vnZ, cvm_rgb_ds, nTrackClrMode, nTrackHistoBin, nTrackCntMem, nTrackCntStable, nTrackCntDisap,
+                         vnTmpPtsCnt, mnTmpPtsIdx, mnTmpRect, mnTmpRCenter, mnTmpCubic, mnTmpCCenter, vnTmpLength, mnTmpClrHist, vnTmpMemoryCnt, vnTmpStableCnt, vnTmpDisapCnt, nTrkSegCnt);
+            Tracking (nTrkSegCnt, nObjsNrLimit, nDiagonal, nTrackMode,
                       nTrackDPos, nTrackDSize, nTrackDClr, nTrackPFac, nTrackSFac, nTrackCFac, nTrackDist, nTrackCntMem, nTrackCntStable, nTrackCntDisap, nTrackHistoBin_tmp,
                       vnTmpPtsCnt, mnTmpPtsIdx, mnTmpRect, mnTmpRCenter, mnTmpCubic, mnTmpCCenter, vnTmpLength, mnTmpClrHist, vnTmpMemoryCnt, vnTmpStableCnt, vnTmpDisapCnt,
                       vnProtoIdx, vnProtoPtsCnt, mnProtoPtsIdx, mnProtoRect, mnProtoCenter, mnProtoCubic, mnProtoRCenter, vnProtoLength, mnProtoClrHist, vnProtoFound, vnProtoMemoryCnt, vnProtoStableCnt, vnProtoDisapCnt, nProtoCnt, vbFlagTask[stTID.nMat]);
 
+            //////*  Making tracking map to a neighborhood matrix for surface saliencies  */////////////////////////////
+            std::vector<int> vnTrkMap(nCvSize, -1);         // Tracking Map
+            //std::vector<int> vnTrkMapComp(nCvSize, -1);     // for the making of the Neighbor Matrix
+            for (int i = 0; i < nProtoCnt; i++) {
+                if (vnProtoStableCnt[i] < nTrackCntStable || vnProtoDisapCnt[i] > nTrackCntDisap) continue;
+                for (size_t j = 0; j < mnProtoPtsIdx[i].size(); j++) {
+                    vnTrkMap[mnProtoPtsIdx[i][j]] = vnProtoIdx[i];
+                    //vnTrkMapComp[mnProtoPtsIdx[i][j]] = i;
+                }
+            }
+
+            // Making Neighboring matrix between attention candidates
+            //std::vector<std::vector<bool> > mbCandNeighbor(nProtoCnt, std::vector<bool>(nProtoCnt, false));
+            //DSegm_NeighborMatrix1(vnTrkMapComp, vnCloudIdx_d, 2, nCvWidth, mbCandNeighbor);
+
             // Show Tracking
-            if (vbFlagTask[stTID.nTrack] || ((vbFlagTask[stTID.nRecogOrg] || vbFlagTask[stTID.nRecVideo]) && nRecordMode) || nModeRecord) {
+            if (vbFlagTask[stTID.nTrack] || ((vbFlagTask[stTID.nRecogOrg] || vbFlagTask[stTID.nRecVideo]) && nRecordMode)) {
                 if(vbFlagTask[stTID.nTrack] && !vbFlagWnd[stTID.nTrack]) SetFlagWnd(stTID.nTrack);
 
-                for (int i = 0; i < nProtoCnt; i++) {
-                    if (vnProtoStableCnt[i] < nTrackCntStable || vnProtoDisapCnt[i] > nTrackCntDisap) continue;
-                    //Idx2Image(mnProtoPtsIdx[i], mnColorTab[vnProtoIdx[i]], cvm_track);
-                    for (size_t j = 0; j < mnProtoPtsIdx[i].size(); j++) {
-                        cvm_track.data[mnProtoPtsIdx[i][j]*3] = mnColorTab[vnProtoIdx[i]][0];
-                        cvm_track.data[mnProtoPtsIdx[i][j]*3+1] = mnColorTab[vnProtoIdx[i]][1];
-                        cvm_track.data[mnProtoPtsIdx[i][j]*3+2] = mnColorTab[vnProtoIdx[i]][2];
-                    }
+                for (int i = 0; i < nCvSize; i++) {
+                    if (vnTrkMap[i] < 0) continue;
+                    cvm_track.data[i*3] = mnColorTab[vnTrkMap[i]][0]; cvm_track.data[i*3+1] = mnColorTab[vnTrkMap[i]][1]; cvm_track.data[i*3+2] = mnColorTab[vnTrkMap[i]][2];
                 }
             }
 
@@ -794,11 +804,21 @@ void updateImage() {
             cvm_mask.release();
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_track_end); nTimeTrack = double(timespecDiff(&t_track_end, &t_track_start)/nTimeRatio);
+            //////////////////----------------------------------------------------------------------------------/////////////////////////
+            //////////////////                                                                                  /////////////////////////
+            //////////////////                          End of the TRACKING                                     /////////////////////////
+            //////////////////                                                                                  /////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 
 
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //////////////////                                                                                  /////////////////////////
+            //////////////////                         ATTENTION & RECOGNITION                                  /////////////////////////
+            //////////////////                                                                                  /////////////////////////
+            //////////////////----------------------------------------------------------------------------------/////////////////////////
             if (vbFlagTask[stTID.nRecognition]) {
             //if (vbFlagTask[stTID.nRecognition] && (bSwitchRecordRec || !vbFlagTask[stTID.nRecRecog])) {
                 struct timespec t_att_start, t_att_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_att_start);
@@ -878,11 +898,11 @@ void updateImage() {
                 int nCandID = -1;
                 SelRecognition_Pre (nProtoCnt, vbProtoCand, vnProtoFound, nCandID);
 
-                if (vbFlagTask[stTID.nRecogOrg] || (vbFlagTask[stTID.nRecVideo] && nRecordMode) || nModeRecord == 2 || nModeRecord == 3) {
+                if (vbFlagTask[stTID.nRecogOrg] || (vbFlagTask[stTID.nRecVideo] && nRecordMode)) {
                     if (vbFlagTask[stTID.nRecogOrg]) OpenWindow(stTID.nRecogOrg);
                     cvm_rgb_org.copyTo(cvm_rec_org);
                 }
-                if (vbFlagTask[stTID.nRecogDs] || ((vbFlagTask[stTID.nRecogOrg] || vbFlagTask[stTID.nRecVideo]) && nRecordMode) || nModeRecord == 2 || nModeRecord == 3) {
+                if (vbFlagTask[stTID.nRecogDs] || ((vbFlagTask[stTID.nRecogOrg] || vbFlagTask[stTID.nRecVideo]) && nRecordMode)) {
                     if (vbFlagTask[stTID.nRecogDs]) OpenWindow(stTID.nRecogDs);
                     cvm_rgb_ds.copyTo(cvm_rec_ds);
                 }
@@ -979,7 +999,7 @@ void updateImage() {
                     SelRecognition (nCandID, nImgScale, nTimeRatio, nProtoCnt, nTrackHistoBin_max, sTimeDir, sImgExt, cvm_rgb_org, cvm_rgb_ds, cvm_rec_org, cvm_rec_ds,
                                     vnProtoPtsCnt, mnProtoPtsIdx, mnProtoRect, vnProtoFound, vnProtoLength, vnProtoDisapCnt, nTrackCntDisap, nCandCnt, vnTmpProtoDiff, nFoundCnt, nFoundNr, nFoundFrame,
                                     nCandKeyCnt, nCandRX, nCandRY, nCandRW, nCandRH,
-                                    t_rec_found_start, t_rec_found_end, bSwitchRecordTime, nRecogRtNr, vnRecogRating_tmp, nModeRecord, cvm_cand);
+                                    t_rec_found_start, t_rec_found_end, bSwitchRecordTime, nRecogRtNr, vnRecogRating_tmp, cvm_cand);
                                     //mnProtoClrHist, mnProtoCenter);
                     nTmpAttKeyCnt = nCandKeyCnt; nTmpAttWidth = nCandRW; nTmpAttHeight = nCandRH;
 
@@ -1041,6 +1061,11 @@ void updateImage() {
                 if (vbFlagWnd[stTID.nRecogOrg]) {cvm_rec_org = cv::Scalar(0, 0, 0); cv::add(cvm_rec_org, cvm_rgb_org, cvm_rec_org);}
                 if (vbFlagWnd[stTID.nRecogDs]) {cvm_rec_ds = cv::Scalar(0, 0, 0); cv::add(cvm_rec_ds, cvm_rgb_ds, cvm_rec_ds);}
             }
+            //////////////////----------------------------------------------------------------------------------/////////////////////////
+            //////////////////                                                                                  /////////////////////////
+            //////////////////                          End of the RECOGNITIOON                                 /////////////////////////
+            //////////////////                                                                                  /////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         }//bFragTask[stTID.nSegmentation]
         else {
             if (bSwitchDSegm) {
@@ -1065,17 +1090,26 @@ void updateImage() {
             if (vbFlagWnd[stTID.nRecogOrg]) {cvm_rec_org = cv::Scalar(0, 0, 0); cv::add(cvm_rec_org, cvm_rgb_org, cvm_rec_org);}
             if (vbFlagWnd[stTID.nRecogDs]) {cvm_rec_ds = cv::Scalar(0, 0, 0); cv::add(cvm_rec_ds, cvm_rgb_ds, cvm_rec_ds);}
         }
-        /////////////***************************//////////////////////////////////////////////////////////
-        //              End of main process
-        //////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////----------------------------------------------------------------------------------/////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        //////////////////                          End of the Main Process                                 /////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-        //////////////////////////////////////////////////////////////////////////////////////////////////
-        //              Other state of art methods for compairison
-        ////////////***************************************************///////////////////////////////////
 
-        //////// 1. Graph-based segmentation ////////////////////////////////
+
+
+
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        //////////////////                  Other state of art methods for compairison                      /////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        //////////////////----------------------------------------------------------------------------------/////////////////////////////
+
+        //////////**  1. Graph-based segmentation  **////////////////////////////////
         if (vbFlagTask[stTID.nGSegm]) {
             struct timespec t_gbseg_start, t_gbseg_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_gbseg_start); bTimeGbSegm = true;
             if(!vbFlagWnd[stTID.nGSegm]) {
@@ -1104,7 +1138,7 @@ void updateImage() {
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_gbseg_end); nTimeGbSegm = double(timespecDiff(&t_gbseg_end, &t_gbseg_start)/nTimeRatio);
 
 
-            ////// Recofd Time ///////
+            //////*  Record Time  *///////
             if (bRtGbSegm) {
                 mnTimeMeasGbSegm.resize(nMeasCounter+1);
                 mnTimeMeasGbSegm[nMeasCounter] = nTimeGbSegm;
@@ -1121,16 +1155,18 @@ void updateImage() {
 
 
 
-        //////// 2. Sift on whole image ////////////////////////////////
+        //////////**  2. Sift on a whole image  **////////////////////////////////
         if (vbFlagTask[stTID.nSIFT]) {
-            struct timespec t_sift_start, t_sift_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_sift_start); bTimeSiftWhole = true;
-//            if(!vbFlagWnd[stTID.nSIFT]) {
-//                vbFlagWnd[stTID.nSIFT] = true;
-//                cv::namedWindow(vsWndName[stTID.nSIFT]);
-//                cvMoveWindow(vsWndName[stTID.nSIFT].data(), 300, 100);
+            if(!vbFlagWnd[stTID.nSIFT]) {
+                vbFlagWnd[stTID.nSIFT] = true;
+                cv::namedWindow(vsWndName[stTID.nSIFT]);
+                cvMoveWindow(vsWndName[stTID.nSIFT].data(), 300, 100);
 
-//                cvCreateTrackbar(vsTrackbarName[59].data(), vsWndName[stTID.nSIFT].data(), &nFlannMatchCntWhole, 100, TrackbarHandler_none);
-//            }
+                cvCreateTrackbar(vsTrackbarName[59].data(), vsWndName[stTID.nSIFT].data(), &nFlannMatchCntWhole, 100, TrackbarHandler_none);
+            }
+
+            //////*  SIFT  *////////////
+            struct timespec t_sift_start, t_sift_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_sift_start); bTimeSiftWhole = true;
 
             Keypoint keypts, keypts_tmp;
             GetSiftKeypoints(cvm_rgb_org, nSiftScales, nSiftInitSigma, nSiftPeakThrs, 0, 0, cvm_rgb_org.cols, cvm_rgb_org.rows, keypts);
@@ -1139,21 +1175,17 @@ void updateImage() {
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_sift_end); nTimeSiftWhole = double(timespecDiff(&t_sift_end, &t_sift_start)/nTimeRatio);
 
 
+            //////*  FLANN  *////////////
             struct timespec t_flann_start, t_flann_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_flann_start);
 
             std::vector<int> vnSiftMatched; std::vector <double> vnDeltaScale; std::vector <double> vnDeltaOri;
-            double nMaxDeltaOri = -999; double nMaxDeltaScale = -999;
-            double nMinDeltaOri = 999; //double nMinDeltaScale = 999;
+            double nMaxDeltaOri = -999; double nMaxDeltaScale = -999; double nMinDeltaOri = 999; //double nMinDeltaScale = 999;
             int nKeyptsCnt = 0; int nFlannIM=0;
-
 
             SelRecognition_FlannSift(tcount, nFlannKnn, nFlannLibCols_sift, nFlannMatchFac, mnSiftExtraFeatures, FlannIdx_Sift, FLANNParam, keypts, nKeyptsCnt, nFlannIM, vnSiftMatched, vnDeltaScale, vnDeltaOri, nMaxDeltaOri, nMinDeltaOri, nMaxDeltaScale, nMinDeltaOri);
 
-
-            /////////////////////////////////////////Filtering Gray Keypoints
-            double nDeltaScale=0;
-            int nFlannTP=0;
-
+            //////  Filtering Gray Keypoints  ////////////
+            double nDeltaScale=0; int nFlannTP=0;
             std::vector<bool> vbSiftTP(nKeyptsCnt, 0);
             if(nFlannIM > T_numb) CalcDeltaScaleOri(vnSiftMatched, vnDeltaScale, vnDeltaOri, nDeltaScale, nDeltaBinNo, nMaxDeltaOri, nMinDeltaOri, T_orient, T_scale, nFlannTP, vbSiftTP);
             else nFlannTP = 0;
@@ -1161,6 +1193,7 @@ void updateImage() {
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_flann_end); nTimeFlannWhole = double(timespecDiff(&t_flann_end, &t_flann_start)/nTimeRatio);
 
 
+            //////*  Visualizing the SIFT keypoints and the FLANN matching  *////////////
             struct timespec t_siftdraw_start, t_siftdraw_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_siftdraw_start);
             cv::add(cvm_sift, cvm_rgb_org, cvm_sift);
             keypts = keypts_tmp;
@@ -1172,19 +1205,20 @@ void updateImage() {
             nKeyptsCnt = 0;
             while(keypts) {
                 if(vbSiftTP[nKeyptsCnt]) {
+                    cv::rectangle(cvm_sift, cv::Point(keypts->row - 2, keypts->col - 2), cv::Point(keypts->row + 2, keypts->col + 2), c_white, 1);
                     cv::rectangle(cvm_sift, cv::Point(keypts->row - 3, keypts->col - 3), cv::Point(keypts->row + 3, keypts->col + 3), c_blue, 1);
                     cv::rectangle(cvm_sift, cv::Point(keypts->row - 1, keypts->col - 1), cv::Point(keypts->row + 1, keypts->col + 1), c_blue, 1);
                 }
                 nKeyptsCnt++;
                 keypts= keypts->next;
             }
+            FreeKeypoints(keypts); FreeKeypoints(keypts_tmp);
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_siftdraw_end); nTimeSiftDrawWhole = double(timespecDiff(&t_siftdraw_end, &t_siftdraw_start)/nTimeRatio);
 
-            FreeKeypoints(keypts); //FreeKeypoints(keypts_tmp);
 
-
-            /////// Record Time ///////////
+            //////*  Record Time  *///////////
             if (bRtSiftW) {
+                if(vbFlagWnd[stTID.nSIFT]) CloseWindow(stTID.nSIFT);
                 mnTimeMeasSiftWhole.resize(nMeasCounter+1);
                 mnTimeMeasSiftWhole[nMeasCounter].assign(3,0);
                 mnTimeMeasSiftWhole[nMeasCounter][0] = nTimeSiftWhole;
@@ -1200,77 +1234,21 @@ void updateImage() {
                 }
             }
         }
-        /////////////************************************************************/////////////////////////
-        //                End of ther state of art methods for compairison
-        //////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////----------------------------------------------------------------------------------/////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        //////////////////               End of the state of art methods for compairison                    /////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 
-        ////////// Recording snapshots for Segmentation /////////////////////////////////////
-        if (vbFlagTask[stTID.nRecSegm]){
-            if (nModeRecord == 1) {
-                if (!bSwitchRecordSegm) {
-                    bSwitchRecordSegm = true;
-                    mkdir(sDataDir.data(), 0777); MakeNiDirectory (sRecordSegDirPref, sRecordSegDir);
-                }
-                else {
-                    std::string sDat;
 
-                    char s_frame[128];
-                    switch (nModeRecord) {
-                    case 1:
-                        sprintf(s_frame, "snap_%06i_01_rgb", nCntFrame); sDat = sRecordSegDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_rgb_ds);
-                        //sprintf(s_frame, "snap_%06i_02_dpt", nCntFrame); sDat = sRecordSegDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_depth);
-                        //sprintf(s_frame, "snap_%06i_03_dgy", nCntFrame); sDat = sRecordSegDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_dgrady);
-                        //sprintf(s_frame, "snap_%06i_04_dgb", nCntFrame); sDat = sRecordSegDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_dgrady_blur);
-                        //sprintf(s_frame, "snap_%06i_05_seg_nopostproc", nCntFrame); sDat = sRecordSegDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_segment_tmp);
-                        //sprintf(s_frame, "snap_%06i_06_seg", nCntFrame); sDat = sRecordSegDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_segment);
-                        break;
-                    }
-                    sprintf(s_frame, "snap_%06i_07_trk", nCntFrame); sDat = sRecordSegDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_track);
-                }
-            }
-        }
-        else bSwitchRecordSegm = false;
-
-
-        ////////// Recording snapshots for Recognition /////////////////////////////////////
-        if (vbFlagTask[stTID.nRecRecog]){
-            if (nModeRecord == 2 || nModeRecord == 3) {
-                if (!bSwitchRecordRec) {
-                    bSwitchRecordRec = true;
-                    mkdir(sDataDir.data(), 0777); MakeNiDirectory (sRecordRecDirPref, sRecordRecDir);
-                }
-                else {
-                    std::string sDat;
-                    char s_frame[128];
-                    switch (nModeRecord) {
-                    case 2:
-                        if (vbFlagWnd[stTID.nRecogOrg]) {
-                            sprintf(s_frame, "snap_%06i_08_rec", nCntFrame); sDat = sRecordRecDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_rec_org);
-                        }
-                        if (vbFlagWnd[stTID.nRecogDs] || !vbFlagWnd[stTID.nRecogOrg]) {
-                            sprintf(s_frame, "snap_%06i_08_rec_ds", nCntFrame); sDat = sRecordRecDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_rec_ds);
-                            //sprintf(s_frame, "snap_%06i_09_recc", nCntFrame); sDat = sRecordRecDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_hist);
-                        }
-                        break;
-                    case 3:
-                        sprintf(s_frame, "snap_%06i_01_rgb", nCntFrame); sDat = sRecordRecDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_rgb_ds);
-                        sprintf(s_frame, "snap_%06i_02_dpt", nCntFrame); sDat = sRecordRecDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_depth);
-                        sprintf(s_frame, "snap_%06i_03_dgy", nCntFrame); sDat = sRecordRecDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_dgrady);
-                        sprintf(s_frame, "snap_%06i_04_dgb", nCntFrame); sDat = sRecordRecDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_dgrady_blur);
-                        sprintf(s_frame, "snap_%06i_05_seg_nopostproc", nCntFrame); sDat = sRecordRecDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_segment_tmp);
-                        sprintf(s_frame, "snap_%06i_06_seg", nCntFrame); sDat = sRecordRecDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_segment);
-                        sprintf(s_frame, "snap_%06i_08_rec", nCntFrame); sDat = sRecordRecDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_rec_org);
-                        sprintf(s_frame, "snap_%06i_08_rec_ds", nCntFrame); sDat = sRecordRecDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_rec_ds);
-                        break;
-                    }
-                    sprintf(s_frame, "snap_%06i_07_trk", nCntFrame); sDat = sRecordRecDir + "/" + s_frame + sImgExt; cv::imwrite(sDat, cvm_track);
-                }
-            }
-        }
-        else bSwitchRecordRec = false;
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        //////////////////                          Other NiVision functions                                /////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        //////////////////----------------------------------------------------------------------------------/////////////////////////////
 
 
         ////** Snapping images once **/////////////////
@@ -1284,7 +1262,7 @@ void updateImage() {
             sDat = sSnapDir + "/" + "snap_03_dgx" + sImgExt; cv::imwrite(sDat, cvm_dgradx);
             sDat = sSnapDir + "/" + "snap_04_dgy_blur" + sImgExt; cv::imwrite(sDat, cvm_dgrady_blur);
             sDat = sSnapDir + "/" + "snap_04_dgy_smooth" + sImgExt; cv::imwrite(sDat, cvm_dgrady_smth);
-            sDat = sSnapDir + "/" + "snap_05_seg_noPostProc" + sImgExt; cv::imwrite(sDat, cvm_segment_tmp);
+            sDat = sSnapDir + "/" + "snap_05_seg_noPostProc" + sImgExt; cv::imwrite(sDat, cvm_segment_raw);
             sDat = sSnapDir + "/" + "snap_06_seg" + sImgExt; cv::imwrite(sDat, cvm_segment);
             sDat = sSnapDir + "/" + "snap_07_trk" + sImgExt; cv::imwrite(sDat, cvm_track);
             sDat = sSnapDir + "/" + "snap_08_obj" + sImgExt; cv::imwrite(sDat, cvm_att);
@@ -1445,7 +1423,7 @@ void updateImage() {
                 int fp = int(nTrackPFac*100), fs = int(nTrackSFac*100), fc = int(nTrackCFac*100);
 
                 cvCreateTrackbar(vsTrackbarName[20].data(), vsWndName[stTID.nPrmSegm].data(), &nTrackMode, 1, TrackbarHandler_none);
-                cvCreateTrackbar(vsTrackbarName[21].data(), vsWndName[stTID.nPrmSegm].data(), &nTrackClrMode, 7, TrackbarHandler_ColorMode);
+                //cvCreateTrackbar(vsTrackbarName[21].data(), vsWndName[stTID.nPrmSegm].data(), &nTrackClrMode, 7, TrackbarHandler_ColorMode);
 
                 cvCreateTrackbar(vsTrackbarName[22].data(), vsWndName[stTID.nPrmSegm].data(), &dp, 100, TrackbarHandler_DistPos);
                 cvCreateTrackbar(vsTrackbarName[23].data(), vsWndName[stTID.nPrmSegm].data(), &ds, 100, TrackbarHandler_DistSize);
@@ -1498,10 +1476,23 @@ void updateImage() {
         ////** Reset Parameters **////////////////
         if (vbFlagTask[stTID.nRstPrm]) ResetParameter();
 
+        //////////////////----------------------------------------------------------------------------------/////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        //////////////////                      End of the other functions                                  /////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-        ///////////////////////////////////////////////////
+
+
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        //////////////////                            Drawing Operations                                    /////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        //////////////////----------------------------------------------------------------------------------/////////////////////////////
+
         if(vbFlagWnd[stTID.nRgbOrg]) cv::imshow(vsWndName[stTID.nRgbOrg], cvm_rgb_org);
         if(vbFlagWnd[stTID.nRgbDs]) cv::imshow(vsWndName[stTID.nRgbDs], cvm_rgb_ds);
         if(vbFlagWnd[stTID.nDepth]) {AttachImgs(cvm_depth, cvm_dgrady, cvm_dgrady_blur, cvm_dgrady_smth, nCvWidth, nCvHeight, cvm_depth_process); cv::imshow(vsWndName[stTID.nDepth], cvm_depth_process);}
@@ -1554,7 +1545,7 @@ void updateImage() {
         sprintf(sTotal, "%8.2f Hz", nFrameRate_avr); cv::putText(cvm_main, sTotal, cv::Point(nPadCol1+150, nPadOver-5), nFont, nFontSize, c_magenta, 1);
 
         if(vbFlagTask[stTID.nInfo]) {
-            DrawInfo (cvm_main, nSegNr, nPadOver, nPadCol1, nCntFrame_tmp, nTimeTotal,
+            DrawInfo (cvm_main, nTrkSegCnt, nPadOver, nPadCol1, nCntFrame_tmp, nTimeTotal,
                       nTimePre, nTimeDepth, nTimeBlur, nTimePre_avr, nTimeDepth_avr, nTimeBlur_avr,
                       nTimeSegm, nTimeTrack, nTimeAtt, nTimeRec, nTimeSift, nTimeFlann,
                       nTimeSegm_avr, nTimeTrack_avr, nTimeAtt_avr, nTimeRec_avr, nTimeSift_avr, nTimeFlann_avr,
@@ -1570,37 +1561,32 @@ void updateImage() {
         }
         cv::imshow(sTitle, cvm_main);
 
+        //////////////////----------------------------------------------------------------------------------/////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        //////////////////                      End of the Drawing Operations                               /////////////////////////////
+        //////////////////                                                                                  /////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
         //nCvCurrentkey = getchar(); nCvCurrentkey = cv::waitKey(1);
         nCvCurrentkey = cv::waitKey(1);
         nCntFrame++;
     }
 
     cvm_main.release();
-    cvm_set_seg.release();
-    cvm_set_rec.release();
-    cvm_rgb_org.release();
-    cvm_rgb_ds.release();
-    cvm_depth.release();
-    cvm_depth_smooth.release();
-    cvm_dgradx.release();
-    cvm_dgrady.release();
-    cvm_segment.release();
-    cvm_segment_tmp.release();
+    cvm_set_seg.release(); cvm_set_rec.release();
+    cvm_rgb_org.release(); cvm_rgb_ds.release();
+    cvm_depth.release(); cvm_dgradx.release(); cvm_dgrady.release();
+    cvm_segment.release(); cvm_segment_raw.release();
     cvm_track.release();
-    cvm_att.release();
-    cvm_gbsegm.release();
+    cvm_att.release(); cvm_cand.release();
+    cvm_rec_org.release(); cvm_rec_ds.release();
 
-    cvm_rec_org.release();
-    cvm_rec_ds.release();
-    cvm_sift.release();
+    cvm_gbsegm.release(); cvm_sift.release();
 
-    cvm_cand.release();
-    cvm_record_rec.release();
-    cvm_record_ds.release();
+    cvm_record_rec.release(); cvm_record_ds.release();
 
-    cvm_dgrady_blur.release();
-    cvm_dgrady_smth.release();
-    cvm_depth_process.release();
+    cvm_dgrady_blur.release(); cvm_dgrady_smth.release(); cvm_depth_process.release();
 
     //ros::shutdown();
     //ros::ok();

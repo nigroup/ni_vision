@@ -53,6 +53,7 @@ void parameter_init(int argc, char** argv) {
     case 0: printf ("Crop Mode: .............................. Devide Image\n"); break;
     case 1: printf ("Crop Mode: .............................. Crop Image\n"); break;
     case 2: printf ("Crop Mode: .............................. Merge Image\n"); break;
+    case 3: printf ("Crop Mode: .............................. Merge Image\n"); break;
     }
     printf ("===============================================================\n\n\n");
 }
@@ -90,7 +91,7 @@ void ScanDir() {
         mkdir(sOutputPath1.data(), 0777);
         mkdir(sOutputPath2.data(), 0777);
         break;
-    case 1: case 2:
+    case 1: case 2: case3:
         sOutputPath1 = sPath + "processed/";
         mkdir(sOutputPath1.data(), 0777);
         break;
@@ -108,7 +109,7 @@ void ScanDir() {
             string sFileName = dp->d_name;
             size_t pos = sFileName.find(".");
             string sExt = sFileName.substr(pos+1);
-            string sFile = sFileName.substr(0, pos);
+            string sFilePrefix = sFileName.substr(0, pos);
             if(sExt.compare("bmp")==0 || sExt.compare("jpeg")==0 || sExt.compare("jpg")==0 || sExt.compare("tiff")==0 || sExt.compare("tif")==0) {
                 string sInputFile = sInputPath + sFileName;
                 //cout << "Opening File : " << sInputFile << "    " << cnt << "\n";
@@ -122,6 +123,8 @@ void ScanDir() {
 
 
                 string sOutputFile;
+                string sStep;
+                int nOutPosX, nOutPosY;
                 switch (nCropMode) {
                 case 0:     // Divide
                     cv::imshow("Current Image", cvm_input);
@@ -129,11 +132,11 @@ void ScanDir() {
                     cvm_output.create(cv::Size(nFocusWidth, nFocusHeight), cvm_input.type());
 
                     CropImage(cvm_input, cvm_output, 0, 0, nFocusWidth, nFocusHeight);
-                    sOutputFile = sOutputPath1 + sFile + "_trk" + "." + sExt; cv::imwrite(sOutputFile.data(), cvm_output);
+                    sOutputFile = sOutputPath1 + sFilePrefix + "_trk" + "." + sExt; cv::imwrite(sOutputFile.data(), cvm_output);
                     cv::imshow("Processed", cvm_output);
 
                     CropImage(cvm_input, cvm_output, nFocusWidth, 0, nFocusWidth, nFocusHeight);
-                    sOutputFile = sOutputPath2 + sFile + "_rgb" + "." + sExt; cv::imwrite(sOutputFile.data(), cvm_output);
+                    sOutputFile = sOutputPath2 + sFilePrefix + "_rgb" + "." + sExt; cv::imwrite(sOutputFile.data(), cvm_output);
                     cv::imshow("Result", cvm_output);
 
                     cvm_output.release();
@@ -151,11 +154,24 @@ void ScanDir() {
 
                     break;
 
-                case 2:     // Merge
-                    if (pos < 20) {
-                        cv::imshow("Current Image", cvm_input);
+                case 2:
+                    cv::imshow("Current Image", cvm_input);
 
-                        string sPrefix = sFileName.substr(0, 11);
+                    cvm_output.create(cv::Size(nFocusWidth*2, nFocusHeight), cvm_input.type());
+                    nOutPosX = 0, nOutPosY = 0;
+                    MergeImage(cvm_input, cvm_output, 2+nFocusX, 522+nFocusY, nFocusWidth, nFocusHeight, nOutPosX, nOutPosY);
+                    nOutPosX = nFocusWidth;
+                    MergeImage(cvm_input, cvm_output, 2+nFocusX, 782+nFocusY, nFocusWidth, nFocusHeight, nOutPosX, nOutPosY);
+                    sOutputFile = sOutputPath1 + sFileName; cv::imwrite(sOutputFile.data(), cvm_output);
+                    cv::imshow("Result", cvm_output);
+                    cvm_output.release();
+                    break;
+
+                case 3:     // Merge
+                    sStep = sFileName.substr(pos-3, 3);
+                    if (sStep == "rgb") {
+                        printf("%s\n", sStep.data());
+                        cv::imshow("Current Image", cvm_input);
 
                         DIR *dirp2;
                         struct dirent *dp2;
@@ -166,33 +182,32 @@ void ScanDir() {
                             if ((dp2 = readdir(dirp2)) != NULL) {
 
                                 string sFileName2 = dp2->d_name;
-                                string sPrefix2 = sFileName2.substr(0, 11);
-                                if (sPrefix != sPrefix2) continue;
 
                                 size_t pos2 = sFileName2.find(".");
-                                if (pos2 < 20) continue;
+                                string sTmp1 = sFileName.substr(0, pos-3);
+                                string sTmp2 = sFileName2.substr(0, pos-3);
+                                if (sTmp1 != sTmp2) continue;
+
+                                string sFilePrefix2 = sFileName2.substr(0, pos2);
+                                if (sFilePrefix == sFilePrefix2) continue;
+
+                                if (pos2 >= 20) continue;
 
 
                                 string sInputFile2 = sInputPath + sFileName2;
 
                                 cv::Mat cvm_input2 = cv::imread(sInputFile2.data(), CV_LOAD_IMAGE_COLOR);
 
-                                cvm_output.create(cv::Size(nFocusWidth, nFocusHeight*2), cvm_input.type());
+                                cvm_output.create(cv::Size(nFocusWidth*2, nFocusHeight), cvm_input.type());
                                 cvm_output = cv::Scalar(0, 0, 0);
 
-                                int nOutPosX = 0, nOutPosY = 0;
+                                nOutPosX = 0, nOutPosY = 0;
                                 MergeImage(cvm_input2, cvm_output, nFocusX, nFocusY, nFocusWidth, nFocusHeight, nOutPosX, nOutPosY);
-                                nOutPosX = 0, nOutPosY = nFocusHeight;
+                                //nOutPosX = 0, nOutPosY = nFocusHeight;
+                                nOutPosX = nFocusWidth, nOutPosY = 0;
                                 MergeImage(cvm_input, cvm_output, nFocusX, nFocusY, nFocusWidth, nFocusHeight, nOutPosX, nOutPosY);
 
-//                                cvm_output.create(cv::Size(nFocusWidth*2, nFocusHeight), cvm_input.type());
-//                                cvm_output = cv::Scalar(0, 0, 0);
-
-//                                int nOutPosX = 0, nOutPosY = 0;
-//                                MergeImage(cvm_input, cvm_output, nFocusX, nFocusY, nFocusWidth, nFocusHeight, nOutPosX, nOutPosY);
-//                                nOutPosX = nFocusWidth, nOutPosY = 0;
-//                                MergeImage(cvm_input2, cvm_output, nFocusX, nFocusY, nFocusWidth, nFocusHeight, nOutPosX, nOutPosY);
-                                sOutputFile = sOutputPath1 + sPrefix2 + "." + sExt;
+                                sOutputFile = sOutputPath1 + sFilePrefix2 + "." + sExt;
                                 cv::imwrite(sOutputFile.data(), cvm_output);
                                 cv::imshow("Result", cvm_output);
 
@@ -205,7 +220,6 @@ void ScanDir() {
                                 closedir(dirp2);
                                 return;
                             }
-
                         }
                     }
                     break;

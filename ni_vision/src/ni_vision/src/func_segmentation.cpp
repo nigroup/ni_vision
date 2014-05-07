@@ -123,7 +123,7 @@ void DSegm_SmoothDepthGrad (std::vector<float> vInput, std::vector<int> index, c
     input_gray.release(); input_gray_blur.release();
 }
 
-void DSegm_NeighborMatrix(std::vector<int> vInputMap, std::vector<int> input_idx, int width, std::vector<std::vector<bool> >& mnOut) {
+void DSegm_NeighborMatrix (std::vector<int> vInputMap, std::vector<int> input_idx, int range, int width, std::vector<std::vector<bool> >& mnOut) {
     for (size_t i = 0; i < input_idx.size() ; i++) {
         int x, y;
         int Ref, Cand;
@@ -131,16 +131,41 @@ void DSegm_NeighborMatrix(std::vector<int> vInputMap, std::vector<int> input_idx
         Ref = vInputMap[input_idx[i]];
         if (!Ref) continue;
 
-        if (y) {
+        if (y + range-1) {
             Cand = vInputMap[input_idx[i] - width];
             if (Cand) {
                 if (!mnOut[Ref][Cand])
                     if (Cand != Ref) {mnOut[Ref][Cand] = true; mnOut[Cand][Ref] = true;}
             }
         }
-        if (x) {
+        if (x + range-1) {
             Cand = vInputMap[input_idx[i] - 1];
             if (Cand) {
+                if (!mnOut[Ref][Cand])
+                    if (Cand != Ref) {mnOut[Ref][Cand] = true; mnOut[Cand][Ref] = true;}
+            }
+        }
+    }
+}
+
+void DSegm_NeighborMatrix1 (std::vector<int> vInputMap, std::vector<int> input_idx, int range, int width, std::vector<std::vector<bool> >& mnOut) {
+    for (size_t i = 0; i < input_idx.size() ; i++) {
+        int x, y;
+        int Ref, Cand;
+        GetPixelPos(input_idx[i], width, x, y);
+        Ref = vInputMap[input_idx[i]];
+        if (Ref < 0) continue;
+
+        if (y + range-1) {
+            Cand = vInputMap[input_idx[i] - width];
+            if (Cand >= 0) {
+                if (!mnOut[Ref][Cand])
+                    if (Cand != Ref) {mnOut[Ref][Cand] = true; mnOut[Cand][Ref] = true;}
+            }
+        }
+        if (x + range-1) {
+            Cand = vInputMap[input_idx[i] - 1];
+            if (Cand >= 0) {
                 if (!mnOut[Ref][Cand])
                     if (Cand != Ref) {mnOut[Ref][Cand] = true; mnOut[Cand][Ref] = true;}
             }
@@ -155,11 +180,12 @@ void DSegm_MatchPoints (int idx_ref, int idx_cand, int nSegCnt, std::vector<int>
         if(seg_list[seg_map[idx_ref]] != seg_list[seg_map[idx_cand]]) {
             int seg_min = min(seg_list[seg_map[idx_ref]], seg_list[seg_map[idx_cand]]);
             int seg_max = max(seg_list[seg_map[idx_ref]], seg_list[seg_map[idx_cand]]);
-            for (int i = 0; i < nSegCnt; i++)
+            for (int i = 0; i < nSegCnt; i++) {
                 if (seg_list[i] == seg_max) {
                     if (seg_min) seg_list[i] = seg_min;
                     else printf("ddddddddddddddddddddddddddddddddddd\n");
                 }
+            }
         }
     }
     else seg_map[idx_ref] = seg_map[idx_cand];
@@ -222,7 +248,7 @@ void DSegmentation (std::vector<float> vnDGrad, std::vector<int> input_idx, int 
         vnDGrad_local[input_idx[i]] = nNnDepthGradRef;
         GetPixelPos(input_idx[i], width, x, y);
 
-        if(y > y_min) {
+        if (y > y_min) {
             nIdxCand = input_idx[i] - width;
             if (vnPatchMap[nIdxCand]) {
                 if (nNnDepthGradRef > dg_high || vnDGrad_local[nIdxCand] > dg_high) nDSegmDistGradTmp = nDepthGradNone;
@@ -302,7 +328,7 @@ void DSegmentation (std::vector<float> vnDGrad, std::vector<int> input_idx, int 
 
 
         std::vector<std::vector<bool> > mbNeighbor(seg_cnt, std::vector<bool>(seg_cnt, false));
-        DSegm_NeighborMatrix(vnLblMap, input_idx, width, mbNeighbor);
+        DSegm_NeighborMatrix(vnLblMap, input_idx, 1, width, mbNeighbor);
 
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -349,13 +375,6 @@ void DSegmentation (std::vector<float> vnDGrad, std::vector<int> input_idx, int 
             else vnLB[i] = vnLB[vnLB[i]];
         }
 
-//        for (int i = 1; i < seg_cnt; i++) {
-//            if (vbCB[i]) printf("%3d %3d %6d true %3d\n", i, vnLB[i], vnSB[i], seg_cnt);
-//            else printf("%3d %3d %6d false %3d\n", i, vnLB[i], vnSB[i], seg_cnt);
-//        }
-//        printf("\n");
-
-
         for (size_t i = 0; i < input_idx.size(); i++)
             vnLblMapFinal[input_idx[i]] = vnLB[vnLblMap[input_idx[i]]];
     }
@@ -365,10 +384,10 @@ void DSegmentation (std::vector<float> vnDGrad, std::vector<int> input_idx, int 
 }
 
 
-void TrackingPre (int nDSegmCutSize, int nCvWidth, int nCvHeight, std::vector<float> vnX, std::vector<float> vnY, std::vector<float> vnZ, cv:: Mat cvm_rgb_ds, int nTrackClrMode, int nTrackHistoBin, int nTrackCntMem, int nTrackCntStable, int nTrackCntDisap,
+void TrackingPre (int nSegCnt, int nDSegmCutSize, int nCvWidth, int nCvHeight, std::vector<float> vnX, std::vector<float> vnY, std::vector<float> vnZ, cv:: Mat cvm_rgb_ds, int nTrackClrMode, int nTrackHistoBin, int nTrackCntMem, int nTrackCntStable, int nTrackCntDisap,
                   std::vector<int> &vnTmpPtsCnt, std::vector<std::vector<int> > &mnTmpPtsIdx, std::vector<std::vector<int> > &mnTmpRect, std::vector<std::vector<int> > &mnTmpRCenter,
                   std::vector<std::vector<float> > &mnTmpCubic, std::vector<std::vector<float> > &mnTmpCCenter, std::vector<int> &vnTmpLength, std::vector<std::vector<float> > &mnTmpClrHist,
-                  std::vector<int> &vnTmpMemoryCnt, std::vector<int> &vnTmpStableCnt, std::vector<int> &vnTmpDisapCnt, int &nSegCnt) {
+                  std::vector<int> &vnTmpMemoryCnt, std::vector<int> &vnTmpStableCnt, std::vector<int> &vnTmpDisapCnt, int &nTrkSegCnt) {
     int final_cnt_new = 0;
     for (int i = 1; i < nSegCnt; i++) {
         if (vnTmpPtsCnt[i] < nDSegmCutSize) continue;
@@ -420,7 +439,7 @@ void TrackingPre (int nDSegmCutSize, int nCvWidth, int nCvHeight, std::vector<fl
 
         final_cnt_new++;
     }
-    nSegCnt = final_cnt_new;
+    nTrkSegCnt = final_cnt_new;
 }
 
 
@@ -446,24 +465,24 @@ void TrackingAAA (int seg, int j_min, int cnt_old, int nObjsNrLimit, float nTrac
 
 
 
-void Tracking(int nSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, double nTrackDPos, double nTrackDSize, double nTrackDRgb, double nTrackPFac, double nTrackSFac, double nTrackCFac, double nTrackDist, int nTrackCntMem, int nTrackCntStable, int nTrackCntDisap, int bin,
+void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, double nTrackDPos, double nTrackDSize, double nTrackDRgb, double nTrackPFac, double nTrackSFac, double nTrackCFac, double nTrackDist, int nTrackCntMem, int nTrackCntStable, int nTrackCntDisap, int bin,
               std::vector<int> vnTmpPtsCnt, std::vector<std::vector<int> > mnTmpPtsIdx, std::vector<std::vector<int> > mnTmpRect, std::vector<std::vector<int> > mnTmpRCenter, std::vector<std::vector<float> > mnTmpCubic, std::vector<std::vector<float> > mnTmpCCenter, std::vector<int> vnTmpLength, std::vector<std::vector<float> > mnTmpClrHist, std::vector<int> vnTmpMemoryCnt, std::vector<int> vnTmpStableCnt, std::vector<int> vnTmpDisapCnt,
               std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx, std::vector<std::vector<int> > &mnProtoRect, std::vector<std::vector<int> > &mnProtoRCenter, std::vector<std::vector<float> > &mnProtoCubic, std::vector<std::vector<float> > &mnProtoCCenter, std::vector<int> &vnProtoLength, std::vector<std::vector<float> > &mnProtoClrHist,
               std::vector<int> &vnProtoFound, std::vector<int> &vnProtoMemoryCnt, std::vector<int> &vProtoStableCnt, std::vector<int> &vProtoDisapCnt, int &nProtoCnt, bool flag_mat) {
 
 
     int cnt_new = 0, cnt_old = nProtoCnt;
-    std::vector<int> objs_new_idx(nSegCnt, 0);
+    std::vector<int> objs_new_idx(nTrkSegCnt, 0);
 
     float huge = 100;
-    int nDim = max(nSegCnt, cnt_old);
+    int nDim = max(nTrkSegCnt, cnt_old);
     std::vector<std::vector<float> > mnDistClr(nDim, std::vector<float>(nDim, huge));
     std::vector<std::vector<float> > mnDistTotal(nDim, std::vector<float>(nDim, huge));
     std::vector<std::vector<float> > mnDistTmp(nDim, std::vector<float>(nDim, huge));
 
 
-    if (nSegCnt && cnt_old) {
-        for (int i = 0; i < nSegCnt; i++) {
+    if (nTrkSegCnt && cnt_old) {
+        for (int i = 0; i < nTrkSegCnt; i++) {
             //int size_ref = vnTmpPtsCnt[i];
             for (int j = 0; j < cnt_old; j++) {
                 //int xc = mnTmpRCenter[i][0], yc = mnTmpRCenter[i][1];
@@ -490,7 +509,7 @@ void Tracking(int nSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, doub
 
             finn1.open(filename.data(), std::ios::app);
 
-            sprintf(sText, "%dx%d\n", nSegCnt, cnt_old);
+            sprintf(sText, "%dx%d\n", nTrkSegCnt, cnt_old);
             finn1<< sText;
             for (int i = 0; i < nDim; i++) {if (!i) sprintf(sText, "%11d", i); else sprintf(sText, "%8d", i); finn1<< sText;} finn1<< "\n";
             for (int i = 0; i < nDim; i++) {for (int j = 0; j < nDim; j++) {if (!j) sprintf(sText, "%2d %8.3f", i, mnDistTotal[i][j]); else sprintf(sText, "%8.3f", mnDistTotal[i][j]); finn1<< sText;} finn1<< "\n";} finn1<< "\n\n";
@@ -508,16 +527,16 @@ void Tracking(int nSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, doub
 
     ////////////// Tracking with optimization ////////////////////////////////////
     float offset = 0.01;
-    std::vector<int> vnSegCandQtt(nSegCnt, 0);
-    std::vector<int> vnSegCandMin(nSegCnt, nObjsNrLimit);
+    std::vector<int> vnSegCandQtt(nTrkSegCnt, 0);
+    std::vector<int> vnSegCandMin(nTrkSegCnt, nObjsNrLimit);
     std::vector<int> vnMemCandQtt(cnt_old, 0);
     std::vector<int> vnMemCandMin(cnt_old, nObjsNrLimit);
-    std::vector<int> vnMatchedSeg(nSegCnt, nObjsNrLimit*2);
+    std::vector<int> vnMatchedSeg(nTrkSegCnt, nObjsNrLimit*2);
     std::vector<int> vnMatchedMem(cnt_old, nObjsNrLimit*2);
 
     mnDistTmp = mnDistTotal;
 
-    for (int i = 0; i < nSegCnt; i++) {
+    for (int i = 0; i < nTrkSegCnt; i++) {
         float j_min = huge;
         for (int j = 0; j < cnt_old; j++) {
             if (mnDistTmp[i][j] >= nTrackDist) {mnDistTmp[i][j] = huge; continue;}
@@ -533,7 +552,7 @@ void Tracking(int nSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, doub
 
     for (int j = 0; j < cnt_old; j++) {
         float i_min = huge;
-        for (int i = 0; i < nSegCnt; i++) {
+        for (int i = 0; i < nTrkSegCnt; i++) {
             if (mnDistTmp[i][j] >= nTrackDist) continue;
 
             if (mnDistTmp[i][j] > i_min) continue;
@@ -545,7 +564,7 @@ void Tracking(int nSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, doub
         }
     }
 
-    for (int i = 0; i < nSegCnt; i++) {
+    for (int i = 0; i < nTrkSegCnt; i++) {
         if (vnSegCandQtt[i]) {
             //// if no other initial elements in the column
             if (vnMemCandQtt[vnSegCandMin[i]] < 2) {
@@ -567,7 +586,7 @@ void Tracking(int nSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, doub
     if (!nTrackMode) {
         std::vector<int> idx_seg;
         int cnt_nn = 0;
-        for (int i = 0; i < nSegCnt; i++) {
+        for (int i = 0; i < nTrkSegCnt; i++) {
             if (vnMatchedSeg[i] > nObjsNrLimit) {
                 for (int j = 0; j < cnt_old; j++) {
                     if (mnDistTmp[i][j] < nTrackDist) {
@@ -651,7 +670,7 @@ void Tracking(int nSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, doub
 
                 finn1.open(filename.data(), std::ios::app);
 
-                sprintf(sText, "%dx%d\n", nSegCnt, cnt_old);
+                sprintf(sText, "%dx%d\n", nTrkSegCnt, cnt_old);
                 finn1<< sText;
                 for (int i = 0; i < nDim; i++) {if (!i) sprintf(sText, "%11d", i); else sprintf(sText, "%8d", i); finn1<< sText;} finn1<< "\n";
                 for (int i = 0; i < nDim; i++) {for (int j = 0; j < nDim; j++) {if (!j) sprintf(sText, "%2d %8.4f", i, m_MunkresOut(i,j)); else sprintf(sText, "%8.4f", m_MunkresOut(i,j)); finn1<< sText;} finn1<< "\n";} finn1<< "\n\n";
@@ -659,12 +678,12 @@ void Tracking(int nSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, doub
             }
         }
     }
-    ////////////// End of tracking with optimization ////////////////////////////////////
+    ////////////// End of the otimization for tracking ////////////////////////////////////
 
 
 
     std::vector<bool> objs_old_flag(cnt_old, false);
-    for (int i = 0; i < nSegCnt; i++) {
+    for (int i = 0; i < nTrkSegCnt; i++) {
         int cand = 0, j_tmp = 500000;
         /////////////// Past tracking ///////////////////////////
         if (nTrackMode) {
@@ -746,7 +765,6 @@ void Tracking(int nSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, doub
     cnt_old = cnt_tmp;
 
 
-    //printf("ddd\n");
     std::vector<int> proto_idx(cnt_old, 0);
     std::vector<int> proto_idx_new(cnt_new, 0);
     for (int i = 0; i < cnt_old; i++) proto_idx[i] = vnProtoIdx[i];

@@ -53,8 +53,6 @@
 
 
 //#include "ni_vision/func_operations.h"
-//#include "/home/ni/ros_overlays/ni_vision/src/ni_vision/src/func_operations.cpp"
-#include "func_operations.cpp"
 
 
 //// This method unpacks the color channels from a float number
@@ -207,6 +205,45 @@ void parameter_init(int argc, char** argv) {
     printf ("===============================================================\n\n\n");
 }
 
+
+
+void Calc3DColorHistogram(cv::Mat cvm_input, std::vector<int> index, int bin_base, std::vector<float> &vnOut) {
+    if (index.size()){
+        int bin_r, bin_g, bin_b;
+        float r, g, b;
+
+        float bin_width;
+        // max has to be slightly greater than 1, since otherwise there is a problem if R, G or B is equal to 255
+        float max = 1.0001, sum;
+        bin_width = (float)max/bin_base;
+
+
+        uint8_t R_, G_, B_;
+        for(size_t i = 0; i < index.size(); i++) {
+
+            B_ = cvm_input.data[index[i]*3];
+            G_ = cvm_input.data[index[i]*3+1];
+            R_ = cvm_input.data[index[i]*3+2];
+
+            sum = (int)R_ + (int)G_ + (int)B_;
+
+
+            if (sum) {r = (float)R_/sum; g = (float)G_/sum; b = (float)B_/sum;}
+            else {r = 1/3; g = 1/3; b = 1/3;}
+            bin_width = (float)max/bin_base;
+            bin_r = (int)(r/bin_width);
+            bin_g = (int)(g/bin_width);
+            bin_b = (int)(b/bin_width);
+
+            vnOut[bin_r*bin_base*bin_base + bin_g*bin_base + bin_b]++;
+
+
+        }
+
+        ///// normalizing //////////////
+        for (int i = 0; i < bin_base*bin_base*bin_base; i++) vnOut[i] = vnOut[i]/index.size();
+    }
+}
 
 
 
