@@ -109,6 +109,7 @@ int nTrjGraphHeight = 0;
 
 // initialize parameters
 void ParameterInit(int argc, char** argv) {
+
     terminal_tools::parse_argument (argc, argv, "-path", sPath);
     terminal_tools::parse_argument (argc, argv, "-file", sFileName);
     terminal_tools::parse_argument (argc, argv, "-ext", sExten);
@@ -179,6 +180,7 @@ void ParameterInit(int argc, char** argv) {
 
 
 void MakeObjectMask (cv::Mat cvm_org, cv::Mat &cvm_mask) {
+
     cv::Mat cvm_gray(cvm_org.size(), CV_8UC1, cv::Scalar(0,0,0));
     cv::Mat cvm_binary(cvm_org.size(), CV_8UC1, cv::Scalar(0,0,0));
 
@@ -219,8 +221,6 @@ void MakeObjectMask (cv::Mat cvm_org, cv::Mat &cvm_mask) {
 
     out.release(); tmp.release();
 
-    //cv::imshow("Test", cvm_binary);
-    //cv::imshow("Gray Image", cvm_gray);
     cvm_gray.release();
     cvm_binary.release();
 }
@@ -288,12 +288,10 @@ void DrawTrajectory (int nValidCnt, int nFrameNrMax, int nMaxStitchedFrame, std:
     int nCnt = 0;
     for (size_t i = 0; i < vnTrajectory.size(); i++) {
         int yy = i + nOffsetY;
-        //cv::line(cvm_traj, cv::Point(nOffsetX, yy), cv::Point(nMaxStitchedFrame*nXInterval + nOffsetX, yy), cv::Scalar(192,192,192), 1); //horizontal axe
         if (vnTrajectory[i].size() && vnTrajectory[i][0][134] == 1) {
             if (vnTrajectory[i].size() == 1) continue;
 
             yy = nCnt*nThickness + nThickness/2 + nOffsetY;
-            //cv::line(cvm_trajv, cv::Point(nOffsetX, yy), cv::Point(nMaxStitchedFrame*nXInterval + nOffsetX, yy), cv::Scalar(192,192,192), 1); //horizontal axe
             nCnt++;
         }
     }
@@ -353,8 +351,6 @@ void DrawTrajectory (int nValidCnt, int nFrameNrMax, int nMaxStitchedFrame, std:
         }
     }
 
-    //for (size_t i = 0; i < vnTrajectory[0].size(); i++) printf("%3.0f ", vnTrajectory[0][i][138]); printf("\n");
-
     cv::imshow("All Trajectories", cvm_traj);
     cv::imshow("Final Trajectories", cvm_trajv);
 
@@ -363,8 +359,8 @@ void DrawTrajectory (int nValidCnt, int nFrameNrMax, int nMaxStitchedFrame, std:
 }
 
 
-void DrawSiftMatching (cv::Mat input, cv::Mat &output, int tlx, int tly, int brx, int bry, int nXDelta, int nYDelta)
-{
+void DrawSiftMatching (cv::Mat input, cv::Mat &output, int tlx, int tly, int brx, int bry, int nXDelta, int nYDelta) {
+
     cv::Mat cvm_clone;
     output.copyTo(cvm_clone);
     output = c_black;
@@ -395,10 +391,8 @@ void DrawSiftMatching (cv::Mat input, cv::Mat &output, int tlx, int tly, int brx
 
 
 
-int
-main (int argc, char** argv)
-{
-    ///////////Sahil
+int main (int argc, char** argv) {
+
     std::vector<std::vector<std::vector<double> > > vnTracker;
     std::vector<std::vector<std::vector<double> > > vnTrajectory;
     std::vector<std::vector <double> > vFirstFrameKeypts;
@@ -431,26 +425,8 @@ main (int argc, char** argv)
     int nFrameLimit = 10000;
     int nRx1 = 2000, nRy1 = 2000, nRx2 = 0, nRy2 = 0;
 
-    //cv::namedWindow("Gray Image"); cvMoveWindow("Gray Image", 200, 200);
-    //cv::namedWindow("test"); cvMoveWindow("test", 300, 300);
     cv::namedWindow("Image"); cvMoveWindow("Image", 50, 50);
     cv::namedWindow("Test Mask"); cvMoveWindow("Test Mask", 100, 100);
-
-
-
-
-
-//    while (dirp) {
-//        if ((dp = readdir(dirp)) != NULL) {
-//            string sFile = dp->d_name;
-//            size_t pos = sFile.find(".");
-//            string sExt = sFile.substr(pos+1);
-
-//            if(sExt.compare("bmp")==0 || sExt.compare("jpeg")==0 || sExt.compare("jpg")==0 || sExt.compare("tiff")==0 || sExt.compare("tif")==0 || sExt.compare("png")==0) {
-//                string sFileName = sInputPath + sFile;
-//                cout << "Opening File : " << sFileName << "\n\n";
-//                const char *c = sFileName.c_str();
-//                IplImage *cv_input = cvLoadImage(c);
 
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -499,19 +475,16 @@ main (int argc, char** argv)
                 if (x2 > nRx2) nRx2 = x2;
                 if (y2 > nRy2) nRy2 = y2;
                 cv::rectangle(cvm_org, cv::Point(nRx1 - res, nRy1 - res), cv::Point(nRx2 + res, nRy2 + res + 10), c_red, 1);
-                //cv::rectangle(cvm_org, cv::Point(nRx1 - res, nRy1 - res), cv::Point(nRx2 + res, nRy2 + res + 10), c_red, 1);
-            }//for
+            }
 
             cv::imshow("Image", cvm_org);
 
             nCvCurrentkey = cv::waitKey(3);
         }
-    }//for
+    }
 
     nCvCurrentkey = cv::waitKey();
     cv::destroyWindow("Test Mask");
-    //cv::destroyWindow("Gray Image");
-    //cv::destroyWindow("Test");
     printf (" O.K.\n\n");
 
 
@@ -520,39 +493,6 @@ main (int argc, char** argv)
     ///////////////** 2. rotation: to get the period **/////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////
     int nFrameNo = 0;
-//    std::vector<std::vector<double> > vnKeyFirst;
-//    for (int i = 0; i < nFrameLimit; i++) {
-//        sprintf(sFNum, "%06i", i);
-//    sFname = sPath + sFileName + "_" + sFNum + sExten;
-
-//        cvm_org = cv::imread(sFname.data(), CV_LOAD_IMAGE_COLOR);
-
-//        if(cvm_org.data) {
-//            Keypoint keypts;
-//            GetSiftKeypoints(cvm_org, nSiftScales, nSiftInitSigma, nSiftPeakThresh, nRx1, nRy1, nRx2-nRx1+1, nRy2-nRy1+1, keypts);
-
-//            int nKeyCnt = 0;
-//            while (keypts) {
-//                if (nFrameNo == 0) {
-//                    vnKeyFirst.resize(vnKeyFirst.size()+1);
-//                    vnKeyFirst[nKeyCnt].resize(nDescripSize);
-//                    for (int ds = 0; ds < nDescripSize; ds++) vnKeyFirst[nKeyCnt][ds] = keypts->descrip[ds];
-//                }
-//                cv::rectangle(cvm_org, cv::Point(keypts->row + nRx1-2 ,keypts->col + nRy1-2), cv::Point(keypts->row + nRx1+2 ,keypts->col + nRy1+2), c_blue, 1);
-
-//                nKeyCnt++;
-//                keypts = keypts->next;
-//            }
-//            nFrameNo++;
-
-//            cv::imshow("Image", cvm_org);
-//            nCvCurrentkey = cv::waitKey(3);
-//        }
-
-//    }
-//    nCvCurrentkey = cv::waitKey();
-
-
 
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -705,7 +645,6 @@ main (int argc, char** argv)
     }
     cv::Mat cvm_rgraph(cvSize(640,nMaxKeyCnt + 70), CV_8UC3);
     DrawRotationGraph(vnMatchedKeyCnt, nFrameNrMax, cvm_rgraph);
-    //DrawRotationGraph(vFrameMatches, nFrameNrMax, cvm_rgraph);
     DrawTrajectory (nValidCnt, nFrameNrMax, nMaxStitchedFrame, vnTrajectory);
 
     cv::namedWindow("Rotation Graph"); cvMoveWindow("Rotation Graph", 300, 300);
@@ -719,6 +658,4 @@ main (int argc, char** argv)
 
     cvm_org.release();
     return (0);
-} //end of main
-
-
+}

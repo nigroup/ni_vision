@@ -1,3 +1,0 @@
-#!/bin/bash
-rosrun ni_tools libmake_simple -dir ~/Video/Objektfotos/ -obj Soennecken -cmode 0 -bwthr 12 -bin 8 -siftsc 3 -siftis 1.6 -siftpt 0.015 -timer 100
-

@@ -5,16 +5,24 @@
 
 #define PI 3.1415926536
 
+
+
+
 void GetPixelPos(int idx, int width, int& x, int& y) {
     y = idx/width;
     x = idx - y*width;
     //if (x < 0) {"Error!! converted position has negative value!\n"; x = 0;}
 }
 
+
+
+
 int GetPixelIdx(int x, int y, int width) {
     int idx = y*width + x;
     return idx;
 }
+
+
 
 
 void DrawDepth(std::vector<float> vnInput, bool mode, float max, float min, cv::Mat &cvm_out)
@@ -70,6 +78,9 @@ void DrawDepth(std::vector<float> vnInput, bool mode, float max, float min, cv::
     }
 }
 
+
+
+
 void DrawDepth(std::vector<float> vnInput, std::vector<int> index, bool mode, float max, float min, cv::Mat &cvm_out)
 {
     if (cvm_out.channels() == 1) {
@@ -124,6 +135,8 @@ void DrawDepth(std::vector<float> vnInput, std::vector<int> index, bool mode, fl
 }
 
 
+
+
 void CalcDepth(cv::Mat input, std::vector<int> index, float max, float min, std::vector<float>& vnOut)
 {
     float scale = (max-min), x;
@@ -136,6 +149,9 @@ void CalcDepth(cv::Mat input, std::vector<int> index, float max, float min, std:
         }
     }
 }
+
+
+
 
 void CalcDepthGrad(cv::Mat input, std::vector<int> index, float max, float min, float none, int amp, std::vector<float> &vnOut)
 {
@@ -150,6 +166,8 @@ void CalcDepthGrad(cv::Mat input, std::vector<int> index, float max, float min, 
         else vnOut[index[i]] = none;
     }
 }
+
+
 
 
 void DrawDepthGrad(std::vector<float> vnInput, std::vector<int> index, bool mode, float max, float min, float none, cv::Mat &cvm_out)
@@ -240,38 +258,13 @@ void CalcHistogram(std::vector<float> vnInput, std::vector<int> index, float bin
 
 
 
-//void CalcColorHistogram(std::vector<float> vnInput, std::vector<int> index, int bin_base, std::vector<float> &vnOut)
-//{
-//    if (index.size()){
-//        int bin_r, bin_g, bin_b;
-//        float r, g, b;
-//        int max = 1, sum;
-//        float bin_width = (float)max/bin_base;
-//        for(size_t i = 0; i < index.size(); i++) {
-//            uint8_t R_, G_, B_;
-//            unpack_rgb(vnInput[index[i]], R_, G_, B_);
-
-//            sum = (int)R_ + (int)G_ + (int)B_;
-
-//            r = (float)R_/sum; g = (float)G_/sum; b = (float)B_/sum;
-//            bin_r = (int)(r/bin_width); vnOut[bin_r]++;
-//            bin_g = (int)(g/bin_width); vnOut[bin_g + bin_base]++;
-//            bin_b = (int)(b/bin_width); vnOut[bin_b + bin_base*2]++;
-//        }
-
-//        ///// normalizing //////////////
-//        for (int i = 0; i < bin_base*3; i++) vnOut[i] = vnOut[i]/index.size()/3;
-//    }
-//}
-
-
 
 // This method is used to generate the object libraries both by makelib_simple and ni_vision
 // It classifies every pixel into one bin in every channel. With 3 channels and 8 bins per channel that gives
 // 512 possible values for each pixel. The result is saved in a vector of that length, which saves the count
 // of pixel which have a certain value. Later on this vector is then normalized
 // such that the sum over all entries is 1.
-void Calc3DColorHistogram(cv::Mat cvm_input, std::vector<int> index, int bin_base, std::vector<float> &vnOut) {
+void Calc3DColorHistogram(const cv::Mat& cvm_input, const std::vector<int>& index, int bin_base, std::vector<float> &vnOut) {
     if (index.size()){
         int bin_r, bin_g, bin_b;
         float r, g, b;
@@ -310,6 +303,8 @@ void Calc3DColorHistogram(cv::Mat cvm_input, std::vector<int> index, int bin_bas
 }
 
 
+
+
 void DrawHistogram(std::vector<int> vnInput, int width, int height, int bin_max_global, cv::Mat &cvm_out, int& y_max)
 {
     cvm_out = cv::Scalar(0, 0, 0);
@@ -331,6 +326,8 @@ void DrawHistogram(std::vector<int> vnInput, int width, int height, int bin_max_
     cv::line(cvm_out, cv::Point(10, height-10), cv::Point(width-10, height-10), cv::Scalar(255, 255, 255), 1, 8);
     cv::line(cvm_out, cv::Point(10, height-10), cv::Point(10, 10), cv::Scalar(255, 255, 255), 1, 8);
 }
+
+
 
 
 void DrawHistogram2(std::vector<int> vnInput, int width, int height, int bin_max_global, cv::Mat &cvm_out)
@@ -357,6 +354,8 @@ void DrawHistogram2(std::vector<int> vnInput, int width, int height, int bin_max
 }
 
 
+
+
 void DrawHistogram(std::vector<int> vnInput, int width, int height, int bin_max_global, int r, int g, int b, cv::Mat &cvm_out, int y_max)
 {
     cvm_out = cv::Scalar(0, 0, 0);
@@ -375,6 +374,9 @@ void DrawHistogram(std::vector<int> vnInput, int width, int height, int bin_max_
     cv::line(cvm_out, cv::Point(10, height-10), cv::Point(width-10, height-10), cv::Scalar(255, 255, 255), 1, 8);
     cv::line(cvm_out, cv::Point(10, height-10), cv::Point(10, 10), cv::Scalar(255, 255, 255), 1, 8);
 }
+
+
+
 
 void DrawColorHistogram(std::vector<float> vnInput, int width, int height, int bin_max_global, int r, int g, int b, cv::Mat &cvm_out, float y_max)
 {
@@ -396,11 +398,14 @@ void DrawColorHistogram(std::vector<float> vnInput, int width, int height, int b
 
 
 
+
 void Map2Objects(std::vector<int> vnInput, int obj_nr, int nCvSize, std::vector<std::vector<int> > &mnOut, std::vector<int> &cnt)
 {
     for (int i = 0; i < nCvSize; i++) if (vnInput[i]) mnOut[vnInput[i]][cnt[vnInput[i]]++] = i;
     for (int i = 0; i < obj_nr; i++) mnOut[i].resize(cnt[i]);
 }
+
+
 
 
 void AssignColor(int idx, cv::Scalar color, cv::Mat &cvm_out)
@@ -410,6 +415,9 @@ void AssignColor(int idx, cv::Scalar color, cv::Mat &cvm_out)
     cvm_out.data[idx*3+2] = color[2];
 }
 
+
+
+
 void Map2Image(std::vector<int> vnInput, int nCvSize, std::vector<cv::Scalar> mnColorTab, cv::Mat &cvm_out)
 {
     switch (cvm_out.channels()) {
@@ -417,6 +425,9 @@ void Map2Image(std::vector<int> vnInput, int nCvSize, std::vector<cv::Scalar> mn
     case 3: for (int i = 0; i < nCvSize; i++) AssignColor(i, mnColorTab[vnInput[i]], cvm_out); break;
     }
 }
+
+
+
 
 void Idx2Image(std::vector<int> vnInput, cv::Scalar color, cv::Mat &cvm_out)
 {
