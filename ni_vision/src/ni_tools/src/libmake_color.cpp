@@ -86,6 +86,12 @@ cv::Mat histo;
 
 
 /* This method unpacks the color channels from a float number into three unsigned chars
+ *
+ * Input:
+ * rgb - color rgb value of a pixel as a 32 bit float
+ *
+ * Output (per reference):
+ * r,g,b - single R,G,B channels as unsigned 8 bit int
  */
 void unpack_rgb(float rgb, uint8_t& r, uint8_t& g, uint8_t& b) {
 
@@ -113,6 +119,9 @@ int event, int x, int y, int flags, void* param
 
 
 /* Draws the bounding box that the user draws in the image.
+ *
+ * Input:
+ * img - image in which the rectangle is drawn
  */
 void draw_box( IplImage* img) {
 
@@ -129,8 +138,11 @@ void draw_box( IplImage* img) {
 
 
 /* Method that updates the image after the user changed the threshold for the binary image
+ *
+ * Input:
+ * threshold - integer which represents the threshold used to compute the binary image
  */
-void changeImage(int value) {
+void changeImage(int threshold) {
 
     IplImage *cv_gray = NULL, *cv_bold = NULL, *output = NULL;
     IplImage* image = cvCloneImage(original_image);
@@ -148,7 +160,7 @@ void changeImage(int value) {
     cvSetImageROI(output, cvRect(nFocusX, nFocusY, nFocusWidth, nFocusHeight));
 
     // computes the new binary image with the new threshold
-    cvThreshold(cv_gray, output, value, 255, CV_THRESH_BINARY );
+    cvThreshold(cv_gray, output, threshold, 255, CV_THRESH_BINARY );
 
     binary_image = cvCloneImage(output);
     cvShowImage("Processed", output);
@@ -161,7 +173,7 @@ void changeImage(int value) {
 
 
 
-/* Initialize the parameters of the program. */
+/* Initialize the parameters of the program with the input from the console. */
 void parameter_init(int argc, char** argv) {
 
     terminal_tools::parse_argument (argc, argv, "-dir", sPath);
@@ -186,6 +198,15 @@ void parameter_init(int argc, char** argv) {
 /* Calculates the histogram of an object using the normalized RGB space. For every pixel that is in the index vector it
  * extracts the R,G,B channel and normalizes these channels with respect to their sum. Then every normalized value r,g,b
  * is assigned into one of the bins.
+ *
+ * Input:
+ * cvm_input - image from which the color histogram should be computed
+ * index - vector of ints, which can vary in length; it contains the indices of the pixel which are used to compute the
+ *         color histogram
+ * bin_base - int which represents the number of bins in the model (default 8)
+ *
+ * Output (by reference):
+ * vnOut - vector of length bin_base³, which contains the normalized histogram
  */
 void Calc3DColorHistogram(const cv::Mat& cvm_input, const std::vector<int>& index, int bin_base, std::vector<float> &vnOut) {
 
@@ -232,6 +253,13 @@ void Calc3DColorHistogram(const cv::Mat& cvm_input, const std::vector<int>& inde
 
 /* Extracts the region of the image where the object is located and returns the width, height and
  * the upper left corner of the bounding box around that image.
+ *
+ * Input:
+ * input - original image
+ *
+ * Output (by reference):
+ * x_min, y_min - ints, coordinates of the upper left corner of the bounding box
+ * width, height - ints, width and height of the bounding box
  */
 void ExtractObject(IplImage* input, int &x_min, int &y_min, int &width, int &height) {
 
@@ -311,6 +339,12 @@ void ExtractObject(IplImage* input, int &x_min, int &y_min, int &width, int &hei
 
 /* Here the information of the binary image, i.e. which pixel are important for the computation of
  * the histogram, is extracted and shown. With that information the histogram is computed.
+ *
+ * Input:
+ * input - original image
+ * cv_binary - binary image, which contains the information about the pixel which should be used for histogram computation
+ * x_min, y_min - coordinates of the upper left corner of the bounding box
+ * width, height - width and height of the bounding box
 */
 void MakeHistogram (IplImage *input, IplImage *cv_binary, int x_min, int y_min, int width, int height) {
 
@@ -408,12 +442,12 @@ void MakeHistogram (IplImage *input, IplImage *cv_binary, int x_min, int y_min, 
 
 /* Stores the computed histogram in a yaml-file.
 */
-void Save2Disk(std::string sLibFileMode)
+void Save2Disk()
 {
 
     std::string sLibFile;
 
-    sLibFile = sOutputPath + sLibFileMode + sOutputFileName + ".yaml";
+    sLibFile = sOutputPath + "simplelib_3dch_" + sOutputFileName + ".yaml";
     cv::FileStorage fs(sLibFile,cv::FileStorage::WRITE);
     fs << "TestObjectFeatureVectors" << histo;
 
@@ -523,7 +557,7 @@ void ScanDir() {
                     s = histo.size();
                     rows = s.height;
 
-                    if (rows) {sLibFileMode = "simplelib_3dch_"; Save2Disk(sLibFileMode); std::cout << "Library File Saved!\n\n";}
+                    if (rows) {Save2Disk(); std::cout << "Library File Saved!\n\n";}
                     else std::cout << "Library file could not be saved. No feature was extracted.\n\n";
                     break;
 
@@ -550,6 +584,10 @@ void ScanDir() {
    to a copy of the current image. When the
    mouse is dragged (with the button down) we
    resize the box and update the binary image if the mouse button is released.
+
+   Input:
+   event - information about the mouse event that occured
+   x,y - coordinates of the mouse event
 */
 void my_mouse_callback_original(int event, int x, int y, int flags, void* param) {
 
@@ -637,6 +675,10 @@ void my_mouse_callback_original(int event, int x, int y, int flags, void* param)
    black to white an vice versa by drawing with the pressed left (resp. right)
    mouse button. The diameter of the drawn line is stored in the variable
    diameter_slider and can be changed via the trackbar at the top of the window.
+
+   Input:
+   event - information about the mouse event that occured
+   x,y - coordinates of the mouse event
 */
 void my_mouse_callback_binary(int event, int x, int y, int flags, void* param) {
 

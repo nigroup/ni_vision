@@ -107,7 +107,9 @@ int nTrjGraphHeight = 0;
 
 
 
-// initialize parameters
+
+/* Initialize parameters with the console input
+ */
 void ParameterInit(int argc, char** argv) {
 
     terminal_tools::parse_argument (argc, argv, "-path", sPath);
@@ -179,6 +181,16 @@ void ParameterInit(int argc, char** argv) {
 }
 
 
+
+
+/* Beschreibung
+ *
+ * Input:
+ * cvm_org -
+ *
+ * Output (by reference):
+ * cvm_mask -
+ */
 void MakeObjectMask (cv::Mat cvm_org, cv::Mat &cvm_mask) {
 
     cv::Mat cvm_gray(cvm_org.size(), CV_8UC1, cv::Scalar(0,0,0));
@@ -226,6 +238,14 @@ void MakeObjectMask (cv::Mat cvm_org, cv::Mat &cvm_mask) {
 }
 
 
+
+
+/* Beschreibung
+ *
+ * Input:
+ *
+ * Output
+ */
 void DrawRotationGraph (std::vector<int> vnMatchedKeyCnt, int nFrameNrMax, cv::Mat &graph) {
 
     int nWidth = graph.cols;
@@ -272,6 +292,14 @@ void DrawRotationGraph (std::vector<int> vnMatchedKeyCnt, int nFrameNrMax, cv::M
 }
 
 
+
+
+/* Beschreibung
+ *
+ * Input:
+ *
+ * Output
+ */
 void DrawTrajectory (int nValidCnt, int nFrameNrMax, int nMaxStitchedFrame, std::vector<std::vector<std::vector<double> > > vnTrajectory) {
     int nThickness = nTrjGraphHeight/nValidCnt;
     if (!nThickness) nThickness = 1;
@@ -359,6 +387,14 @@ void DrawTrajectory (int nValidCnt, int nFrameNrMax, int nMaxStitchedFrame, std:
 }
 
 
+
+
+/* Beschreibung
+ *
+ * Input:
+ *
+ * Output
+ */
 void DrawSiftMatching (cv::Mat input, cv::Mat &output, int tlx, int tly, int brx, int bry, int nXDelta, int nYDelta) {
 
     cv::Mat cvm_clone;
@@ -391,6 +427,9 @@ void DrawSiftMatching (cv::Mat input, cv::Mat &output, int tlx, int tly, int brx
 
 
 
+/* Beschreibung
+ *
+ */
 int main (int argc, char** argv) {
 
     std::vector<std::vector<std::vector<double> > > vnTracker;
