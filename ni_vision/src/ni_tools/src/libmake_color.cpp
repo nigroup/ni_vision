@@ -209,15 +209,14 @@ void parameter_init(int argc, char** argv) {
  * vnOut - vector of length bin_base³, which contains the normalized histogram
  */
 void Calc3DColorHistogram(const cv::Mat& cvm_input, const std::vector<int>& index, int bin_base, std::vector<float> &vnOut) {
-
     if (index.size()){
         int bin_r, bin_g, bin_b;
         float r, g, b;
 
         float bin_width;
-
         // max has to be slightly greater than 1, since otherwise there is a problem if R, G or B is equal to 255
-        float max = 1.0001, sum;
+        float max = 1.0001;
+        float sum;
         bin_width = (float)max/bin_base;
 
 
@@ -238,16 +237,15 @@ void Calc3DColorHistogram(const cv::Mat& cvm_input, const std::vector<int>& inde
             bin_g = (int)(g/bin_width);
             bin_b = (int)(b/bin_width);
 
-            // The specific combination of the bins for the different channels is incremented in the histogram
             vnOut[bin_r*bin_base*bin_base + bin_g*bin_base + bin_b]++;
+
+
         }
 
-        // Normalization, so that the sum over all entries of the histogram is one
+        ///// normalizing //////////////
         for (int i = 0; i < bin_base*bin_base*bin_base; i++) vnOut[i] = vnOut[i]/index.size();
     }
-
 }
-
 
 
 
@@ -359,7 +357,7 @@ void MakeHistogram (IplImage *input, IplImage *cv_binary, int x_min, int y_min, 
     std::vector<int> index(size, 0);
     cv::Mat rgb = cv::Mat::zeros(size, 3, CV_8U);
     // stores the computed histogram
-    histo = cv::Mat::zeros(1, histVal, CV_32F);
+    histo = cv::Mat::zeros(8, histVal+1, CV_32F);
     CvScalar s;
 
     IplImage *cv_input_tmp = NULL, *cv_binary_tmp = NULL;
@@ -431,9 +429,12 @@ void MakeHistogram (IplImage *input, IplImage *cv_binary, int x_min, int y_min, 
     Calc3DColorHistogram(rgb, index, nHistBinNr, vRgbHist);
 
     for(int j = 0; j < histVal; j++) {
-        histo.at<float>(0,j) = vRgbHist[j];
+        histo.at<float>(1,j) = vRgbHist[j];
     }
 
+    for(int j = 0; j < 8; j++) {
+        histo.at<float>(j,histVal) = j%4;
+    }
 
 }
 

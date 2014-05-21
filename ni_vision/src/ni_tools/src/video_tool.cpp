@@ -7,7 +7,8 @@
 
 #include "terminal_tools/parse.h"
 
-
+/* This programm extracts the single frames of a video stream and stores them in a folder.
+ */
 
 int nMode = 0;
 std::string sDirectory;

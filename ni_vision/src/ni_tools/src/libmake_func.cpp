@@ -527,5 +527,6 @@ void Stitching (std::vector<std::vector<std::vector<double> > > vnTracker, int n
             }
 
         }
+        //if(flag) printf("\n");
     }
 }

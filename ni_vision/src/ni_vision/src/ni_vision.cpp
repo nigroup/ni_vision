@@ -86,13 +86,6 @@ bool bRtGbSegm = false, bRtSiftW = false;
 int nMeasCounter = 0;
 
 
-
-// for histogram_view
-static int nStatCounter = 1;
-
-
-
-
 int64_t timespecDiff (struct timespec *timeA_p, struct timespec *timeB_p) {
   return ((timeA_p->tv_sec * 1000000000) + timeA_p->tv_nsec) - ((timeB_p->tv_sec * 1000000000) + timeB_p->tv_nsec);
 }
@@ -104,6 +97,7 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
                      std::vector<int> vnProtoLength, std::vector<int> vnProtoDisapCnt, int nTrackCntDisap, int &nCandCnt, std::vector<std::vector<float> > vnTmpProtoDiff, int &nFoundCnt, int &nFoundNr, int &nFoundFrame,
                      int &nCandKeyCnt, int &nCandRX, int &nCandRY, int &nCandRW, int &nCandRH,
                      struct timespec t_rec_found_start, struct timespec t_rec_found_end, bool bSwitchRecordTime, int nRecogRtNr, std::vector<int> &vnRecogRating_tmp, cv::Mat cvm_cand) {
+                     //std::vector<std::vector<float> > mnProtoClrHist, std::vector<std::vector<int> > mnProtoCenter) {
 
     nCandCnt++;
     // Initialize
@@ -121,7 +115,6 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
 
     SelRecognition_1 (nCandID, nImgScale, nCvWidth, vnProtoPtsCnt, cvm_rgb_org, cvm_cand, mnProtoPtsIdx, vnIdxTmp);
 
-
     //////** 1. Estimating histogram-distance **//////////////////////////////
     float nColorDistMaskOrg = 0;
     if (bRecogClrMask) {
@@ -130,7 +123,7 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
         Calc3DColorHistogram (cvm_rgb_org, vnIdxTmp, nTrackHistoBin, vnHistTmp);
         //else Calc3DColorHistogram (cvm_rgb_ds, mnProtoPtsIdx[nCandID], nTrackClrMode, nTrackHistoBin, vnHistTmp);
 
-        for (int i = 0; i< nTrackHistoBin_max; i++) {
+        for (int i = 0; i < nTrackHistoBin_max; i++) {
             if (mnColorHistY_lib.size() == 1) nColorDistMaskOrg += fabs(mnColorHistY_lib[0][i] - vnHistTmp[i]);
             else nColorDistMaskOrg += fabs(mnColorHistY_lib[nTrackClrMode][i] - vnHistTmp[i]);
         }
@@ -188,7 +181,6 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
     if (bRecogClrMask) nColorDist = nColorDistMaskOrg; else nColorDist = vnTmpProtoDiff[0][nCandID];
     if(nFlannTP >= nFlannMatchCnt && nColorDist < nRecogDClr) { //If the number of matches for the current object are more than or equal to the threshhold for matches
         clock_gettime(CLOCK_MONOTONIC_RAW, &t_rec_found_end); nTimeRecFound = double(timespecDiff(&t_rec_found_end, &t_rec_found_start)/nTimeRatio);
-        //printf("%d. object with %3d keypoints (%d %d) at frame %d (%d), Color dist: %4.3f (%4.3f), Object size: %d mm\n", nCandCnt, nFlannTP, nFlannIM, nKeyptsCnt, nCntFrame, nCntFrame_tmp, vnTmpProtoDiff[0][nCandID], nColorDist, vnProtoLength[nCandID]);
 
         nFoundCnt++;
         nFoundNr = nCandCnt;
@@ -276,6 +268,7 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
                 int size_curr = (mnProtoRect[j][2] - mnProtoRect[j][0])*(mnProtoRect[j][3] - mnProtoRect[j][1]);
                 int size_past = (mnProtoRect[k][2] - mnProtoRect[k][0])*(mnProtoRect[k][3] - mnProtoRect[k][1]);
 
+                //if (size_overlapp > size_curr*0.6 || size_overlapp > size_past*0.6) draw = false;
             }
 
             if (draw) cv::rectangle(cvm_rec_org, cv::Point(x_min_tmp -offset, y_min_tmp -offset), cv::Point(x_max_tmp +offset, y_max_tmp +offset), c_lemon, line_thickness);
@@ -288,6 +281,8 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
             cvm_rec_ds.data[mnProtoPtsIdx[nCandID][j]*3+1] = 0;
             cvm_rec_ds.data[mnProtoPtsIdx[nCandID][j]*3+2] = 255;
         }
+
+        //ShowColorHistogramView (nCandID, nTrackHistoBin_max, mnProtoClrHist, mnProtoCenter, vnProtoPtsCnt, cvm_rec_ds);
 
         int offset = 2;
         int line_thickness = cvm_rec_ds.cols/128;
@@ -316,20 +311,17 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
 }
 
 
-
-
-/*
- */
 void updateImage() {
 
     ros::Duration d (0.001);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////                                                                                        /////////////////////////////////
-    ////////////////                    Declartion and initialization of variables                          /////////////////////////////////
+    ////////////////                    Declartion and initialization of veriables                          /////////////////////////////////
     ////////////////                                                                                        /////////////////////////////////
     ////////////////----------------------------------------------------------------------------------------/////////////////////////////////
 
+    //std::vector<sensor_msgs::PointField> fields;
     bool bPointRgb;                                         // Flag whether point-cloud is in colored or monochrome
 
     InitVariables();
@@ -464,7 +456,7 @@ void updateImage() {
 
     //////////////--------------------------------------------------------------------------------------/////////////////////////////////////
     //////////////                                                                                      /////////////////////////////////////
-    //////////////                End of Declaration and Initialization of variables                     /////////////////////////////////////
+    //////////////                End of Declartion and initialization of veriables                     /////////////////////////////////////
     //////////////                                                                                      /////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -472,6 +464,7 @@ void updateImage() {
     while (true) {
 
         d.sleep ();
+        //if(bFlagEnd) break;               // finish the program
         if(bFlagEnd) printf("%d", 1/0);   // finish the program
 
         if (!cloud_) continue;
@@ -549,6 +542,7 @@ void updateImage() {
         //////*  copy point cloud  *///////////
         pcl::PointCloud<pcl::PointXYZ> cloud_Input;
         pcl::PointCloud<pcl::PointXYZRGB> cloud_Input_rgb;
+
         if (bPointRgb) pcl::copyPointCloud (cloud_xyz_rgb, cloud_Input_rgb);
         else pcl::copyPointCloud (cloud_xyz, cloud_Input);
 
@@ -879,6 +873,7 @@ void updateImage() {
                     clock_gettime(CLOCK_MONOTONIC_RAW, &t_reccyc_end); nTimeRecCycle = double(timespecDiff(&t_reccyc_end, &t_reccyc_start)/nTimeRatio);
 
 
+                    //printf("\n");
                     bSwitchRecogNewCyc = true;
                     if (nCandCnt) {
                         if (vbFlagTask[stTID.nRecTime] && bSwitchRecordTime) {
@@ -941,7 +936,8 @@ void updateImage() {
                 }
 
                 if (nCandID >= 0) {
-                    // Print information about the color distance
+
+                    // Print information about the color distance between found objects and learned model
                     if(flag_pcd) {
                         printf("Color distance (normalized rgb)   ");
                         for (int i = 0; i < nProtoCnt; i++) {
@@ -959,6 +955,7 @@ void updateImage() {
                                     vnProtoPtsCnt, mnProtoPtsIdx, mnProtoRect, vnProtoFound, vnProtoLength, vnProtoDisapCnt, nTrackCntDisap, nCandCnt, vnTmpProtoDiff, nFoundCnt, nFoundNr, nFoundFrame,
                                     nCandKeyCnt, nCandRX, nCandRY, nCandRW, nCandRH,
                                     t_rec_found_start, t_rec_found_end, bSwitchRecordTime, nRecogRtNr, vnRecogRating_tmp, cvm_cand);
+
                     nTmpAttKeyCnt = nCandKeyCnt; nTmpAttWidth = nCandRW; nTmpAttHeight = nCandRH;
 
                     if (((vbFlagTask[stTID.nRecogOrg] || vbFlagTask[stTID.nRecVideo]) && nRecordMode)) {
@@ -1234,6 +1231,7 @@ void updateImage() {
                 if (vnDGradX[i] >= nDGradNan*0.8 || vnDGradY[i] >= nDGradNan*0.8) {cvm_tmp_tmp.data[3*i] = 0; cvm_tmp_tmp.data[3*i+1] = 0; cvm_tmp_tmp.data[3*i+2] = 0;}
                 else {cvm_tmp_tmp.data[3*i] = 192; cvm_tmp_tmp.data[3*i+1] = 192; cvm_tmp_tmp.data[3*i+2] = 192;}
             }
+
             sDat = sSnapDir + "/" + "snap_03_dgl" + sImgExt; cv::imwrite(sDat, cvm_tmp_tmp);
 
             cvm_tmp_tmp = cv::Scalar(0, 0, 0);
@@ -1256,6 +1254,7 @@ void updateImage() {
                 mkdir(sDataDir.data(), 0777);  MakeNiDirectory (sVideoDirPref, sVideoDir);
                 std::string sDat;
                 int fourcc = CV_FOURCC('D', 'I', 'V', 'X'); // MPEG-4 codec
+
                 int frame_rate = int(nFrameRate_avr); if (frame_rate > 30) frame_rate = 30; if (frame_rate < 15) frame_rate = 15;
 
                 double fr = 18.0;
@@ -1285,6 +1284,7 @@ void updateImage() {
                     break;
                 case 2:
                     writer_total.write(cvm_record_ds);
+
                     break;
                 }
             }
@@ -1367,19 +1367,7 @@ void updateImage() {
                 cv::namedWindow(vsWndName[stTID.nPrmSegm]);
                 cvMoveWindow(vsWndName[stTID.nPrmSegm].data(), 800, 100);
 
-                int dp = int(nTrackDPos*100), ds = int(nTrackDSize*100), dc = int(nTrackDClr*100), dt = int(nTrackDist*100);
-                int fp = int(nTrackPFac*100), fs = int(nTrackSFac*100), fc = int(nTrackCFac*100);
-
                 cvCreateTrackbar(vsTrackbarName[20].data(), vsWndName[stTID.nPrmSegm].data(), &nTrackMode, 1, TrackbarHandler_none);
-
-                cvCreateTrackbar(vsTrackbarName[22].data(), vsWndName[stTID.nPrmSegm].data(), &dp, 100, TrackbarHandler_DistPos);
-                cvCreateTrackbar(vsTrackbarName[23].data(), vsWndName[stTID.nPrmSegm].data(), &ds, 100, TrackbarHandler_DistSize);
-                cvCreateTrackbar(vsTrackbarName[24].data(), vsWndName[stTID.nPrmSegm].data(), &dc, 100, TrackbarHandler_DistClr);
-                cvCreateTrackbar(vsTrackbarName[25].data(), vsWndName[stTID.nPrmSegm].data(), &fp, 100, TrackbarHandler_FacPos);
-                cvCreateTrackbar(vsTrackbarName[26].data(), vsWndName[stTID.nPrmSegm].data(), &fs, 100, TrackbarHandler_FacSize);
-                cvCreateTrackbar(vsTrackbarName[27].data(), vsWndName[stTID.nPrmSegm].data(), &fc, 100, TrackbarHandler_FacClr);
-                cvCreateTrackbar(vsTrackbarName[28].data(), vsWndName[stTID.nPrmSegm].data(), &dt, 500, TrackbarHandler_DistTotal);
-
                 cvCreateTrackbar(vsTrackbarName[31].data(), vsWndName[stTID.nPrmSegm].data(), &nProtoSizeMax, 1000, TrackbarHandler_ProMax);
                 cvCreateTrackbar(vsTrackbarName[32].data(), vsWndName[stTID.nPrmSegm].data(), &nProtoSizeMin, 1000, TrackbarHandler_ProMin);
                 cvCreateTrackbar(vsTrackbarName[33].data(), vsWndName[stTID.nPrmSegm].data(), &nProtoPtsMin, 1000, TrackbarHandler_none);
@@ -1392,19 +1380,13 @@ void updateImage() {
                 cv::namedWindow(vsWndName[stTID.nPrmRecog]);
                 cvMoveWindow(vsWndName[stTID.nPrmRecog].data(), 850, 100);
 
+                //int dlimit = int(nDLimit*10);
                 int recdc = int(nRecogDClr*100);
-                int sift_sigma = int(nSiftInitSigma*10);
-                int sift_peak = int(nSiftPeakThrs*1000);
                 int flannmf = int(nFlannMatchFac*100);
 
                 cvCreateTrackbar(vsTrackbarName[1].data(), vsWndName[stTID.nPrmRecog].data(), &nSnapFormat, 2, TrackbarHandler_none);
-
                 cvCreateTrackbar(vsTrackbarName[99].data(), vsWndName[stTID.nPrmRecog].data(), &nAttTDMode, 2, TrackbarHandler_none);
                 cvCreateTrackbar(vsTrackbarName[36].data(), vsWndName[stTID.nPrmRecog].data(), &recdc, 120, TrackbarHandler_ColorThres);
-                cvCreateTrackbar(vsTrackbarName[41].data(), vsWndName[stTID.nPrmRecog].data(), &nSiftScales, 5, TrackbarHandler_SiftScales);
-                cvCreateTrackbar(vsTrackbarName[42].data(), vsWndName[stTID.nPrmRecog].data(), &sift_sigma, 20, TrackbarHandler_SiftSigma);
-                cvCreateTrackbar(vsTrackbarName[43].data(), vsWndName[stTID.nPrmRecog].data(), &sift_peak, 100, TrackbarHandler_SiftPeak);
-                cvCreateTrackbar(vsTrackbarName[51].data(), vsWndName[stTID.nPrmRecog].data(), &nFlannKnn, 5, TrackbarHandler_FlannKnn);
                 cvCreateTrackbar(vsTrackbarName[52].data(), vsWndName[stTID.nPrmRecog].data(), &flannmf, 100, TrackbarHandler_FlannMFac);
                 cvCreateTrackbar(vsTrackbarName[53].data(), vsWndName[stTID.nPrmRecog].data(), &nFlannMatchCnt, 100, TrackbarHandler_none);
                 cvCreateTrackbar(vsTrackbarName[54].data(), vsWndName[stTID.nPrmRecog].data(), &flag_pcd, 1, TrackbarHandler_none);
@@ -1506,6 +1488,7 @@ void updateImage() {
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+        //nCvCurrentkey = getchar(); nCvCurrentkey = cv::waitKey(1);
         nCvCurrentkey = cv::waitKey(1);
         nCntFrame++;
     }
@@ -1525,7 +1508,13 @@ void updateImage() {
 
     cvm_dgrady_blur.release(); cvm_dgrady_smth.release(); cvm_depth_process.release();
 
+    //ros::shutdown();
+    //ros::ok();
+    //ros::spinOnce();
 }
+
+
+
 
 
 
@@ -1553,6 +1542,9 @@ public:
         cloud_sub = nh_.subscribe ("input_pc", 30, &NiVisionNode::cloudCb, this);
         image_sub_ = it_.subscribe("input_img", 1, &NiVisionNode::imageCb, this);
 
+        //pub = nh.advertise<sensor_msgs::PointCloud2> ("output", 1);
+
+        //image_pub_ = it_.advertise("out", 1);
     }
 
     ~NiVisionNode() {
@@ -1560,6 +1552,8 @@ public:
 
     void cloudCb (const sensor_msgs::PointCloud2ConstPtr& cloud){
         m.lock ();
+        //sensor_msgs::PointCloud2 output;
+        //pub.publish (output);
 
         cloud_ = cloud;
         m.unlock ();
@@ -1571,6 +1565,7 @@ public:
             if (bFlagWait && cloud_){
                 bFlagWait = false;
                 printf("O.K.\n\n\n");
+                //cvm_image_camera.create(cv::Size(width, height), CV_8UC3);
                 nCvWidth = cloud_->width;
                 nCvHeight = cloud_->height;
                 nCvSize = nCvWidth * nCvHeight;
@@ -1583,16 +1578,30 @@ public:
         }
         catch (cv_bridge::Exception& e) {ROS_ERROR("cv_bridge exception: %s", e.what()); return;}
 
+        //image_pub_.publish(cv_ptr->toImageMsg());
     }
 };
-
-
-
 
 int main(int argc, char** argv)
 {
     //////////// Set parameters as default ///////////////////////////////
     InitParameter(argc, argv);
+    //sObjNameTmp.append(sSIFTLibFileName, 0, strlen(sSIFTLibFileName.data())-5);
+    //sObjNameTmp.append(sSIFTLibFileName, 10, 7);
+
+//    unsigned found = sSIFTLibFileName.find_first_of("_");
+//    int fcnt = 0;
+//    while (found!=std::string::npos) {
+//        printf("%d %d %d\n", fcnt++, found);
+//      sObjNameTmp[found]='*';
+//      found = sSIFTLibFileName.find_first_of("aeiou",found+1);
+//    }
+    //std::cout << sSIFTLibFileName << '\n';
+    //std::cout << sObjNameTmp << '\n';
+
+    //if (int(strlen(sSIFTLibFileName.data())) <= 10) sObjNameTmp.append(sSIFTLibFileName, 9, strlen(sSIFTLibFileName.data())-4-9-1);
+    //else sObjNameTmp.append(sSIFTLibFileName, 15, strlen(sSIFTLibFileName.data())-4-15-1);
+    //sTarget.append(sSIFTLibFileName, 0, strlen(sSIFTLibFileName.data())-5);
 
     sSIFTLibFileName = sLibFilePath + sSIFTLibFileName;
     sColorLibFileName = sLibFilePath + sColorLibFileName;

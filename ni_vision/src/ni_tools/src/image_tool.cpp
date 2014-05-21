@@ -110,7 +110,7 @@ void ScanDir() {
             size_t pos = sFileName.find(".");
             string sExt = sFileName.substr(pos+1);
             string sFilePrefix = sFileName.substr(0, pos);
-            if(sExt.compare("bmp")==0 || sExt.compare("jpeg")==0 || sExt.compare("jpg")==0 || sExt.compare("tiff")==0 || sExt.compare("tif")==0) {
+            if(sExt.compare("bmp")==0 || sExt.compare("jpeg")==0 || sExt.compare("jpg")==0 || sExt.compare("tiff")==0 || sExt.compare("tif")==0 || sExt.compare("avi")==0) {
                 string sInputFile = sInputPath + sFileName;
                 //cout << "Opening File : " << sInputFile << "    " << cnt << "\n";
                 cv::Mat cvm_input = cv::imread(sInputFile.data(), CV_LOAD_IMAGE_COLOR);

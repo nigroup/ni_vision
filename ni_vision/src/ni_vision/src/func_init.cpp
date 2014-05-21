@@ -1,5 +1,14 @@
 /*
- * Initialization of parameters
+ * Initialization of parameters with the input from the console
+ * Defining names for button, windows and trackbars
+ * Drawing the gui
+ * Handling mouse events
+ * Open and closing of windows
+ * Different trackbarhandlers
+ *
+ * Since the early version of opencv did not provide good methods to create a gui, we had to develop
+ * our own approach. The gui is basically a window on which different rectangles are drawn which
+ * represent the button.
  */
 
 
@@ -74,10 +83,9 @@ int nRecogMaskDispMode = 0, nRecogMaskDispMode_default = 0;
 int nRecordMode = 0, nRecordMode_default = 0;
 int nTimeMessFrmLimit = 0, nTimeMessFrmLimit_default = 50;
 int nSnapFormat = 0, nSnapFormat_default = 0;
-int flag_pcd = 0; // Flag for printing color distance
+
 
 std::string sDataDir;
-
 
 
 /////// for User Interface /////////////////////////
@@ -97,6 +105,8 @@ std::vector<std::string> vsWndName(nTaskNrMax);
 std::vector<std::string> vsBtnName(nTaskNrMax);
 std::vector<std::string> vsTrackbarName(100);
 
+
+// Different colors in opencv
 cv::Scalar c_white(255, 255, 255);
 cv::Scalar c_gray(127, 127, 127);
 cv::Scalar c_darkgray(63, 63, 63);
@@ -119,7 +129,8 @@ cv::Scalar c_kakki(0, 127, 127);
 cv::Scalar c_pink(127, 0, 255);
 cv::Scalar c_violet(255, 0, 127);
 
-////////// ID of Tasks //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// ID of Tasks - Different Tasks get a number in order to identify them easily
 struct TaskID {
     int nRgbOrg, nRgbDs, nDepth, nInfo, nRecVideo, nSnap;
     int nSegmentation, nDSegm, nGSegm, nTrack, nProto, nMat;
@@ -170,18 +181,14 @@ int nDeltaBinNo;
 int T_numb;
 double T_orient;
 double T_scale;
+// Flag for printing color distance
+int flag_pcd = 1;
 
 
 
 
 /* BUILDING COLOR INDEX
- * This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address.
- *
- * Input:
- * mFeatureSet - matrix of features which was extracted from the lib file
- *
- * Output:
- * Pointer to the first address of the feature vector
+ * This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address
  */
 float* ReadFlannDataset_Color (cv::Mat mFeatureSet) {
     float *data;
@@ -212,13 +219,7 @@ float* ReadFlannDataset_Color (cv::Mat mFeatureSet) {
 
 
 /* BUILDING SIFT INDEX
- * This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address.
- *
- * Input:
- * mFeatureSet - matrix of features which was extracted from the lib file
- *
- * Output:
- * Pointer to the first address of the feature vector
+ * This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address
  */
 float* ReadFlannDataset_SiftOnePos (cv::Mat mFeatureSet) {
 
@@ -260,10 +261,13 @@ float* ReadFlannDataset_SiftOnePos (cv::Mat mFeatureSet) {
 
 
 
-
-/*
+/* Read informtion from the library file, i.e. SIFT Trajectories and color histogram
+ *
+ * Input:
+ * libnr - indicates if information about SIFT or color histogram should be read
+ * sLibFileName - string which contains the name of the file for the library
  */
-void BuildFlannIndex (int libnr, std::string sLibFileName) {   //Read the library file
+void BuildFlannIndex (int libnr, std::string sLibFileName) {
     cv::Mat mFeatureSet;
     cv::FileStorage fs(sLibFileName, cv::FileStorage::READ);
     fs["TestObjectFeatureVectors"] >> mFeatureSet;
@@ -279,7 +283,6 @@ void BuildFlannIndex (int libnr, std::string sLibFileName) {   //Read the librar
         FLANN_LOG_NONE, 0
     };
 
-    //FLANNParam = DEFAULT_FLANN_PARAMETERS;
     FLANNParam = DEFAULT_FLANN_PARAMETERS_USR;
     FLANNParam.algorithm = FLANN_INDEX_KDTREE;
     FLANNParam.trees = 8;
@@ -301,11 +304,7 @@ void BuildFlannIndex (int libnr, std::string sLibFileName) {   //Read the librar
 
 
 
-/* Initialize parameter with the console input
- *
- * Input:
- * argc - number of input arguments on the console
- * argv - console input
+/* Initialize parametes with console input
  */
 void InitParameter (int argc, char** argv) {
     terminal_tools::parse_argument (argc, argv, "-ddmod", bDepthDispMode);
@@ -432,7 +431,6 @@ void InitParameter (int argc, char** argv) {
     terminal_tools::parse_argument (argc, argv, "-datadir", sDataDir);
 
 
-    // Sahils parameters
     terminal_tools::parse_argument (argc, argv, "-deltabin", nDeltaBinNo);
     if(nDeltaBinNo == 0) nDeltaBinNo = 12;
     terminal_tools::parse_argument (argc, argv, "-tnumb", T_numb);
@@ -441,7 +439,6 @@ void InitParameter (int argc, char** argv) {
     if(T_orient == 0) T_orient = 0.1;
     terminal_tools::parse_argument (argc, argv, "-tscale", T_scale);
     if(T_scale == 0) T_scale = 0.001;
-
 
 
 
@@ -493,7 +490,7 @@ void InitParameter (int argc, char** argv) {
 
 
 
-/* Resets all the segmentation and recognition parameter to their default value
+/* Resets all the recognition and segmentation parameter to their default value
  */
 void ResetParameter () {
     bDepthDispMode = bDepthDispMode_default;
@@ -559,29 +556,17 @@ void ResetParameter () {
     nTimeMessFrmLimit = nTimeMessFrmLimit_default;
     nSnapFormat = nSnapFormat_default;
 
+
     if (vbFlagWnd[stTID.nPrmSegm]) {
         cvSetTrackbarPos(vsTrackbarName[20].data(), vsWndName[stTID.nPrmSegm].data(), nTrackMode);
-        cvSetTrackbarPos(vsTrackbarName[22].data(), vsWndName[stTID.nPrmSegm].data(), nTrackDPos*100);
-        cvSetTrackbarPos(vsTrackbarName[23].data(), vsWndName[stTID.nPrmSegm].data(), nTrackDSize*100);
-        cvSetTrackbarPos(vsTrackbarName[24].data(), vsWndName[stTID.nPrmSegm].data(), nTrackDClr*100);
-        cvSetTrackbarPos(vsTrackbarName[25].data(), vsWndName[stTID.nPrmSegm].data(), nTrackPFac*100);
-        cvSetTrackbarPos(vsTrackbarName[26].data(), vsWndName[stTID.nPrmSegm].data(), nTrackSFac*100);
-        cvSetTrackbarPos(vsTrackbarName[27].data(), vsWndName[stTID.nPrmSegm].data(), nTrackCFac*100);
-        cvSetTrackbarPos(vsTrackbarName[28].data(), vsWndName[stTID.nPrmSegm].data(), nTrackDist*100);
-
         cvSetTrackbarPos(vsTrackbarName[31].data(), vsWndName[stTID.nPrmSegm].data(), nProtoSizeMax);
         cvSetTrackbarPos(vsTrackbarName[32].data(), vsWndName[stTID.nPrmSegm].data(), nProtoSizeMin);
         cvSetTrackbarPos(vsTrackbarName[33].data(), vsWndName[stTID.nPrmSegm].data(), nProtoPtsMin);
     }
     if (vbFlagWnd[stTID.nPrmRecog]) {
         cvSetTrackbarPos(vsTrackbarName[1].data(), vsWndName[stTID.nPrmRecog].data(), nSnapFormat);
-
         cvSetTrackbarPos(vsTrackbarName[99].data(), vsWndName[stTID.nPrmRecog].data(), nAttTDMode);
         cvSetTrackbarPos(vsTrackbarName[36].data(), vsWndName[stTID.nPrmRecog].data(), nRecogDClr*100);
-        cvSetTrackbarPos(vsTrackbarName[41].data(), vsWndName[stTID.nPrmRecog].data(), nSiftScales);
-        cvSetTrackbarPos(vsTrackbarName[42].data(), vsWndName[stTID.nPrmRecog].data(), nSiftInitSigma*10);
-        cvSetTrackbarPos(vsTrackbarName[43].data(), vsWndName[stTID.nPrmRecog].data(), nSiftPeakThrs*1000);
-        cvSetTrackbarPos(vsTrackbarName[51].data(), vsWndName[stTID.nPrmRecog].data(), nFlannKnn);
         cvSetTrackbarPos(vsTrackbarName[52].data(), vsWndName[stTID.nPrmRecog].data(), nFlannMatchFac*100);
         cvSetTrackbarPos(vsTrackbarName[53].data(), vsWndName[stTID.nPrmRecog].data(), nFlannMatchCnt);
     }
@@ -603,16 +588,19 @@ void ResetParameter () {
 
 
 
-/*
+/* Assigns the ID to different windows and button to recognize them easier. Moreover, the text for the buttons, windows
+ * and trackbars is defined here.
  */
 void InitVariables () {
     cv::namedWindow(sTitle); cvMoveWindow(sTitle.data(), 80, 20);
 
+    // It is important that every number is only assigned ONCE
     stTID.nRgbOrg = 0, stTID.nRgbDs = 1, stTID.nDepth = 2, stTID.nInfo = 3, stTID.nRecVideo = 7, stTID.nSnap = 8;
     stTID.nSegmentation = 10, stTID.nDSegm = 12, stTID.nGSegm = 13, stTID.nTrack = 15, stTID.nProto = 16;
     stTID.nRecognition = 20, stTID.nRecogOrg = 21, stTID.nRecogDs = 22, stTID.nSIFT = 23;
     stTID.nRecTime = 31, stTID.nRstTime = 33, stTID.nPrmInfo = 34, stTID.nPrmSett = 35, stTID.nPrmSegm = 36, stTID.nPrmRecog = 37, stTID.nRstPrm = 38;
 
+    // Names of windows
     vsWndName[stTID.nRgbOrg] = "Original RGB";
     vsWndName[stTID.nRgbDs] = "Downsampled RGB";
     vsWndName[stTID.nDepth] = "Depth Image";
@@ -627,6 +615,7 @@ void InitVariables () {
     vsWndName[stTID.nPrmSegm] = "Segmentation Setting";
     vsWndName[stTID.nPrmRecog] = "Recognition Setting";
 
+    // Names of buttons
     vsBtnName[stTID.nRgbOrg] = "Org";
     vsBtnName[stTID.nRgbDs] = "DS";
     vsBtnName[stTID.nDepth] = "Depth";
@@ -650,6 +639,7 @@ void InitVariables () {
     vsBtnName[stTID.nRstPrm] = "Reset Prm";
     vsBtnName[nTaskNrMax-1] = "Abandon Ship!";
 
+    // Flags that show if some buttons are pressed
     vbFlagTask[stTID.nInfo] = true;
     vbFlagTask[stTID.nPrmInfo] = true;
 
@@ -659,7 +649,7 @@ void InitVariables () {
     for (int i = 0; i < nTaskNrMax; i++)
         if (vbFlagWnd[i]) {cv::namedWindow(vsWndName[i]); cvMoveWindow(vsWndName[i].data(), mWndPos[i][0], mWndPos[i][1]);}
 
-
+    // Names of the trackbars
     vsTrackbarName[1]  = "Snptshot format (0-2)                 ";
     vsTrackbarName[2]  = "Depth limit (0.5-10 m)                ";
     vsTrackbarName[3]  = "Filter size (3-27 pixels)               ";
@@ -667,13 +657,6 @@ void InitVariables () {
     vsTrackbarName[12] = "BBB";
     vsTrackbarName[20] = "Tracking mode                                ";
     vsTrackbarName[21] = "Color mode (0-4)                          ";
-    vsTrackbarName[22] = "Pos. dist. limit (0-1)       ";
-    vsTrackbarName[23] = "Size dist. limit (0-1)       ";
-    vsTrackbarName[24] = "Color dist. limit (0-1)    ";
-    vsTrackbarName[25] = "Pos. dist factor (0-1)    ";
-    vsTrackbarName[26] = "Size factor (0-1)              ";
-    vsTrackbarName[27] = "Color dist. factor (0-1)";
-    vsTrackbarName[28] = "Total dist. limit (0-5)    ";
     vsTrackbarName[38] = "Stable counter (0-5 frames) " ;
     vsTrackbarName[39] = "Vanish counter (0-2 frames) " ;
     vsTrackbarName[31] = "Objs upper limit (0-1000 mm)";
@@ -682,13 +665,9 @@ void InitVariables () {
     vsTrackbarName[34] = "Objs aspect1 (0-100%)           ";
     vsTrackbarName[35] = "Objs aspect2 (0-100%)           ";
     vsTrackbarName[36] = "Color dist. thres. (0-1)               ";
-    vsTrackbarName[41] = "SIFT scales (1-5)                             ";
-    vsTrackbarName[42] = "SIFT init. sigma (1-2)                   ";
-    vsTrackbarName[43] = "SIFT peak thres. (0-1)                  ";
-    vsTrackbarName[51] = "Flann KNN (1-3)                             ";
     vsTrackbarName[52] = "Flann match fac. (0-1)                ";
     vsTrackbarName[53] = "Flann match cnt (0-100)            ";
-    vsTrackbarName[54] = "Print color distance                   ";
+    vsTrackbarName[54] = "Print Color Distance              ";
 
     vsTrackbarName[17] = "GB segm. sigma (0-1)     ";
     vsTrackbarName[18] = "GB segm. gr (0-500)        ";
@@ -706,7 +685,7 @@ void InitVariables () {
 
 
 
-/*
+/* Stores the position of the individual rectangles which represent a button in a matrix
  */
 void SetBtnPos (int nTaskNr, int nPadSecX, int nPadSecY, int nBtnW, int nBtnH, std::vector<std::vector<int> >& mnBtnPos)
 {
@@ -719,11 +698,18 @@ void SetBtnPos (int nTaskNr, int nPadSecX, int nPadSecY, int nBtnW, int nBtnH, s
 
 
 
-/*
+/* Determines the position of the individual button in the main ni-vision window
+ *
+ * Button are represented by rectangles. The coordinates are assigned to each button and stored. If a
+ * mouse event happens a mouse listener can then evaluate in which rectangle the mouse was located
+ * when the button was pushed.
  */
 void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, int &col1, int &col2, int &height)
 {
     int nTaskNr;
+    // nBtnOffset is the distance between the buttons
+    // nBtnW, nBtnH the width and heigth of a button
+    // nPadSecX, nPadSecY the position of the upper left corner of the button
     int nBtnOffset = 5, nBtnW, nBtnH, nPadSecX = 0, nPadSecY = 0;
     col1 = 2*nBtnSize + 1;
     col2 = col1 + 3*nBtnSize - nBtnOffset;
@@ -825,8 +811,7 @@ void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, i
 
 
 
-
-/*
+/* Draws the main window, the information about the location of the rectangle is extracted from a matrix
  */
 void DrawPad(cv::Mat &cvm_input, std::vector<int> vnBtnProp, int nPadRow1, int nPadCol1, int nPadCol2)
 {
@@ -878,7 +863,7 @@ void DrawPad(cv::Mat &cvm_input, std::vector<int> vnBtnProp, int nPadRow1, int n
 
 
 
-/*
+/* Prints information about the computation time for the individual processes in the main ni-vision window
  */
 void DrawInfo(cv::Mat &cvm_input, int nSegNr, int nPadRow1, int nPadCol1, int nCntFrame_tmp, double nTimeTotal,
               double nTimePre, double nTimeDepth, double nTimeBlur, double nTimePre_avr, double nTimeDepth_avr, double nTimeBlur_avr,
@@ -950,20 +935,18 @@ void DrawInfo(cv::Mat &cvm_input, int nSegNr, int nPadRow1, int nPadCol1, int nC
     sprintf(sText, "%8.2f", nTimeSiftWhole_avr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_darkgreen, 1);
     sprintf(sText, "Flann on whole image: "); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_darkgreen, 1);
     sprintf(sText, "%8.2f", nTimeFlannWhole_avr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_darkgreen, 1);
-
 }
 
 
 
 
-/*
+/* Prints information about the segmentation and recognition settings in the main ni-vision window
  */
 void DrawSettings(cv::Mat &cvm_input, int IX, int nSnapFormat, double nDLimit, int nDGradFilterSize,
                   int nTrackMode, int nTrackColorMode, double nTrackDistPos, double nTrackDistSize, double nTrackDistdlr, double nTrackFacPos, double nTrackFacSize, double nTrackFacClr, double nTrackDistTotal,
                   int nProtoSizeMax, int nProtoSizeMin, int nProtoPtsMin, int nProtoAspect1, int nProtoAspect2, int nAttTDMode,
                   double nRecogDClr, int nSiftScales, double nSiftInitSigma, double nSiftPeakThrs, int nFlannKnn, double nFlannMatchFac, int nFlannMatchCnt,
-                  double nGSegmSigma, int nGSegmGrThs, int nGSegmMinSize)
-{
+                  double nGSegmSigma, int nGSegmGrThs, int nGSegmMinSize) {
 
     CvFont font;
     char sText[128];
@@ -997,13 +980,7 @@ void DrawSettings(cv::Mat &cvm_input, int IX, int nSnapFormat, double nDLimit, i
     sprintf(sText, "Tracking mode:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
     if (nTrackMode) sprintf(sText, "normal"); else sprintf(sText, "optimized"); cv::putText(cvm_input, sText, cv::Point(nTab+25, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Color mode:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    switch (nTrackColorMode) {
-    case 0: sprintf(sText, "RGB"); break;
-    case 1: sprintf(sText, "Normalized rgb"); break;
-    case 2: sprintf(sText, "Color plane directions"); break;
-    case 3: sprintf(sText, "HSV"); break;
-    case 4: sprintf(sText, "Map"); break;}
-    cv::putText(cvm_input, sText, cv::Point(nTab+25, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "Normalized rgb"); cv::putText(cvm_input, sText, cv::Point(nTab+25, nPosY), nFont, nFontSize, c_lemon, 1);
 
     sprintf(sText, "Position distance threshold:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "%8.2f", nTrackDistPos); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
@@ -1056,12 +1033,7 @@ void DrawSettings(cv::Mat &cvm_input, int IX, int nSnapFormat, double nDLimit, i
 
 
 
-
-/* For Mouse events
- *
- * Input:
- * event - information about the mouse event that occured
- * x,y - coordinates of the mouse event that occured
+/* This mousehandler evaluates in which rectangle the mouse was, when the mouse event occured.
  */
 void MouseHandler(int event, int x, int y, int flags, void *param){
     int k;
@@ -1085,8 +1057,9 @@ void MouseHandler(int event, int x, int y, int flags, void *param){
 
 
 
-
-/*
+/* Closes a window
+ * Input:
+ * wnd_nr - ID of the window
  */
 void CloseWindow (int wnd_nr) {
     if (vbFlagWnd[wnd_nr]) {
@@ -1096,9 +1069,9 @@ void CloseWindow (int wnd_nr) {
 }
 
 
-
-
-/*
+/* Set the window flag which indicates if the window is open or closed
+ * Input:
+ * wnd_nr - ID of the window
  */
 void SetFlagWnd (int wnd_nr) {
     vbFlagWnd[wnd_nr] = true;
@@ -1107,16 +1080,16 @@ void SetFlagWnd (int wnd_nr) {
 }
 
 
-
-
-/*
+/* Opens a window
+ * Input:
+ * wnd_nr - ID of the window
  */
 void OpenWindow (int wnd_nr) {if(!vbFlagWnd[wnd_nr]) SetFlagWnd (wnd_nr);}
 
 
 
 
-/*
+/* Resets the recorded time
  */
 void ResetRecTime () {
     nCntRec = 0; nTimeRec_acc = 0; nTimeRec_avr = 0;
@@ -1135,7 +1108,9 @@ void ResetRecTime () {
 
 
 
-/*
+/* Resets the time measurement on the left side of the main window
+ *
+ * This may be necessary after some processes were startet or stopped
  */
 void ResetTime () {
     nCntGbSegm = 0; nTimeGbSegm_acc = 0; nTimeGbSegm_avr = 0;
@@ -1153,6 +1128,9 @@ void ResetTime () {
 
 
 
+
+
+// Various Trackbarhandlers for the trackbars in the Segmentation and Recognition parameter windows
 void TrackbarHandler_none (int){}
 void TrackbarHandler_ZLimit (int pos) {if (pos < 5) pos = 5; nDLimit = (float)pos/10; cvSetTrackbarPos(vsTrackbarName[2].data(), vsWndName[stTID.nPrmRecog].data(), pos);}
 void TrackbarHandler_ZGradFilterSize (int) {if (nDGradFilterSize < 3) nDGradFilterSize = 3; else {if (!(nDGradFilterSize%2)) nDGradFilterSize++;} cvSetTrackbarPos(vsTrackbarName[3].data(), vsWndName[stTID.nPrmRecog].data(), nDGradFilterSize);}
@@ -1173,4 +1151,5 @@ void TrackbarHandler_SiftPeak (int pos) {if (pos > 500) pos = 500; nSiftPeakThrs
 void TrackbarHandler_FlannKnn (int) {if (nFlannKnn < 1) nFlannKnn = 1; cvSetTrackbarPos(vsTrackbarName[51].data(), vsWndName[stTID.nPrmRecog].data(), nFlannKnn);}
 void TrackbarHandler_FlannMFac (int pos) {nFlannMatchFac = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[52].data(), vsWndName[stTID.nPrmRecog].data(), pos);}
 void TrackbarHandler_GSegmSigma (int pos) {nGSegmSigma = (float)pos/10; cvSetTrackbarPos(vsTrackbarName[17].data(), vsWndName[stTID.nGSegm].data(), pos);}
+
 void TrackbarHandler_DGradC (int pos) {nDGradConst = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[84].data(), vsWndName[stTID.nDepth].data(), pos);}
