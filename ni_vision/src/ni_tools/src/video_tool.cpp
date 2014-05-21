@@ -8,18 +8,14 @@
 #include "terminal_tools/parse.h"
 
 
-<<<<<<< HEAD
-
 #define DIVIDE 2
 #define MERGE 3
-=======
->>>>>>> parent of 3b1d971... 4.Versuch
 
 int nMode = 0;
 bool bOutVideo = true, bXFrame = false;
 std::string sDirectory;
-std::string sFileName;
-std::string sExt;
+std::string sVideoName;
+std::string sVideoExt, sImageExt;
 int nFocusX = 1, nFocusY = 17, nFocusWidth = 292, nFocusHeight = 220;
 int nFrameStart = 0, nFrameEnd = 1000;
 
@@ -36,8 +32,9 @@ void CropImage(cv::Mat cvm_input, cv::Mat &cvm_out, int nFocusX, int nFocusY, in
 // initialize parameters
 void parameter_init(int argc, char** argv) {
     terminal_tools::parse_argument (argc, argv, "-path", sDirectory);
-    terminal_tools::parse_argument (argc, argv, "-file", sFileName);
-    terminal_tools::parse_argument (argc, argv, "-ext", sExt);
+    terminal_tools::parse_argument (argc, argv, "-vfile", sVideoName);
+    terminal_tools::parse_argument (argc, argv, "-vext", sVideoExt);
+    terminal_tools::parse_argument (argc, argv, "-iext", sImageExt);
     terminal_tools::parse_argument (argc, argv, "-mode", nMode); if (nMode == 0) nMode = 0;
     terminal_tools::parse_argument (argc, argv, "-frame", bXFrame);
     terminal_tools::parse_argument (argc, argv, "-fox", nFocusX); if(nFocusX == 0) nFocusX = 0;
@@ -68,12 +65,11 @@ int main(int argc, char* argv[]) {
 
     parameter_init(argc, argv);
 
-    std::string sInput = sDirectory + sFileName;
-    std::string sOutputPath = sDirectory + "finished";
-    std::string sOutput = sOutputPath + "/" + sFileName;
-    mkdir(sOutputPath.data(), 0777);
-
+    std::string sInput = sDirectory + sVideoName + "." + sVideoExt;
     cv::VideoCapture cap(sInput.data()); // open the video file for reading
+    sInput = sDirectory + sVideoName + "2." + sVideoExt;
+    cv::VideoCapture cap2(sInput.data()); // open the video file for reading
+
 
     if ( !cap.isOpened() )  // if not success, exit program
     {
@@ -86,7 +82,7 @@ int main(int argc, char* argv[]) {
     //// set Frame Fate and Start Timing
     //cap.set(CV_CAP_PROP_POS_MSEC, 300); //start the video at 300ms
     double frame_rate = cap.get(CV_CAP_PROP_FPS); //get the frames per seconds of the video
-    //frame_rate = 15.0;
+    frame_rate = 15.0;
 
     //// set Canvas ////////////////////
     cv::Size size_out, size_out2;
@@ -103,20 +99,38 @@ int main(int argc, char* argv[]) {
     cv::namedWindow("Video Input", CV_WINDOW_AUTOSIZE); //create a window called "Video Input"
     cvMoveWindow("Video Input", 100, 0);
 
+    if (nMode == MERGE) {cv::namedWindow("Video Input2", CV_WINDOW_AUTOSIZE); cvMoveWindow("Video Input2", 500, 0);}
+
 
 
     //// set Video Writer ////////////////
     CvVideoWriter *writer_out = NULL, *writer_out2 = NULL;
+
+    std::string sVideoOutPath = sDirectory + "video";
+    std::string sVideoOutput = sVideoOutPath + "/" + sVideoName + "." + sVideoExt;;
     if (bOutVideo) {
+        mkdir(sVideoOutPath.data(), 0777);
+
         int fourcc = CV_FOURCC('D', 'I', 'V', 'X'); // MPEG-4 codec
-        writer_out = cvCreateVideoWriter(sOutput.data(), fourcc, frame_rate, size_out, 1);
-        if (nMode == DIVIDE) writer_out2 = cvCreateVideoWriter(sOutput.data(), fourcc, frame_rate, size_out, 1);
+        writer_out = cvCreateVideoWriter(sVideoOutput.data(), fourcc, frame_rate, size_out, 1);
+        if (nMode == DIVIDE) {
+            sVideoOutput = sVideoOutPath + "/" + sVideoName + "2." + sVideoExt;
+            writer_out2 = cvCreateVideoWriter(sVideoOutput.data(), fourcc, frame_rate, size_out, 1);
+        }
     }
+
+
+    std::string sImageOutPath = sDirectory + "finished", sImageOutPath2 = sDirectory + "finished2";
+    if (bXFrame) {
+        mkdir(sImageOutPath.data(), 0777);
+        if (nMode == DIVIDE) mkdir(sImageOutPath2.data(), 0777);
+    }
+
 
 
     int nFrameCntr = 0, nFrameReserve = 3;
     while(1) {
-        cv::Mat cvm_frame;
+        cv::Mat cvm_frame, cvm_frame2;
 
         bool bSuccess = cap.read(cvm_frame); // read a new frame from video
 
@@ -135,9 +149,10 @@ int main(int argc, char* argv[]) {
 
 
             cv::Mat cvm_out(size_out, cvm_frame.type()); cvm_out = cv::Scalar(0, 0, 0);
+            cv::Mat cvm_out2(size_out2, cvm_frame.type()); cvm_out2 = cv::Scalar(0, 0, 0);
 
             IplImage *cv_out = cvCreateImage(cvSize(cvm_out.cols, cvm_out.rows), IPL_DEPTH_8U, 3); cvZero(cv_out);
-            cv_out->imageData = (char *) cvm_out.data;
+            IplImage *cv_out2 = cvCreateImage(cvSize(cvm_out.cols, cvm_out.rows), IPL_DEPTH_8U, 3); cvZero(cv_out2);
             //cv_out = cvCloneImage(&(IplImage)cvm_out);
 
             char sFile[128];
@@ -146,12 +161,15 @@ int main(int argc, char* argv[]) {
             switch (nMode) {
             case 0:
                 cvm_frame.copyTo(cvm_out);
+                cv_out->imageData = (char *) cvm_out.data;
                 if (nFrameCntr > nFrameEnd) cvm_out = cv::Scalar(0,0,0);
                 if (bOutVideo) cvWriteFrame(writer_out, cv_out);
-                if (bXFrame) {std::string sOutputFile = sOutputPath + "/" + sFile + "." + sExt; cv::imwrite(sOutputFile.data(), cvm_out);}
+                if (bXFrame) {std::string sImageOutFile = sImageOutPath + "/" + sFile + "." + sImageExt; cv::imwrite(sImageOutFile.data(), cvm_out);}
                 break;
+
             case 1:
                 CropImage(cvm_frame, cvm_out, nFocusX, nFocusY, nFocusWidth, nFocusHeight);
+                cv_out->imageData = (char *) cvm_out.data;
                 if (false) {
                     cv::Mat tmp_in, tmp_out;
                     tmp_in = cvm_frame(cv::Rect(4, 3, 317, 524));
@@ -179,31 +197,47 @@ int main(int argc, char* argv[]) {
                 }
                 if (nFrameCntr > nFrameEnd) cvm_out = cv::Scalar(0,0,0);
                 if (bOutVideo) cvWriteFrame(writer_out, cv_out);
-                if (bXFrame) {std::string sOutputFile = sOutputPath + "/" + sFile + "." + sExt; cv::imwrite(sOutputFile.data(), cvm_out);}
+                if (bXFrame) {std::string sImageOutFile = sImageOutPath + "/" + sFile + "." + sImageExt; cv::imwrite(sImageOutFile.data(), cvm_out);}
+                cv::imshow("Finished", cvm_out);
                 break;
+
             case DIVIDE:
-                cv::Mat cvm_output2(size_out2, cvm_frame.type());
-                CropImage(cvm_frame, cvm_output, 0, 0, nFocusWidth, nFocusHeight);
-
-                CropImage(cvm_frame, cvm_output2, nFocusWidth, 0, nFocusWidth, nFocusHeight);
-                sOutputFile = sOutputPath + "/" + sFile + "_trk" + "." + sExt; cv::imwrite(sOutputFile.data(), cvm_output);
-                sOutputFile = sOutputPath + "/" + sFile + "_rgb" + "." + sExt; cv::imwrite(sOutputFile.data(), cvm_output);
-
-
-                cv::imshow("Processed1", cvm_output); cv::imshow("Processed2", cvm_output2);
-                cvm_output2.release();
+                CropImage(cvm_frame, cvm_out, 0, 0, nFocusWidth, nFocusHeight);
+                CropImage(cvm_frame, cvm_out2, nFocusWidth, 0, nFocusWidth, nFocusHeight);
+                cv_out->imageData = (char *) cvm_out.data;
+                cv_out2->imageData = (char *) cvm_out2.data;
+                if (nFrameCntr > nFrameEnd) {cvm_out = cv::Scalar(0,0,0); cvm_out2 = cv::Scalar(0,0,0);}
+                if (bOutVideo) {cvWriteFrame(writer_out, cv_out); cvWriteFrame(writer_out2, cv_out2);}
+                if (bXFrame) {
+                    std::string sImageOutFile;
+                    sImageOutFile = sImageOutPath + "/" + sFile + "_trk" + "." + sImageExt; cv::imwrite(sImageOutFile.data(), cvm_out);
+                    sImageOutFile = sImageOutPath2 + "/" + sFile + "_rgb" + "." + sImageExt; cv::imwrite(sImageOutFile.data(), cvm_out);
+                }
+                cv::imshow("Finished1", cvm_out); cv::imshow("Finished2", cvm_out2);
                 break;
-            case MERGE: break;
+
+            case MERGE:
+                if (bool bSuccess2 = cap2.read(cvm_frame2)) {
+                    cv::Mat tmp_in, tmp_out;
+                    tmp_in = cvm_frame(cv::Rect(nFocusX, nFocusY, nFocusWidth, nFocusHeight));
+                    tmp_out = cvm_out(cv::Rect(0, 0, nFocusWidth, nFocusHeight));
+                    tmp_in.copyTo(tmp_out);
+                    tmp_in = cvm_frame2(cv::Rect(nFocusX, nFocusY, nFocusWidth, nFocusHeight));
+                    tmp_out = cvm_out(cv::Rect(nFocusWidth, 0, nFocusWidth, nFocusHeight));
+                    tmp_in.copyTo(tmp_out);
+                    tmp_in.release(); tmp_out.release();
+                    cv_out->imageData = (char *) cvm_out.data;
+                    if (nFrameCntr > nFrameEnd) cvm_out = cv::Scalar(0,0,0);
+                    if (bOutVideo) cvWriteFrame(writer_out, cv_out);
+                    if (bXFrame) {std::string sImageOutFile = sImageOutPath + "/" + sFile + "." + sImageExt; cv::imwrite(sImageOutFile.data(), cvm_out);}
+                    cv::imshow("Video Input2", cvm_frame2);
+                    cv::imshow("Finished", cvm_out);
+                }
+                break;
             }
 
-
-            switch (nMode) {
-            case 3:         // Extract streams and divide
-                {
-                }break;
-            }
-            cvReleaseImage(&cv_out);
-            cvm_out.release();
+            cvReleaseImage(&cv_out); cvReleaseImage(&cv_out2);
+            cvm_out.release(); cvm_out2.release();
         }
         cvm_frame.release();
 
