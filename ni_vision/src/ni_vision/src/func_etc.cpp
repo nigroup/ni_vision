@@ -248,115 +248,15 @@ void ResetTime (int nCntDepth, int nCntBlur, int nCntSegm, int nCntTrack, int nC
 
 
 
-void AttachImgs (cv::Mat cvm_sec1, cv::Mat cvm_sec2, cv::Mat cvm_sec3, cv::Mat cvm_sec4, int nCvWidth, int nCvHeight, cv::Mat &cvm_out) {
+void AttachImgs (cv::Mat cvm_sec1, cv::Mat cvm_sec2, cv::Mat cvm_sec3, cv::Mat cvm_sec4, int nDsWidth, int nDsHeight, cv::Mat &cvm_out) {
     cv::Mat tmp;
-    tmp = cvm_out(cv::Rect(0, 0, nCvWidth, nCvHeight)); cvm_sec1.copyTo(tmp);
-    tmp = cvm_out(cv::Rect(nCvWidth, 0, nCvWidth, nCvHeight)); cvm_sec2.copyTo(tmp);
-    tmp = cvm_out(cv::Rect(0, nCvHeight, nCvWidth, nCvHeight)); cvm_sec3.copyTo(tmp);
-    tmp = cvm_out(cv::Rect(nCvWidth, nCvHeight, nCvWidth, nCvHeight)); cvm_sec4.copyTo(tmp);
+    tmp = cvm_out(cv::Rect(0, 0, nDsWidth, nDsHeight)); cvm_sec1.copyTo(tmp);
+    tmp = cvm_out(cv::Rect(nDsWidth, 0, nDsWidth, nDsHeight)); cvm_sec2.copyTo(tmp);
+    tmp = cvm_out(cv::Rect(0, nDsHeight, nDsWidth, nDsHeight)); cvm_sec3.copyTo(tmp);
+    tmp = cvm_out(cv::Rect(nDsWidth, nDsHeight, nDsWidth, nDsHeight)); cvm_sec4.copyTo(tmp);
     tmp.release();
 }
 
-
-
-void ShowColorHistogramView (int seg_nr, int nTrackHistoBin_tmp, std::vector<std::vector<float> > mnProtoClrHist, std::vector<std::vector<int> > mnProtoRCenter, std::vector<int> vnProtoPtsCnt, cv::Mat cvm_rec_ds)
-{
-    float ymax = 0;
-    float nnn = 0;
-    for (int iii = 0; iii < nTrackHistoBin_tmp; iii++) {
-        if (mnProtoClrHist[seg_nr][iii] > ymax) ymax = mnProtoClrHist[seg_nr][iii];
-        nnn += mnProtoClrHist[seg_nr][iii];
-    }
-    cv::Mat cvm_out(cv::Size((cvm_rec_ds.cols)*2, cvm_rec_ds.rows), cvm_rec_ds.type());
-    cv::Mat cvm_hist(cv::Size(300, 120), cvm_rec_ds.type());
-    cvm_out = cv::Scalar(0, 0, 0);
-    cvm_hist = cv::Scalar(0, 0, 0);
-
-    DrawColorHistogram(mnProtoClrHist[seg_nr], 300, 120, nTrackHistoBin_tmp, 255, 0, 0, cvm_hist, ymax);
-    cv::Mat tmp;
-    tmp = cvm_out(cv::Rect(0, 60, 300, 120)); cvm_hist.copyTo(tmp);
-    tmp = cvm_out(cv::Rect(cvm_rec_ds.cols, 0, cvm_rec_ds.cols, cvm_rec_ds.rows)); cvm_rec_ds.copyTo(tmp);
-    tmp.release();
-    cvm_hist.release();
-
-
-    char sText[128];
-    sprintf(sText, "(%3d %3d)", mnProtoRCenter[seg_nr][0], mnProtoRCenter[seg_nr][1]);
-    cv::putText(cvm_out, sText, cv::Point(120, 30),  nFont, nFontSize, c_white, 1);
-    sprintf(sText, "%2d %3d %3f", seg_nr, vnProtoPtsCnt[seg_nr], nnn);
-    cv::putText(cvm_out, sText, cv::Point(120, 50),  nFont, nFontSize, c_white, 1);
-
-    cv::imshow("gggggg", cvm_out);
-    cvm_out.release();
-}
-
-
-void PrintMatrix(int nSegNrTmp, int nCvWidth)
-{
-    char sText[128];
-    std::ofstream finn;
-    std::string filename = "matrix.txt";
-
-    finn.open(filename.data(), std::ios::app);
-
-    finn << "Split Matrix\n\n";
-    finn << "   ";
-    for (int i = 0; i < nSegNrTmp; i++) {sprintf(sText, "%3d", i); finn << sText;} finn << "\n";
-    for (int i = 0; i < nSegNrTmp; i++) {
-        sprintf(sText, "%3d ", i); finn << sText;
-        for (int j = 0; j < nSegNrTmp; j++) {if (mbMat1[i][j]) sprintf(sText, " @ "); else sprintf(sText, " - "); finn << sText;} finn << "\n";
-    } finn << "\n\n";
-
-    finn << "Neighbor Matrix\n\n";
-    finn << "   ";
-    for (int i = 0; i < nSegNrTmp; i++) {sprintf(sText, "%3d", i); finn << sText;} finn << "\n";
-    for (int i = 0; i < nSegNrTmp; i++) {
-        sprintf(sText, "%3d ", i); finn << sText;
-        for (int j = 0; j < nSegNrTmp; j++) {if (mbMat2[i][j]) sprintf(sText, " @ "); else sprintf(sText, " - "); finn << sText;} finn << "\n";
-    } finn << "\n\n";
-
-    finn << "Merge Matrix\n\n";
-    finn << "   ";
-    for (int i = 0; i < nSegNrTmp; i++) {sprintf(sText, "%3d", i); finn << sText;} finn << "\n";
-    for (int i = 0; i < nSegNrTmp; i++) {
-        sprintf(sText, "%3d ", i); finn << sText;
-        for (int j = 0; j < nSegNrTmp; j++) {if (mbMat3[i][j]) sprintf(sText, " @ "); else sprintf(sText, " - "); finn << sText;} finn << "\n";
-    } finn << "\n\n";
-
-
-    sprintf(sText, "%d", (int)mnTmpPtsIdx.size());
-    finn << "Depth Gradients "<<sText<<"\n\n";
-    int x, y;
-    for (int ii = 0; ii < nSegNrTmp/30 +1; ii++) {
-        for (int i = 0 + ii*30; i < (ii+1)*30; i++) {
-            if (i > nSegNrTmp -1) break;
-            sprintf(sText, "%9d", i); finn << sText;
-        } finn << "\n";
-        for (int i = 0 + ii*30; i < (ii+1)*30; i++) {
-            if (i > nSegNrTmp -1) break;
-            if(vbTmpSmall[i]) sprintf(sText, "%9d", 1); else sprintf(sText, "%9d", 0); finn << sText;
-        } finn << "\n";
-        for (int i = 0 + ii*30; i < (ii+1)*30; i++) {
-            if (i > nSegNrTmp -1) break;
-            GetPixelPos(mnTmpPtsIdx[i][0], nCvWidth, x, y);
-            sprintf(sText, "  %3d %3d", x, y); finn << sText;
-        } finn << "\n";
-        for (int i = 0 + ii*30; i < (ii+1)*30; i++) {
-            if (i > nSegNrTmp -1) break;
-            sprintf(sText, "%9d", (int)mnTmpPtsIdx[i].size());  finn << sText;
-        } finn << "\n";
-        for (int i = 0 + ii*30; i < (ii+1)*30; i++) {
-            if (i > nSegNrTmp -1) break;
-            sprintf(sText, "%9.4f", vnTmpGradX[i]); finn << sText;
-        } finn << "\n";
-        for (int i = 0 + ii*30; i < (ii+1)*30; i++) {
-            if (i > nSegNrTmp -1) break;
-            sprintf(sText, "%9.4f", vnTmpGradY[i]); finn << sText;
-        } finn << "\n\n";
-    } finn << "\n\n";
-
-    finn.close();
-}
 
 
 void accCutImage(cv::Mat cvm_input, cv::Mat &cvm_out, int nDepthX, int nDepthY, int nDepthWidth, int nDepthHeight)

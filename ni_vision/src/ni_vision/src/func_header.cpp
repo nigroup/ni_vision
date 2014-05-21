@@ -5,13 +5,6 @@
 typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointXYZRGBNormal PointNormalT;
 
-int min(int a, int b) {if (a > b) return b; else return a;}
-float min(float a, float b) {if (a > b) return b; else return a;}
-double min(double a, double b) {if (a > b) return b; else return a;}
-int max(int a, int b) {if (a > b) return a; else return b;}
-float max(float a, float b) {if (a > b) return a; else return b;}
-double max(double a, double b) {if (a > b) return a; else return b;}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // pulls r,b,g fields out of packed "rgb" float in an image
 void unpack_rgb(float rgb, uint8_t& r, uint8_t& g, uint8_t& b) {

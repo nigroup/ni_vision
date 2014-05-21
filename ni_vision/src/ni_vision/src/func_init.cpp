@@ -1,17 +1,8 @@
 /*
- * Initialization of parameters with the input from the console
- * Defining names for button, windows and trackbars
- * Drawing the gui
- * Handling mouse events
- * Open and closing of windows
- * Different trackbarhandlers
- *
- * Since the early version of opencv did not provide good methods to create a gui, we had to develop
- * our own approach. The gui is basically a window on which different rectangles are drawn which
- * represent the button.
+ * Initialization of parameters
  */
 
-
+// park
 
 ////////// System Paramters ///////////////////////////////////////
 bool bDepthDispMode = false, bDepthDispMode_default = false;
@@ -38,27 +29,18 @@ double nGSegmSigma = 0, nGSegmSigma_default = 0.8;
 int nGSegmGrThrs = 0, nGSegmGrThrs_default = 500;
 int nGSegmMinSize = 0, nGSegmMinSize_default = 450;
 
+struct TrackProp {
+    int Mode, ClrMode, HistoBin;
+    double DPos, DSize, DClr, Dist, FPos, FSize, FClr, MFac;
+    int CntMem, CntStable, CntDisap;
+}; TrackProp stTrack, stTrack_default;
 
-int nTrackMode = 0 ,nTrackMode_default = 0;
-int nTrackClrMode = 0 ,nTrackClrMode_default = 1;
-int nTrackHistoBin = 0 ,nTrackHistoBin_default = 4;
-double nTrackDPos = 0, nTrackDPos_default = 0.2;
-double nTrackDSize = 0, nTrackDSize_default = 0.15;
-double nTrackDClr = 0, nTrackDClr_default = 0.2;
-double nTrackDist = 0, nTrackDist_default = 1.6;
-double nTrackPFac = 0, nTrackPFac_default = 0.1;
-double nTrackSFac = 0, nTrackSFac_default = 0.5;
-double nTrackCFac = 0, nTrackCFac_default = 0.4;
-double nTrackMFac = 0, nTrackMFac_default = 100;
-int nTrackCntMem = 0, nTrackCntMem_default = 5;
-int nTrackCntStable = 0, nTrackCntStable_default = 2;
-int nTrackCntDisap = 0, nTrackCntDisap_default = 1;
-
-int nProtoSizeMax = 0, nProtoSizeMax_default = 350;
-int nProtoSizeMin = 0, nProtoSizeMin_default = 100;
-int nProtoPtsMin = 0, nProtoPtsMin_default = 200;
-int nProtoAspect1 = 0, nProtoAspect1_default = 20;
-int nProtoAspect2 = 0, nProtoAspect2_default = 30;
+int nAttTDMode = 0, nAttTDMode_default = 0;
+int nAttSizeMax = 0, nAttSizeMax_default = 350;
+int nAttSizeMin = 0, nAttSizeMin_default = 100;
+int nAttPtsMin = 0, nAttPtsMin_default = 200;
+int nAttAspect1 = 0, nAttAspect1_default = 20;
+int nAttAspect2 = 0, nAttAspect2_default = 30;
 
 
 int nSiftScales = 0, nSiftScales_default = 3;
@@ -70,10 +52,7 @@ double nFlannTargetPrecision = 0, nFlannTargetPrecision_default = 0.9;
 double nFlannMatchFac, nFlannMatchFac_default = 0.7;
 int nFlannMatchCnt, nFlannMatchCnt_default = 6;
 
-int nFlannMatchCntWhole, nFlannMatchCntWhole_default = 4;
 
-
-int nAttTDMode = 0, nAttTDMode_default = 0;
 int nRecogFeature = 0, nRecogFeature_default = 0;
 double nRecogDClr = 0, nRecogDClr_default = 0.35;
 bool bRecogClrMask = false, bRecogClrMask_default = false;
@@ -86,6 +65,14 @@ int nSnapFormat = 0, nSnapFormat_default = 0;
 
 
 std::string sDataDir;
+
+
+struct ProtoProp {
+    std::vector<std::vector<int> > mnRect, mnRCenter; std::vector<std::vector<float> > mnCubic, mnCCenter;
+    std::vector<int> vnLength; std::vector<std::vector<float> > mnColorHist;
+    std::vector<int> vnMemoryCnt, vnStableCnt, vnDisapCnt;
+};
+
 
 
 /////// for User Interface /////////////////////////
@@ -105,8 +92,6 @@ std::vector<std::string> vsWndName(nTaskNrMax);
 std::vector<std::string> vsBtnName(nTaskNrMax);
 std::vector<std::string> vsTrackbarName(100);
 
-
-// Different colors in opencv
 cv::Scalar c_white(255, 255, 255);
 cv::Scalar c_gray(127, 127, 127);
 cv::Scalar c_darkgray(63, 63, 63);
@@ -129,16 +114,13 @@ cv::Scalar c_kakki(0, 127, 127);
 cv::Scalar c_pink(127, 0, 255);
 cv::Scalar c_violet(255, 0, 127);
 
-
-// ID of Tasks - Different Tasks get a number in order to identify them easily
+////////// ID of Tasks //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct TaskID {
     int nRgbOrg, nRgbDs, nDepth, nInfo, nRecVideo, nSnap;
-    int nSegmentation, nDSegm, nGSegm, nTrack, nProto, nMat;
+    int nSegmentation, nDSegm, nGSegm, nTrack, nProto;
     int nRecognition, nRecogOrg, nRecogDs, nSIFT;
     int nRecTime, nRstTime, nPrmInfo, nPrmSett, nPrmSegm, nPrmRecog, nRstPrm;
-};
-struct TaskID stTID;
-
+}; struct TaskID stTID;
 
 
 //// for time estimation ////
@@ -181,15 +163,11 @@ int nDeltaBinNo;
 int T_numb;
 double T_orient;
 double T_scale;
-// Flag for printing color distance
-int flag_pcd = 1;
 
 
 
-
-/* BUILDING COLOR INDEX
- * This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address
- */
+//////////////////////BUILDING COLOR INDEX////////////////////////////////////////////////////////////////////////////////
+//This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address
 float* ReadFlannDataset_Color (cv::Mat mFeatureSet) {
     float *data;
     float *p;
@@ -211,16 +189,12 @@ float* ReadFlannDataset_Color (cv::Mat mFeatureSet) {
         }
     }
 
-    nTrackHistoBin = pow(mFeatureSet.cols,(1/3.0));
+    stTrack.HistoBin = pow(mFeatureSet.cols,(1/3.0));
     return data;
 }
 
-
-
-
-/* BUILDING SIFT INDEX
- * This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address
- */
+///////////////////////////////BUILDING SIFT INDEX/////////////////////////////////////////////////////////////////////
+//This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address
 float* ReadFlannDataset_SiftOnePos (cv::Mat mFeatureSet) {
 
     nFlannLibCols_sift = 128;
@@ -259,15 +233,7 @@ float* ReadFlannDataset_SiftOnePos (cv::Mat mFeatureSet) {
     return data;
 }
 
-
-
-/* Read informtion from the library file, i.e. SIFT Trajectories and color histogram
- *
- * Input:
- * libnr - indicates if information about SIFT or color histogram should be read
- * sLibFileName - string which contains the name of the file for the library
- */
-void BuildFlannIndex (int libnr, std::string sLibFileName) {
+void BuildFlannIndex (int libnr, std::string sLibFileName) {   //Read the library file
     cv::Mat mFeatureSet;
     cv::FileStorage fs(sLibFileName, cv::FileStorage::READ);
     fs["TestObjectFeatureVectors"] >> mFeatureSet;
@@ -283,6 +249,7 @@ void BuildFlannIndex (int libnr, std::string sLibFileName) {
         FLANN_LOG_NONE, 0
     };
 
+    //FLANNParam = DEFAULT_FLANN_PARAMETERS;
     FLANNParam = DEFAULT_FLANN_PARAMETERS_USR;
     FLANNParam.algorithm = FLANN_INDEX_KDTREE;
     FLANNParam.trees = 8;
@@ -293,6 +260,7 @@ void BuildFlannIndex (int libnr, std::string sLibFileName) {
     switch (libnr) {        // 1: Color histogram, 2: SIFT for one view-point
     case 1:
         nFlannDataset = ReadFlannDataset_Color(mFeatureSet);  //Store the Input file into memory!
+        //FlannIdx_Color = flann_build_index(nFlannDataset, mFeatureSet.rows, mFeatureSet.rows, &speedup, &FLANNParam);
         break;
     case 2:
         nFlannDataset = ReadFlannDataset_SiftOnePos(mFeatureSet);  //Store the Input file into memory!
@@ -304,9 +272,27 @@ void BuildFlannIndex (int libnr, std::string sLibFileName) {
 
 
 
-/* Initialize parametes with console input
- */
+
+
+
+// initialize parameters
 void InitParameter (int argc, char** argv) {
+
+    stTrack.Mode = 0, stTrack_default.Mode = 0;
+    stTrack.ClrMode = 0, stTrack_default.ClrMode = 1;
+    stTrack.HistoBin = 0, stTrack_default.HistoBin = 4;
+    stTrack.DPos = 0, stTrack_default.DPos = 0.2;
+    stTrack.DSize = 0, stTrack_default.DSize = 0.15;
+    stTrack.DClr = 0, stTrack_default.DClr = 0.2;
+    stTrack.Dist = 0, stTrack_default.Dist = 1.6;
+    stTrack.FPos = 0, stTrack_default.FPos = 0.1;
+    stTrack.FSize = 0, stTrack_default.FSize = 0.5;
+    stTrack.FClr = 0, stTrack_default.FClr = 0.4;
+    stTrack.MFac = 0, stTrack_default.MFac = 100;
+    stTrack.CntMem = 0, stTrack_default.CntMem = 5;
+    stTrack.CntStable = 0, stTrack_default.CntStable = 2;
+    stTrack.CntDisap = 0, stTrack_default.CntDisap = 1;
+
     terminal_tools::parse_argument (argc, argv, "-ddmod", bDepthDispMode);
     if(bDepthDispMode == 0) bDepthDispMode = 0; bDepthDispMode_default = bDepthDispMode;
     terminal_tools::parse_argument (argc, argv, "-dlim", nDLimit);
@@ -344,47 +330,47 @@ void InitParameter (int argc, char** argv) {
     if(nGSegmMinSize == 0) nGSegmMinSize = nGSegmMinSize_default; nGSegmMinSize_default = nGSegmMinSize;
 
 
-    terminal_tools::parse_argument (argc, argv, "-trkmod", nTrackMode);
-    if(nTrackMode == 0) nTrackMode = nTrackMode_default; nTrackMode_default = nTrackMode;
-    terminal_tools::parse_argument (argc, argv, "-trkcmod", nTrackClrMode);
-    if(nTrackClrMode == 0) nTrackClrMode = nTrackClrMode_default; nTrackClrMode_default = nTrackClrMode;
+    terminal_tools::parse_argument (argc, argv, "-trkmod", stTrack.Mode);
+    if(stTrack.Mode == 0) stTrack.Mode = stTrack_default.Mode; stTrack_default.Mode = stTrack.Mode;
+    terminal_tools::parse_argument (argc, argv, "-trkcmod", stTrack.ClrMode);
+    if(stTrack.ClrMode == 0) stTrack.ClrMode = stTrack_default.ClrMode; stTrack_default.ClrMode = stTrack.ClrMode;
 
-    terminal_tools::parse_argument (argc, argv, "-trkdp", nTrackDPos);
-    if(nTrackDPos == 0) nTrackDPos = nTrackDPos_default; nTrackDPos_default = nTrackDPos;
-    terminal_tools::parse_argument (argc, argv, "-trkds", nTrackDSize);
-    if(nTrackDSize == 0) nTrackDSize = nTrackDSize_default; nTrackDSize_default = nTrackDSize;
-    terminal_tools::parse_argument (argc, argv, "-trkdc", nTrackDClr);
-    if(nTrackDClr == 0) nTrackDClr = nTrackDClr_default; nTrackDClr_default = nTrackDClr;
-    terminal_tools::parse_argument (argc, argv, "-trkd", nTrackDist);
-    if(nTrackDist == 0) nTrackDist = nTrackDist_default; nTrackDist_default = nTrackDist;
-    terminal_tools::parse_argument (argc, argv, "-trkpf", nTrackPFac);
-    if(nTrackPFac == 0) nTrackPFac = nTrackPFac_default; nTrackPFac_default = nTrackPFac;
-    terminal_tools::parse_argument (argc, argv, "-trksf", nTrackSFac);
-    if(nTrackSFac == 0) nTrackSFac = nTrackSFac_default; nTrackSFac_default = nTrackSFac;
-    terminal_tools::parse_argument (argc, argv, "-trkcf", nTrackCFac);
-    if(nTrackCFac == 0) nTrackCFac = nTrackCFac_default; nTrackCFac_default = nTrackCFac;
-    terminal_tools::parse_argument (argc, argv, "-trkmf", nTrackMFac);
-    if(nTrackMFac == 0) nTrackMFac = nTrackMFac_default; nTrackMFac_default = nTrackMFac;
+    terminal_tools::parse_argument (argc, argv, "-trkdp", stTrack.DPos);
+    if(stTrack.DPos == 0) stTrack.DPos = stTrack_default.DPos; stTrack_default.DPos = stTrack.DPos;
+    terminal_tools::parse_argument (argc, argv, "-trkds", stTrack.DSize);
+    if(stTrack.DSize == 0) stTrack.DSize = stTrack_default.DSize; stTrack_default.DSize = stTrack.DSize;
+    terminal_tools::parse_argument (argc, argv, "-trkdc", stTrack.DClr);
+    if(stTrack.DClr == 0) stTrack.DClr = stTrack_default.DClr; stTrack_default.DClr = stTrack.DClr;
+    terminal_tools::parse_argument (argc, argv, "-trkd", stTrack.Dist);
+    if(stTrack.Dist == 0) stTrack.Dist = stTrack_default.Dist; stTrack_default.Dist = stTrack.Dist;
+    terminal_tools::parse_argument (argc, argv, "-trkpf", stTrack.FPos);
+    if(stTrack.FPos == 0) stTrack.FPos = stTrack_default.FPos; stTrack_default.FPos = stTrack.FPos;
+    terminal_tools::parse_argument (argc, argv, "-trksf", stTrack.FSize);
+    if(stTrack.FSize == 0) stTrack.FSize = stTrack_default.FSize; stTrack_default.FSize = stTrack.FSize;
+    terminal_tools::parse_argument (argc, argv, "-trkcf", stTrack.FClr);
+    if(stTrack.FClr == 0) stTrack.FClr = stTrack_default.FClr; stTrack_default.FClr = stTrack.FClr;
+    terminal_tools::parse_argument (argc, argv, "-trkmf", stTrack.MFac);
+    if(stTrack.MFac == 0) stTrack.MFac = stTrack_default.MFac; stTrack_default.MFac = stTrack.MFac;
 
-    terminal_tools::parse_argument (argc, argv, "-trkcm", nTrackCntMem);
-    if(nTrackCntMem == 0) nTrackCntMem = nTrackCntMem_default; nTrackCntMem_default = nTrackCntMem;
-    terminal_tools::parse_argument (argc, argv, "-trkcs", nTrackCntStable);
-    if(nTrackCntStable == 0) nTrackCntStable = nTrackCntStable_default; nTrackCntStable_default = nTrackCntStable;
-    terminal_tools::parse_argument (argc, argv, "-trkcd", nTrackCntDisap);
-    if(nTrackCntDisap == 0) nTrackCntDisap = nTrackCntDisap_default; nTrackCntDisap_default = nTrackCntDisap;
+    terminal_tools::parse_argument (argc, argv, "-trkcm", stTrack.CntMem);
+    if(stTrack.CntMem == 0) stTrack.CntMem = stTrack_default.CntMem; stTrack_default.CntMem = stTrack.CntMem;
+    terminal_tools::parse_argument (argc, argv, "-trkcs", stTrack.CntStable);
+    if(stTrack.CntStable == 0) stTrack.CntStable = stTrack_default.CntStable; stTrack_default.CntStable = stTrack.CntStable;
+    terminal_tools::parse_argument (argc, argv, "-trkcd", stTrack.CntDisap);
+    if(stTrack.CntDisap == 0) stTrack.CntDisap = stTrack_default.CntDisap; stTrack_default.CntDisap = stTrack.CntDisap;
 
     terminal_tools::parse_argument (argc, argv, "-natttd", nAttTDMode);
     if(nAttTDMode == 0) nAttTDMode = nAttTDMode_default; nAttTDMode_default = nAttTDMode;
-    terminal_tools::parse_argument (argc, argv, "-promax", nProtoSizeMax);
-    if(nProtoSizeMax == 0) nProtoSizeMax = nProtoSizeMax_default; nProtoSizeMax_default = nProtoSizeMax;
-    terminal_tools::parse_argument (argc, argv, "-promin", nProtoSizeMin);
-    if(nProtoSizeMin == 0) nProtoSizeMin = nProtoSizeMin_default; nProtoSizeMin_default = nProtoSizeMin;
-    terminal_tools::parse_argument (argc, argv, "-propm", nProtoPtsMin);
-    if(nProtoPtsMin == 0) nProtoPtsMin = nProtoPtsMin_default; nProtoPtsMin_default = nProtoPtsMin;
-    terminal_tools::parse_argument (argc, argv, "-proar1", nProtoAspect1);
-    if(nProtoAspect1 == 0) nProtoAspect1 = nProtoAspect1_default; nProtoAspect1_default = nProtoAspect1;
-    terminal_tools::parse_argument (argc, argv, "-proar2", nProtoAspect2);
-    if(nProtoAspect2 == 0) nProtoAspect2 = nProtoAspect2_default; nProtoAspect2_default = nProtoAspect2;
+    terminal_tools::parse_argument (argc, argv, "-candmax", nAttSizeMax);
+    if(nAttSizeMax == 0) nAttSizeMax = nAttSizeMax_default; nAttSizeMax_default = nAttSizeMax;
+    terminal_tools::parse_argument (argc, argv, "-candmin", nAttSizeMin);
+    if(nAttSizeMin == 0) nAttSizeMin = nAttSizeMin_default; nAttSizeMin_default = nAttSizeMin;
+    terminal_tools::parse_argument (argc, argv, "-candpm", nAttPtsMin);
+    if(nAttPtsMin == 0) nAttPtsMin = nAttPtsMin_default; nAttPtsMin_default = nAttPtsMin;
+    terminal_tools::parse_argument (argc, argv, "-candar1", nAttAspect1);
+    if(nAttAspect1 == 0) nAttAspect1 = nAttAspect1_default; nAttAspect1_default = nAttAspect1;
+    terminal_tools::parse_argument (argc, argv, "-candar2", nAttAspect2);
+    if(nAttAspect2 == 0) nAttAspect2 = nAttAspect2_default; nAttAspect2_default = nAttAspect2;
 
 
     terminal_tools::parse_argument (argc, argv, "-siftsc", nSiftScales);
@@ -402,8 +388,6 @@ void InitParameter (int argc, char** argv) {
     if(nFlannMatchFac == 0) nFlannMatchFac = nFlannMatchFac_default; nFlannMatchFac_default = nFlannMatchFac;
     terminal_tools::parse_argument (argc, argv, "-flmc", nFlannMatchCnt);
     if(nFlannMatchCnt == 0) nFlannMatchCnt = nFlannMatchCnt_default; nFlannMatchCnt_default = nFlannMatchCnt;
-    terminal_tools::parse_argument (argc, argv, "-flmcw", nFlannMatchCntWhole);
-    if(nFlannMatchCntWhole == 0) nFlannMatchCntWhole = nFlannMatchCntWhole_default; nFlannMatchCntWhole_default = nFlannMatchCntWhole;
 
     terminal_tools::parse_argument (argc, argv, "-recfeat", nRecogFeature);
     if(nRecogFeature == 0) nRecogFeature = nRecogFeature_default; nRecogFeature_default = nRecogFeature;
@@ -431,6 +415,7 @@ void InitParameter (int argc, char** argv) {
     terminal_tools::parse_argument (argc, argv, "-datadir", sDataDir);
 
 
+    /////////////////////////Sahils parameters /////////////////////////////////////////////////////////////////////
     terminal_tools::parse_argument (argc, argv, "-deltabin", nDeltaBinNo);
     if(nDeltaBinNo == 0) nDeltaBinNo = 12;
     terminal_tools::parse_argument (argc, argv, "-tnumb", T_numb);
@@ -439,6 +424,7 @@ void InitParameter (int argc, char** argv) {
     if(T_orient == 0) T_orient = 0.1;
     terminal_tools::parse_argument (argc, argv, "-tscale", T_scale);
     if(T_scale == 0) T_scale = 0.001;
+
 
 
 
@@ -457,14 +443,14 @@ void InitParameter (int argc, char** argv) {
     printf ("Segmentation - Distance Threshold: .............. %5.0f mm\n", nDSegmDThres*1000);
     printf ("Segmentation - Distance gradient threshold: ..... %7.1f mm/pixel\n", nDSegmGradDist*1000);
     printf ("Segmentation - Cut out small segments: .......... %5d pixels\n", nDSegmCutSize);
-    printf ("Tracking - Position displacement threshold: ..... %8.2f\n", nTrackDPos);
-    printf ("Tracking - Size difference threshold: ........... %8.2f %%\n", nTrackDSize*100);
-    printf ("Tracking - Color difference threshold: .......... %8.2f\n", nTrackDClr);
-    printf ("Tracking - Position displacement factor: ........ %8.2f\n", nTrackPFac);
-    printf ("Tracking - Size difference factor: .............. %8.2f\n", nTrackSFac);
-    printf ("Tracking - Color difference factor: ............. %8.2f\n", nTrackCFac);
-    printf ("Tracking - Total difference threshold: .......... %8.2f\n", nTrackDist);
-    printf ("Tracking - Stablity threshold: .................. %5d\n", nTrackCntStable);
+    printf ("Tracking - Position displacement threshold: ..... %8.2f\n", stTrack.DPos);
+    printf ("Tracking - Size difference threshold: ........... %8.2f %%\n", stTrack.DSize*100);
+    printf ("Tracking - Color difference threshold: .......... %8.2f\n", stTrack.DClr);
+    printf ("Tracking - Position displacement factor: ........ %8.2f\n", stTrack.FPos);
+    printf ("Tracking - Size difference factor: .............. %8.2f\n", stTrack.FSize);
+    printf ("Tracking - Color difference factor: ............. %8.2f\n", stTrack.FClr);
+    printf ("Tracking - Total difference threshold: .......... %8.2f\n", stTrack.Dist);
+    printf ("Tracking - Stablity threshold: .................. %5d\n", stTrack.CntStable);
     printf ("\n");
 
     printf ("== Recognition Parameter ==\n");
@@ -488,10 +474,6 @@ void InitParameter (int argc, char** argv) {
 }
 
 
-
-
-/* Resets all the recognition and segmentation parameter to their default value
- */
 void ResetParameter () {
     bDepthDispMode = bDepthDispMode_default;
     nDLimit = nDLimit_default;
@@ -516,27 +498,27 @@ void ResetParameter () {
     nGSegmMinSize = nGSegmMinSize_default;
 
 
-    nTrackMode = nTrackMode_default;
-    nTrackClrMode = nTrackClrMode_default;
-    nTrackHistoBin = nTrackHistoBin_default;
-    nTrackDPos = nTrackDPos_default;
-    nTrackDSize = nTrackDSize_default;
-    nTrackDClr = nTrackDClr_default;
-    nTrackDist = nTrackDist_default;
-    nTrackPFac = nTrackPFac_default;
-    nTrackSFac = nTrackSFac_default;
-    nTrackCFac = nTrackCFac_default;
-    nTrackMFac = nTrackMFac_default;
-    nTrackCntMem = nTrackCntMem_default;
-    nTrackCntStable = nTrackCntStable_default;
-    nTrackCntDisap = nTrackCntDisap_default;
+    stTrack.Mode = stTrack_default.Mode;
+    stTrack.ClrMode = stTrack_default.ClrMode;
+    stTrack.HistoBin = stTrack_default.HistoBin;
+    stTrack.DPos = stTrack_default.DPos;
+    stTrack.DSize = stTrack_default.DSize;
+    stTrack.DClr = stTrack_default.DClr;
+    stTrack.Dist = stTrack_default.Dist;
+    stTrack.FPos = stTrack_default.FPos;
+    stTrack.FSize = stTrack_default.FSize;
+    stTrack.FClr = stTrack_default.FClr;
+    stTrack.MFac = stTrack_default.MFac;
+    stTrack.CntMem = stTrack_default.CntMem;
+    stTrack.CntStable = stTrack_default.CntStable;
+    stTrack.CntDisap = stTrack_default.CntDisap;
 
 
-    nProtoSizeMax = nProtoSizeMax_default;
-    nProtoSizeMin = nProtoSizeMin_default;
-    nProtoPtsMin = nProtoPtsMin_default;
-    nProtoAspect1 = nProtoAspect1_default;
-    nProtoAspect2 = nProtoAspect2_default;
+    nAttSizeMax = nAttSizeMax_default;
+    nAttSizeMin = nAttSizeMin_default;
+    nAttPtsMin = nAttPtsMin_default;
+    nAttAspect1 = nAttAspect1_default;
+    nAttAspect2 = nAttAspect2_default;
 
     nSiftScales = nSiftScales_default;
     nSiftInitSigma = nSiftInitSigma_default;
@@ -545,7 +527,6 @@ void ResetParameter () {
     nFlannKnn = nFlannKnn_default;
     nFlannMatchFac = nFlannMatchFac_default;
     nFlannMatchCnt = nFlannMatchCnt_default;
-    nFlannMatchCntWhole = nFlannMatchCntWhole_default;
 
     nAttTDMode = nAttTDMode_default;
     nRecogFeature = nRecogFeature_default;
@@ -558,15 +539,36 @@ void ResetParameter () {
 
 
     if (vbFlagWnd[stTID.nPrmSegm]) {
-        cvSetTrackbarPos(vsTrackbarName[20].data(), vsWndName[stTID.nPrmSegm].data(), nTrackMode);
-        cvSetTrackbarPos(vsTrackbarName[31].data(), vsWndName[stTID.nPrmSegm].data(), nProtoSizeMax);
-        cvSetTrackbarPos(vsTrackbarName[32].data(), vsWndName[stTID.nPrmSegm].data(), nProtoSizeMin);
-        cvSetTrackbarPos(vsTrackbarName[33].data(), vsWndName[stTID.nPrmSegm].data(), nProtoPtsMin);
+        cvSetTrackbarPos(vsTrackbarName[20].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.Mode);
+        //cvSetTrackbarPos(vsTrackbarName[21].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.ClrMode);
+        cvSetTrackbarPos(vsTrackbarName[22].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.DPos*100);
+        cvSetTrackbarPos(vsTrackbarName[23].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.DSize*100);
+        cvSetTrackbarPos(vsTrackbarName[24].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.DClr*100);
+        cvSetTrackbarPos(vsTrackbarName[25].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.FPos*100);
+        cvSetTrackbarPos(vsTrackbarName[26].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.FSize*100);
+        cvSetTrackbarPos(vsTrackbarName[27].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.FClr*100);
+        cvSetTrackbarPos(vsTrackbarName[28].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.Dist*100);
+
+        //cvSetTrackbarPos(vsTrackbarName[38].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.CntStable);
+        //cvSetTrackbarPos(vsTrackbarName[39].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.CntDisap);
+        cvSetTrackbarPos(vsTrackbarName[31].data(), vsWndName[stTID.nPrmSegm].data(), nAttSizeMax);
+        cvSetTrackbarPos(vsTrackbarName[32].data(), vsWndName[stTID.nPrmSegm].data(), nAttSizeMin);
+        cvSetTrackbarPos(vsTrackbarName[33].data(), vsWndName[stTID.nPrmSegm].data(), nAttPtsMin);
+        //cvSetTrackbarPos(vsTrackbarName[34].data(), vsWndName[stTID.nPrmSegm].data(), nAttAspect1);
+        //cvSetTrackbarPos(vsTrackbarName[35].data(), vsWndName[stTID.nPrmSegm].data(), nAttAspect2);
     }
     if (vbFlagWnd[stTID.nPrmRecog]) {
         cvSetTrackbarPos(vsTrackbarName[1].data(), vsWndName[stTID.nPrmRecog].data(), nSnapFormat);
+        //cvSetTrackbarPos(vsTrackbarName[2].data(), vsWndName[stTID.nPrmRecog].data(), nDLimit*10);
+        //cvSetTrackbarPos(vsTrackbarName[3].data(), vsWndName[stTID.nPrmRecog].data(), nDGradFilterSize);
+        //cvSetTrackbarPos(vsTrackbarName[11].data(), vsWndName[stTID.nPrmRecog].data(), nDSegmSizeThres);
+
         cvSetTrackbarPos(vsTrackbarName[99].data(), vsWndName[stTID.nPrmRecog].data(), nAttTDMode);
         cvSetTrackbarPos(vsTrackbarName[36].data(), vsWndName[stTID.nPrmRecog].data(), nRecogDClr*100);
+        cvSetTrackbarPos(vsTrackbarName[41].data(), vsWndName[stTID.nPrmRecog].data(), nSiftScales);
+        cvSetTrackbarPos(vsTrackbarName[42].data(), vsWndName[stTID.nPrmRecog].data(), nSiftInitSigma*10);
+        cvSetTrackbarPos(vsTrackbarName[43].data(), vsWndName[stTID.nPrmRecog].data(), nSiftPeakThrs*1000);
+        cvSetTrackbarPos(vsTrackbarName[51].data(), vsWndName[stTID.nPrmRecog].data(), nFlannKnn);
         cvSetTrackbarPos(vsTrackbarName[52].data(), vsWndName[stTID.nPrmRecog].data(), nFlannMatchFac*100);
         cvSetTrackbarPos(vsTrackbarName[53].data(), vsWndName[stTID.nPrmRecog].data(), nFlannMatchCnt);
     }
@@ -581,26 +583,18 @@ void ResetParameter () {
         cvSetTrackbarPos(vsTrackbarName[18].data(), vsWndName[stTID.nGSegm].data(), nGSegmGrThrs);
         cvSetTrackbarPos(vsTrackbarName[19].data(), vsWndName[stTID.nGSegm].data(), nGSegmMinSize);
     }
-    if (vbFlagWnd[stTID.nSIFT])
-        cvSetTrackbarPos(vsTrackbarName[59].data(), vsWndName[stTID.nSIFT].data(), nFlannMatchCntWhole);
 }
 
 
 
-
-/* Assigns the ID to different windows and button to recognize them easier. Moreover, the text for the buttons, windows
- * and trackbars is defined here.
- */
 void InitVariables () {
     cv::namedWindow(sTitle); cvMoveWindow(sTitle.data(), 80, 20);
 
-    // It is important that every number is only assigned ONCE
     stTID.nRgbOrg = 0, stTID.nRgbDs = 1, stTID.nDepth = 2, stTID.nInfo = 3, stTID.nRecVideo = 7, stTID.nSnap = 8;
     stTID.nSegmentation = 10, stTID.nDSegm = 12, stTID.nGSegm = 13, stTID.nTrack = 15, stTID.nProto = 16;
     stTID.nRecognition = 20, stTID.nRecogOrg = 21, stTID.nRecogDs = 22, stTID.nSIFT = 23;
     stTID.nRecTime = 31, stTID.nRstTime = 33, stTID.nPrmInfo = 34, stTID.nPrmSett = 35, stTID.nPrmSegm = 36, stTID.nPrmRecog = 37, stTID.nRstPrm = 38;
 
-    // Names of windows
     vsWndName[stTID.nRgbOrg] = "Original RGB";
     vsWndName[stTID.nRgbDs] = "Downsampled RGB";
     vsWndName[stTID.nDepth] = "Depth Image";
@@ -615,7 +609,6 @@ void InitVariables () {
     vsWndName[stTID.nPrmSegm] = "Segmentation Setting";
     vsWndName[stTID.nPrmRecog] = "Recognition Setting";
 
-    // Names of buttons
     vsBtnName[stTID.nRgbOrg] = "Org";
     vsBtnName[stTID.nRgbDs] = "DS";
     vsBtnName[stTID.nDepth] = "Depth";
@@ -639,7 +632,6 @@ void InitVariables () {
     vsBtnName[stTID.nRstPrm] = "Reset Prm";
     vsBtnName[nTaskNrMax-1] = "Abandon Ship!";
 
-    // Flags that show if some buttons are pressed
     vbFlagTask[stTID.nInfo] = true;
     vbFlagTask[stTID.nPrmInfo] = true;
 
@@ -649,7 +641,7 @@ void InitVariables () {
     for (int i = 0; i < nTaskNrMax; i++)
         if (vbFlagWnd[i]) {cv::namedWindow(vsWndName[i]); cvMoveWindow(vsWndName[i].data(), mWndPos[i][0], mWndPos[i][1]);}
 
-    // Names of the trackbars
+
     vsTrackbarName[1]  = "Snptshot format (0-2)                 ";
     vsTrackbarName[2]  = "Depth limit (0.5-10 m)                ";
     vsTrackbarName[3]  = "Filter size (3-27 pixels)               ";
@@ -657,6 +649,13 @@ void InitVariables () {
     vsTrackbarName[12] = "BBB";
     vsTrackbarName[20] = "Tracking mode                                ";
     vsTrackbarName[21] = "Color mode (0-4)                          ";
+    vsTrackbarName[22] = "Pos. dist. limit (0-1)       ";
+    vsTrackbarName[23] = "Size dist. limit (0-1)       ";
+    vsTrackbarName[24] = "Color dist. limit (0-1)    ";
+    vsTrackbarName[25] = "Pos. dist factor (0-1)    ";
+    vsTrackbarName[26] = "Size factor (0-1)              ";
+    vsTrackbarName[27] = "Color dist. factor (0-1)";
+    vsTrackbarName[28] = "Total dist. limit (0-5)    ";
     vsTrackbarName[38] = "Stable counter (0-5 frames) " ;
     vsTrackbarName[39] = "Vanish counter (0-2 frames) " ;
     vsTrackbarName[31] = "Objs upper limit (0-1000 mm)";
@@ -665,15 +664,17 @@ void InitVariables () {
     vsTrackbarName[34] = "Objs aspect1 (0-100%)           ";
     vsTrackbarName[35] = "Objs aspect2 (0-100%)           ";
     vsTrackbarName[36] = "Color dist. thres. (0-1)               ";
+    vsTrackbarName[41] = "SIFT scales (1-5)                             ";
+    vsTrackbarName[42] = "SIFT init. sigma (1-2)                   ";
+    vsTrackbarName[43] = "SIFT peak thres. (0-1)                  ";
+    vsTrackbarName[51] = "Flann KNN (1-3)                             ";
     vsTrackbarName[52] = "Flann match fac. (0-1)                ";
     vsTrackbarName[53] = "Flann match cnt (0-100)            ";
-    vsTrackbarName[54] = "Print Color Distance              ";
 
     vsTrackbarName[17] = "GB segm. sigma (0-1)     ";
     vsTrackbarName[18] = "GB segm. gr (0-500)        ";
     vsTrackbarName[19] = "GB segm. min (0-1000)  ";
 
-    vsTrackbarName[59] = "Flann match cnt (0-100)             ";
     vsTrackbarName[99] = "Selection Mode                ";
 
     vsTrackbarName[81] = "DG Gray Center                ";
@@ -684,9 +685,6 @@ void InitVariables () {
 
 
 
-
-/* Stores the position of the individual rectangles which represent a button in a matrix
- */
 void SetBtnPos (int nTaskNr, int nPadSecX, int nPadSecY, int nBtnW, int nBtnH, std::vector<std::vector<int> >& mnBtnPos)
 {
     mnBtnPos[nTaskNr][0] = nPadSecX;
@@ -695,21 +693,9 @@ void SetBtnPos (int nTaskNr, int nPadSecX, int nPadSecY, int nBtnW, int nBtnH, s
     mnBtnPos[nTaskNr][3] = nBtnH;
 }
 
-
-
-
-/* Determines the position of the individual button in the main ni-vision window
- *
- * Button are represented by rectangles. The coordinates are assigned to each button and stored. If a
- * mouse event happens a mouse listener can then evaluate in which rectangle the mouse was located
- * when the button was pushed.
- */
 void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, int &col1, int &col2, int &height)
 {
     int nTaskNr;
-    // nBtnOffset is the distance between the buttons
-    // nBtnW, nBtnH the width and heigth of a button
-    // nPadSecX, nPadSecY the position of the upper left corner of the button
     int nBtnOffset = 5, nBtnW, nBtnH, nPadSecX = 0, nPadSecY = 0;
     col1 = 2*nBtnSize + 1;
     col2 = col1 + 3*nBtnSize - nBtnOffset;
@@ -722,7 +708,13 @@ void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, i
     nPadSecX += nBtnW + 2*nBtnOffset;
     nTaskNr = stTID.nRgbDs;
     SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
+    //nPadSecY += nBtnH + nBtnOffset;
 
+    //nPadSecX = nBtnOffset;
+    //nPadSecY += nBtnOffset;
+    //nTaskNr = nNrMat; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
+    //nPadSecX += nBtnW + 2*nBtnOffset;
+    //nTaskNr = nNrInfo; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecY += nBtnH + 2*nBtnOffset;
 
     nPadSecX = nBtnOffset;
@@ -811,8 +803,7 @@ void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, i
 
 
 
-/* Draws the main window, the information about the location of the rectangle is extracted from a matrix
- */
+
 void DrawPad(cv::Mat &cvm_input, std::vector<int> vnBtnProp, int nPadRow1, int nPadCol1, int nPadCol2)
 {
     int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
@@ -862,9 +853,6 @@ void DrawPad(cv::Mat &cvm_input, std::vector<int> vnBtnProp, int nPadRow1, int n
 
 
 
-
-/* Prints information about the computation time for the individual processes in the main ni-vision window
- */
 void DrawInfo(cv::Mat &cvm_input, int nSegNr, int nPadRow1, int nPadCol1, int nCntFrame_tmp, double nTimeTotal,
               double nTimePre, double nTimeDepth, double nTimeBlur, double nTimePre_avr, double nTimeDepth_avr, double nTimeBlur_avr,
               double nTimeSegm, double nTimeTrack, double nTimeAtt, double nTimeRec, double nTimeSift, double nTimeFlann,
@@ -935,18 +923,23 @@ void DrawInfo(cv::Mat &cvm_input, int nSegNr, int nPadRow1, int nPadCol1, int nC
     sprintf(sText, "%8.2f", nTimeSiftWhole_avr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_darkgreen, 1);
     sprintf(sText, "Flann on whole image: "); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_darkgreen, 1);
     sprintf(sText, "%8.2f", nTimeFlannWhole_avr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_darkgreen, 1);
+
+
+//    sprintf(sText, "Frame count:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=25)), nFont, nFontSize, c_green, 1);
+//    sprintf(sText, "%6d", nCntFrame_tmp); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_green, 1);
+//    sprintf(sText, "Recognition cycle:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_green, 1);
+//    sprintf(sText, "%8.2f", nTimeRecCycle_avr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_green, 1);
+//    sprintf(sText, "Recognition Found:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_green, 1);
+//    sprintf(sText, "%8.2f", nTimeRecFound_avr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_green, 1);
 }
 
 
-
-
-/* Prints information about the segmentation and recognition settings in the main ni-vision window
- */
 void DrawSettings(cv::Mat &cvm_input, int IX, int nSnapFormat, double nDLimit, int nDGradFilterSize,
-                  int nTrackMode, int nTrackColorMode, double nTrackDistPos, double nTrackDistSize, double nTrackDistdlr, double nTrackFacPos, double nTrackFacSize, double nTrackFacClr, double nTrackDistTotal,
-                  int nProtoSizeMax, int nProtoSizeMin, int nProtoPtsMin, int nProtoAspect1, int nProtoAspect2, int nAttTDMode,
+                  TrackProp stTrack1,
+                  int nAttSizeMax, int nAttSizeMin, int nAttPtsMin, int nAttAspect1, int nAttAspect2, int nAttTDMode,
                   double nRecogDClr, int nSiftScales, double nSiftInitSigma, double nSiftPeakThrs, int nFlannKnn, double nFlannMatchFac, int nFlannMatchCnt,
-                  double nGSegmSigma, int nGSegmGrThs, int nGSegmMinSize) {
+                  double nGSegmSigma, int nGSegmGrThs, int nGSegmMinSize)
+{
 
     CvFont font;
     char sText[128];
@@ -978,36 +971,42 @@ void DrawSettings(cv::Mat &cvm_input, int IX, int nSnapFormat, double nDLimit, i
 
     sprintf(sText, "Tracking"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=25)), nFont, nFontSize, c_magenta, 1);
     sprintf(sText, "Tracking mode:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    if (nTrackMode) sprintf(sText, "normal"); else sprintf(sText, "optimized"); cv::putText(cvm_input, sText, cv::Point(nTab+25, nPosY), nFont, nFontSize, c_lemon, 1);
+    if (stTrack.Mode) sprintf(sText, "normal"); else sprintf(sText, "optimized"); cv::putText(cvm_input, sText, cv::Point(nTab+25, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Color mode:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "Normalized rgb"); cv::putText(cvm_input, sText, cv::Point(nTab+25, nPosY), nFont, nFontSize, c_lemon, 1);
+    switch (stTrack.ClrMode) {
+    case 0: sprintf(sText, "RGB"); break;
+    case 1: sprintf(sText, "Normalized rgb"); break;
+    case 2: sprintf(sText, "Color plane directions"); break;
+    case 3: sprintf(sText, "HSV"); break;
+    case 4: sprintf(sText, "Map"); break;}
+    cv::putText(cvm_input, sText, cv::Point(nTab+25, nPosY), nFont, nFontSize, c_lemon, 1);
 
     sprintf(sText, "Position distance threshold:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%8.2f", nTrackDistPos); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "%8.2f", stTrack1.DPos); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Size distance threshold:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%8.2f", nTrackDistSize); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "%8.2f", stTrack1.DSize); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Color distance threshold:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%8.2f", nTrackDistdlr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "%8.2f", stTrack1.DClr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Position distancd factor:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%8.2f", nTrackFacPos); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "%8.2f", stTrack1.FPos); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Size distancd factor:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%8.2f", nTrackFacSize); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "%8.2f", stTrack1.FSize); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Color distancd factor:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%8.2f", nTrackFacClr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "%8.2f", stTrack1.FClr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Total distance threshold:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%8.2f", nTrackDistTotal); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "%8.2f", stTrack1.Dist); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
 
 
     sprintf(sText, "Objects upper limit:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%5d mm", nProtoSizeMax); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "%5d mm", nAttSizeMax); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Objects lower limit:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%5d mm", nProtoSizeMin); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "%5d mm", nAttSizeMin); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Objects pixel size lower limit:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%5d mm", nProtoPtsMin); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "%5d mm", nAttPtsMin); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Objects aspect ratio 1:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%5d", nProtoAspect1); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "%5d", nAttAspect1); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Objects aspect ratio 2:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%5d", nProtoAspect2); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "%5d", nAttAspect2); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Selection Mode:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
     switch (nAttTDMode) {
     case 0: sprintf(sText, "Top-down selection"); break;
@@ -1033,8 +1032,7 @@ void DrawSettings(cv::Mat &cvm_input, int IX, int nSnapFormat, double nDLimit, i
 
 
 
-/* This mousehandler evaluates in which rectangle the mouse was, when the mouse event occured.
- */
+
 void MouseHandler(int event, int x, int y, int flags, void *param){
     int k;
     bool flag = false;
@@ -1057,10 +1055,7 @@ void MouseHandler(int event, int x, int y, int flags, void *param){
 
 
 
-/* Closes a window
- * Input:
- * wnd_nr - ID of the window
- */
+
 void CloseWindow (int wnd_nr) {
     if (vbFlagWnd[wnd_nr]) {
         vbFlagWnd[wnd_nr] = false;
@@ -1068,29 +1063,19 @@ void CloseWindow (int wnd_nr) {
     }
 }
 
-
-/* Set the window flag which indicates if the window is open or closed
- * Input:
- * wnd_nr - ID of the window
- */
 void SetFlagWnd (int wnd_nr) {
     vbFlagWnd[wnd_nr] = true;
     cv::namedWindow(vsWndName[wnd_nr]);
     cvMoveWindow(vsWndName[wnd_nr].data(), mWndPos[wnd_nr][0], mWndPos[wnd_nr][1]);
 }
 
-
-/* Opens a window
- * Input:
- * wnd_nr - ID of the window
- */
 void OpenWindow (int wnd_nr) {if(!vbFlagWnd[wnd_nr]) SetFlagWnd (wnd_nr);}
 
 
 
 
-/* Resets the recorded time
- */
+
+
 void ResetRecTime () {
     nCntRec = 0; nTimeRec_acc = 0; nTimeRec_avr = 0;
     nTimeAtt_acc = 0; nTimeAtt_avr = 0;
@@ -1105,13 +1090,6 @@ void ResetRecTime () {
     nTimeRecCycle = 0; nTimeRecFound = 0; nTimeRecFound_max = 0; nTimeRecFound_min = 10000;
 }
 
-
-
-
-/* Resets the time measurement on the left side of the main window
- *
- * This may be necessary after some processes were startet or stopped
- */
 void ResetTime () {
     nCntGbSegm = 0; nTimeGbSegm_acc = 0; nTimeGbSegm_avr = 0;
     nCntSiftWhole = 0; nTimeSiftWhole_acc = 0; nTimeSiftWhole_avr = 0;
@@ -1130,20 +1108,20 @@ void ResetTime () {
 
 
 
-// Various Trackbarhandlers for the trackbars in the Segmentation and Recognition parameter windows
+
 void TrackbarHandler_none (int){}
 void TrackbarHandler_ZLimit (int pos) {if (pos < 5) pos = 5; nDLimit = (float)pos/10; cvSetTrackbarPos(vsTrackbarName[2].data(), vsWndName[stTID.nPrmRecog].data(), pos);}
 void TrackbarHandler_ZGradFilterSize (int) {if (nDGradFilterSize < 3) nDGradFilterSize = 3; else {if (!(nDGradFilterSize%2)) nDGradFilterSize++;} cvSetTrackbarPos(vsTrackbarName[3].data(), vsWndName[stTID.nPrmRecog].data(), nDGradFilterSize);}
-void TrackbarHandler_ColorMode (int) {if (nTrackClrMode > 7) nTrackClrMode = 7; if (mnColorHistY_lib.size() == 1) nTrackClrMode = 1; cvSetTrackbarPos(vsTrackbarName[21].data(), vsWndName[stTID.nPrmSegm].data(), nTrackClrMode);}
-void TrackbarHandler_DistPos (int pos) {nTrackDPos = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[22].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
-void TrackbarHandler_DistSize (int pos) {nTrackDSize = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[23].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
-void TrackbarHandler_DistClr (int pos) {nTrackDClr = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[24].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
-void TrackbarHandler_FacPos (int pos) {nTrackPFac = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[25].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
-void TrackbarHandler_FacSize (int pos) {nTrackSFac = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[26].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
-void TrackbarHandler_FacClr (int pos) {nTrackCFac = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[27].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
-void TrackbarHandler_DistTotal (int pos) {nTrackDist = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[28].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
-void TrackbarHandler_ProMax (int) {if (nProtoSizeMax < nProtoSizeMin) nProtoSizeMax = nProtoSizeMin; cvSetTrackbarPos(vsTrackbarName[31].data(), vsWndName[stTID.nPrmSegm].data(), nProtoSizeMax);}
-void TrackbarHandler_ProMin (int) {if (nProtoSizeMax < nProtoSizeMin) nProtoSizeMin = nProtoSizeMax; cvSetTrackbarPos(vsTrackbarName[32].data(), vsWndName[stTID.nPrmSegm].data(), nProtoSizeMin);}
+void TrackbarHandler_ColorMode (int) {if (stTrack.ClrMode > 7) stTrack.ClrMode = 7; if (mnColorHistY_lib.size() == 1) stTrack.ClrMode = 1; cvSetTrackbarPos(vsTrackbarName[21].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.ClrMode);}
+void TrackbarHandler_DistPos (int pos) {stTrack.DPos = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[22].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
+void TrackbarHandler_DistSize (int pos) {stTrack.DSize = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[23].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
+void TrackbarHandler_DistClr (int pos) {stTrack.DClr = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[24].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
+void TrackbarHandler_FacPos (int pos) {stTrack.FPos = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[25].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
+void TrackbarHandler_FacSize (int pos) {stTrack.FSize = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[26].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
+void TrackbarHandler_FacClr (int pos) {stTrack.FClr = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[27].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
+void TrackbarHandler_DistTotal (int pos) {stTrack.Dist = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[28].data(), vsWndName[stTID.nPrmSegm].data(), pos);}
+void TrackbarHandler_ProMax (int) {if (nAttSizeMax < nAttSizeMin) nAttSizeMax = nAttSizeMin; cvSetTrackbarPos(vsTrackbarName[31].data(), vsWndName[stTID.nPrmSegm].data(), nAttSizeMax);}
+void TrackbarHandler_ProMin (int) {if (nAttSizeMax < nAttSizeMin) nAttSizeMin = nAttSizeMax; cvSetTrackbarPos(vsTrackbarName[32].data(), vsWndName[stTID.nPrmSegm].data(), nAttSizeMin);}
 void TrackbarHandler_ColorThres (int pos) {nRecogDClr = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[36].data(), vsWndName[stTID.nPrmRecog].data(), pos);}
 void TrackbarHandler_SiftScales (int) {if (nSiftScales < 1) nSiftScales = 1; cvSetTrackbarPos(vsTrackbarName[41].data(), vsWndName[stTID.nPrmRecog].data(), nSiftScales);}
 void TrackbarHandler_SiftSigma (int pos) {if (pos < 10) pos = 10; nSiftInitSigma = (float)pos/10; cvSetTrackbarPos(vsTrackbarName[42].data(), vsWndName[stTID.nPrmRecog].data(), pos);}

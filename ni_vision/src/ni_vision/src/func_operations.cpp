@@ -3,7 +3,13 @@
  */
 
 
-#define PI 3.1415926536
+int min(int a, int b) {if (a > b) return b; else return a;}
+float min(float a, float b) {if (a > b) return b; else return a;}
+double min(double a, double b) {if (a > b) return b; else return a;}
+int max(int a, int b) {if (a > b) return a; else return b;}
+float max(float a, float b) {if (a > b) return a; else return b;}
+double max(double a, double b) {if (a > b) return a; else return b;}
+
 
 void GetPixelPos(int idx, int width, int& x, int& y) {
     y = idx/width;
@@ -40,13 +46,11 @@ void DrawDepth(std::vector<float> vnInput, bool mode, float max, float min, cv::
             x = vnInput[i] - min;
             //////////// Set RGB w.r.t distance //////////////////////////////
             // R
-            if (x < (max-min)*2/3)
-                r = (int)(510 - 255 * x * scale);
+            if (x < (max-min)*2/3) r = (int)(510 - 255 * x * scale);
             else r = (int)(x * 255/4 * scale - 255);
 
             // G
-            if (x < (max-min)*1/3)
-                g = (int)(255 * x * scale);
+            if (x < (max-min)*1/3) g = (int)(255 * x * scale);
             else g = (int)(1020 - 255 * x * scale);
 
             // B
@@ -93,13 +97,11 @@ void DrawDepth(std::vector<float> vnInput, std::vector<int> index, bool mode, fl
             x = vnInput[index[i]] - min;
             //////////// Set RGB w.r.t distance //////////////////////////////
             // R
-            if (x < (max-min)*2/3)
-                r = (int)(510 - 255 * x * scale);
+            if (x < (max-min)*2/3) r = (int)(510 - 255 * x * scale);
             else r = (int)(x * 255/4 * scale - 255);
 
             // G
-            if (x < (max-min)*1/3)
-                g = (int)(255 * x * scale);
+            if (x < (max-min)*1/3) g = (int)(255 * x * scale);
             else g = (int)(1020 - 255 * x * scale);
 
             // B
@@ -209,63 +211,6 @@ void DrawDepthGrad(std::vector<float> vnInput, std::vector<int> index, bool mode
 }
 
 
-
-
-void CalcHistogram(std::vector<float> vnInput, std::vector<int> index, float bin_base, float input_bound, std::vector<int>& vnOut, std::vector<int>& index_map, int &bin_max_global)
-{
-    size_t nBinMax = 0;
-    if (index.size()){
-        size_t bin_nr = 0;
-        for(size_t i = 0; i < index.size(); i++) {
-            if(!vnInput[index[i]]) continue;
-
-            if(vnInput[index[i]] > input_bound)
-                bin_nr = (int)(input_bound / bin_base);
-            else
-                bin_nr = (int)(vnInput[index[i]] / bin_base);
-
-            if(bin_nr) {
-                if (bin_nr < vnOut.size()) vnOut[bin_nr]++;         // Accumulate Indeces
-                else printf("Warning: Bin number exceeds the limit! %f\n", vnInput[index[i]]);
-                if (bin_nr > nBinMax)
-                    nBinMax = bin_nr;                     // Set max Index Nr.
-                index_map[index[i]] = bin_nr;             // Set Index Nr. on Pixel
-            }
-        }
-        nBinMax++;
-        if ((int)nBinMax > bin_max_global) bin_max_global = (int)nBinMax;  // Set global max Index Nr.
-    }
-    vnOut.resize(nBinMax);
-}
-
-
-
-//void CalcColorHistogram(std::vector<float> vnInput, std::vector<int> index, int bin_base, std::vector<float> &vnOut)
-//{
-//    if (index.size()){
-//        int bin_r, bin_g, bin_b;
-//        float r, g, b;
-//        int max = 1, sum;
-//        float bin_width = (float)max/bin_base;
-//        for(size_t i = 0; i < index.size(); i++) {
-//            uint8_t R_, G_, B_;
-//            unpack_rgb(vnInput[index[i]], R_, G_, B_);
-
-//            sum = (int)R_ + (int)G_ + (int)B_;
-
-//            r = (float)R_/sum; g = (float)G_/sum; b = (float)B_/sum;
-//            bin_r = (int)(r/bin_width); vnOut[bin_r]++;
-//            bin_g = (int)(g/bin_width); vnOut[bin_g + bin_base]++;
-//            bin_b = (int)(b/bin_width); vnOut[bin_b + bin_base*2]++;
-//        }
-
-//        ///// normalizing //////////////
-//        for (int i = 0; i < bin_base*3; i++) vnOut[i] = vnOut[i]/index.size()/3;
-//    }
-//}
-
-
-
 // This method is used to generate the object libraries both by makelib_simple and ni_vision
 // It classifies every pixel into one bin in every channel. With 3 channels and 8 bins per channel that gives
 // 512 possible values for each pixel. The result is saved in a vector of that length, which saves the count
@@ -277,7 +222,7 @@ void Calc3DColorHistogram(cv::Mat cvm_input, std::vector<int> index, int bin_bas
         float r, g, b;
 
         float bin_width;
-        // max has to be slightly greater than 1, since otherwise there is a problem if R, G or B are equal to 255
+        // max has to be slightly greater than 1, since otherwise there is a problem if R, G or B is equal to 255
         float max = 1.0001, sum;
         bin_width = (float)max/bin_base;
 
@@ -300,8 +245,6 @@ void Calc3DColorHistogram(cv::Mat cvm_input, std::vector<int> index, int bin_bas
             bin_b = (int)(b/bin_width);
 
             vnOut[bin_r*bin_base*bin_base + bin_g*bin_base + bin_b]++;
-
-
         }
 
         ///// normalizing //////////////
@@ -310,95 +253,12 @@ void Calc3DColorHistogram(cv::Mat cvm_input, std::vector<int> index, int bin_bas
 }
 
 
-void DrawHistogram(std::vector<int> vnInput, int width, int height, int bin_max_global, cv::Mat &cvm_out, int& y_max)
+
+
+
+void Map2Objects(std::vector<int> vnInput, int obj_nr, int nDsSize, std::vector<std::vector<int> > &mnOut, std::vector<int> &cnt)
 {
-    cvm_out = cv::Scalar(0, 0, 0);
-
-    if(vnInput.size()) {
-        std::vector<int>::iterator iter;
-        iter = max_element(vnInput.begin(), vnInput.end());
-        if(y_max < *iter) y_max = *iter;
-
-        int BinWidth = (int)(width / (bin_max_global + 10));
-        if (BinWidth < 2) BinWidth = 1;
-
-        for (size_t i = 0; i < vnInput.size(); i++)
-            if(vnInput[i] > 0)
-                if (y_max > 1)
-                    cv::rectangle(cvm_out, cv::Point(i*BinWidth +10, height-10), cv::Point(i*BinWidth+BinWidth +10, height-10 - (int)(vnInput[i]*(height-20)/y_max)), cv::Scalar(255, 255, 255), 1, 8);
-    }
-
-    cv::line(cvm_out, cv::Point(10, height-10), cv::Point(width-10, height-10), cv::Scalar(255, 255, 255), 1, 8);
-    cv::line(cvm_out, cv::Point(10, height-10), cv::Point(10, 10), cv::Scalar(255, 255, 255), 1, 8);
-}
-
-
-void DrawHistogram2(std::vector<int> vnInput, int width, int height, int bin_max_global, cv::Mat &cvm_out)
-{
-    cvm_out = cv::Scalar(0, 0, 0);
-    int y_max = 0;
-
-    if(vnInput.size()) {
-        std::vector<int>::iterator iter;
-        iter = max_element(vnInput.begin(), vnInput.end());
-        if(y_max < *iter) y_max = *iter;
-
-        int BinWidth = (int)(width / (bin_max_global + 10));
-        if (BinWidth < 2) BinWidth = 1;
-
-        for (size_t i = 0; i < vnInput.size(); i++)
-            if(vnInput[i] > 0)
-                if (y_max > 1)
-                    cv::rectangle(cvm_out, cv::Point(i*BinWidth +10, height-10), cv::Point(i*BinWidth+BinWidth +10, height-10 - (int)(vnInput[i]*(height-20)/y_max)), cv::Scalar(255, 255, 255), 1, 8);
-    }
-
-    cv::line(cvm_out, cv::Point(10, height-10), cv::Point(width-10, height-10), cv::Scalar(255, 255, 255), 1, 8);
-    cv::line(cvm_out, cv::Point(10, height-10), cv::Point(10, 10), cv::Scalar(255, 255, 255), 1, 8);
-}
-
-
-void DrawHistogram(std::vector<int> vnInput, int width, int height, int bin_max_global, int r, int g, int b, cv::Mat &cvm_out, int y_max)
-{
-    cvm_out = cv::Scalar(0, 0, 0);
-
-    if(vnInput.size()) {
-
-        int BinWidth = (int)(width / (bin_max_global + 10));
-        if (BinWidth < 2) BinWidth = 1;
-
-        for (size_t i = 0; i < vnInput.size(); i++)
-            if(vnInput[i] > 0)
-                if (y_max > 1)
-                    cv::rectangle(cvm_out, cv::Point(i*BinWidth +10, height-10), cv::Point(i*BinWidth+BinWidth +10, height-10 - (int)(vnInput[i]*(height-20)/y_max)), cv::Scalar(b, g, r), 1, 8);
-    }
-
-    cv::line(cvm_out, cv::Point(10, height-10), cv::Point(width-10, height-10), cv::Scalar(255, 255, 255), 1, 8);
-    cv::line(cvm_out, cv::Point(10, height-10), cv::Point(10, 10), cv::Scalar(255, 255, 255), 1, 8);
-}
-
-void DrawColorHistogram(std::vector<float> vnInput, int width, int height, int bin_max_global, int r, int g, int b, cv::Mat &cvm_out, float y_max)
-{
-    cvm_out = cv::Scalar(0, 0, 0);
-
-    if(vnInput.size()) {
-
-        int BinWidth = (int)(width / (bin_max_global + 10));
-        if (BinWidth < 2) BinWidth = 1;
-
-        for (size_t i = 0; i < vnInput.size(); i++)
-            if(vnInput[i] > 0)
-                cv::rectangle(cvm_out, cv::Point(i*BinWidth +10, height-10), cv::Point(i*BinWidth+BinWidth +10, height-10 - (int)(vnInput[i]*(height-20)/y_max)), cv::Scalar(b, g, r), 1, 8);
-    }
-
-    cv::line(cvm_out, cv::Point(10, height-10), cv::Point(width-10, height-10), cv::Scalar(255, 255, 255), 1, 8);
-    cv::line(cvm_out, cv::Point(10, height-10), cv::Point(10, 10), cv::Scalar(255, 255, 255), 1, 8);
-}
-
-
-
-void Map2Objects(std::vector<int> vnInput, int obj_nr, int nCvSize, std::vector<std::vector<int> > &mnOut, std::vector<int> &cnt)
-{
-    for (int i = 0; i < nCvSize; i++) if (vnInput[i]) mnOut[vnInput[i]][cnt[vnInput[i]]++] = i;
+    for (int i = 0; i < nDsSize; i++) if (vnInput[i]) mnOut[vnInput[i]][cnt[vnInput[i]]++] = i;
     for (int i = 0; i < obj_nr; i++) mnOut[i].resize(cnt[i]);
 }
 
@@ -410,11 +270,11 @@ void AssignColor(int idx, cv::Scalar color, cv::Mat &cvm_out)
     cvm_out.data[idx*3+2] = color[2];
 }
 
-void Map2Image(std::vector<int> vnInput, int nCvSize, std::vector<cv::Scalar> mnColorTab, cv::Mat &cvm_out)
+void Map2Image(std::vector<int> vnInput, int nDsSize, std::vector<cv::Scalar> mnColorTab, cv::Mat &cvm_out)
 {
     switch (cvm_out.channels()) {
-    case 1: for (int i = 0; i < nCvSize; i++) cvm_out.data[i] = mnColorTab[vnInput[i]][0]; break;
-    case 3: for (int i = 0; i < nCvSize; i++) AssignColor(i, mnColorTab[vnInput[i]], cvm_out); break;
+    case 1: for (int i = 0; i < nDsSize; i++) cvm_out.data[i] = mnColorTab[vnInput[i]][0]; break;
+    case 3: for (int i = 0; i < nDsSize; i++) AssignColor(i, mnColorTab[vnInput[i]], cvm_out); break;
     }
 }
 

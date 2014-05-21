@@ -5,60 +5,6 @@
 
 #include "munkres/munkres.h"
 
-void LP(IplImage *input, IplImage *output)
-{
-    int lcutoff = 130;
-    int hcutoff = 255;
-    uchar *data_out, *data_in;
-
-    int height_out, width_out, step_out, channels_out;
-    int step_in, channels_in;
-
-    height_out = output->height;
-    width_out = output->width;
-    step_out = output->widthStep;
-    step_in = input->widthStep;
-
-    channels_out = output->nChannels;
-    channels_in = input->nChannels;
-    data_out = (uchar *)output->imageData;
-    data_in = (uchar *)input->imageData;
-
-    /*Do not get confused.Here i have just taken the first channel of the image regardless if the image is multichannel*/
-    /*first copy the first channel into the output image.*/
-
-    for (int i = 0; i < height_out; i++)
-        for (int j = 0; j < width_out; j++)
-            data_out[i*step_out + j*channels_out] = data_in[i*step_in + j*channels_in];
-
-    /*Apply the filter in these for loops*/
-    for (int i = 0; i < height_out; i++)
-        for (int j = 0; j < width_out; j++) {
-            if(data_out[i*step_out + j*channels_out] < lcutoff || data_out[i*step_out + j*channels_out] > hcutoff)
-                data_out[i*step_out + j*channels_out]=0;
-        }
-}
-
-
-
-void DSegm_FlatDepthGrad_old (cv::Mat cvm_input, std::vector<int> index, int width, int height, float max, float min, int mode, int scenter, int sband, float factor, std::vector<float> &output_blur, std::vector<float> &output_ct)
-{
-    float scale =  (max-min), x;
-    uint8_t gr;
-    for(size_t i = 0; i < index.size(); i++) {
-        gr = cvm_input.data[index[i]];
-        if (gr) {
-            x = (gr-1) * scale /254 + min;
-            output_blur[index[i]] = x;
-            if (mode == 1) {
-                if (gr > scenter) gr = scenter + int(factor*sband);
-                else gr = scenter - int(factor*sband);
-            }
-            x = (gr-1) * scale /254 + min;
-            output_ct[index[i]] = x;
-        }
-    }
-}
 
 void DSegm_FlatDepthGrad (cv::Mat cvm_input, std::vector<int> index, float max, float min, int mode, int scenter, int sband1, int sband2, float factor, std::vector<float> &output_blur, std::vector<float> &output_ct)
 {
@@ -305,9 +251,6 @@ void DSegmentation (std::vector<float> vnDGrad, std::vector<int> input_idx, int 
 
     //for (int i = 1; i < seg_cnt; i++) if (!vnSB[i]) printf("Error the size of the segment %d is zero\n", i, vnSB[i]);
 
-//    for (int i = 1; i < nSegCntTmp; i++) printf("%3d %3d %6d %3d\n", i, vnLB[i], vnSB[i], nSegCntTmp);
-//    printf("\n");
-
 
     if (seg_cnt < 3) {
         for (int i = 0; i < cnt_miss; i++) vnLblMap[vnIdxMissing[i]] = 1;
@@ -320,11 +263,11 @@ void DSegmentation (std::vector<float> vnDGrad, std::vector<int> input_idx, int 
 
 
 
-        ///////////////////////////////////////////////
-        /////**                             **/////////
-        /////**      Postprocessing         **/////////
-        /////**                             **/////////
-        ///////////////////////////////////////////////
+        //////////////////////////////////////////////////
+        ////////**                             **/////////
+        ////////**      Postprocessing         **/////////
+        ////////**                             **/////////
+        //////////////////////////////////////////////////
 
 
         std::vector<std::vector<bool> > mbNeighbor(seg_cnt, std::vector<bool>(seg_cnt, false));
@@ -384,27 +327,27 @@ void DSegmentation (std::vector<float> vnDGrad, std::vector<int> input_idx, int 
 }
 
 
-void TrackingPre (int nSegCnt, int nDSegmCutSize, int nCvWidth, int nCvHeight, std::vector<float> vnX, std::vector<float> vnY, std::vector<float> vnZ, cv:: Mat cvm_rgb_ds, int nTrackClrMode, int nTrackHistoBin, int nTrackCntMem, int nTrackCntStable, int nTrackCntDisap,
-                  std::vector<int> &vnTmpPtsCnt, std::vector<std::vector<int> > &mnTmpPtsIdx, std::vector<std::vector<int> > &mnTmpRect, std::vector<std::vector<int> > &mnTmpRCenter,
-                  std::vector<std::vector<float> > &mnTmpCubic, std::vector<std::vector<float> > &mnTmpCCenter, std::vector<int> &vnTmpLength, std::vector<std::vector<float> > &mnTmpClrHist,
-                  std::vector<int> &vnTmpMemoryCnt, std::vector<int> &vnTmpStableCnt, std::vector<int> &vnTmpDisapCnt, int &nTrkSegCnt) {
+
+
+void TrackingPre (int nSegCnt, int nDSegmCutSize, int nDsWidth, int nDsHeight, std::vector<float> vnX, std::vector<float> vnY, std::vector<float> vnZ, cv:: Mat cvm_rgb_ds, TrackProp stTrack,
+                  std::vector<int> &vnSegmPtsCnt, std::vector<std::vector<int> > &mnSegmPtsIdx, ProtoProp &stProtoTmp, int &nTrkSegCnt) {
     int final_cnt_new = 0;
     for (int i = 1; i < nSegCnt; i++) {
-        if (vnTmpPtsCnt[i] < nDSegmCutSize) continue;
+        if (vnSegmPtsCnt[i] < nDSegmCutSize) continue;
         int rx_acc = 0, ry_acc = 0;
-        int rx_min = nCvWidth, rx_max = 0, ry_min = nCvHeight, ry_max = 0;
+        int rx_min = nDsWidth, rx_max = 0, ry_min = nDsHeight, ry_max = 0;
         float cx_acc = 0, cy_acc = 0, cz_acc = 0;
         float cx_min = 99, cx_max = -99, cy_min = 99, cy_max = -99, cz_min = 99, cz_max = -99;
-        for (int j = 0; j < vnTmpPtsCnt[i]; j++) {
+        for (int j = 0; j < vnSegmPtsCnt[i]; j++) {
             int rx_tmp, ry_tmp;
-            GetPixelPos(mnTmpPtsIdx[i][j], nCvWidth, rx_tmp, ry_tmp);
+            GetPixelPos(mnSegmPtsIdx[i][j], nDsWidth, rx_tmp, ry_tmp);
             rx_acc += rx_tmp; ry_acc += ry_tmp;
             if (rx_tmp < rx_min) rx_min = rx_tmp;
             if (rx_tmp > rx_max) rx_max = rx_tmp;
             if (ry_tmp < ry_min) ry_min = ry_tmp;
             if (ry_tmp > ry_max) ry_max = ry_tmp;
 
-            float cx_tmp = vnX[mnTmpPtsIdx[i][j]], cy_tmp = vnY[mnTmpPtsIdx[i][j]], cz_tmp = vnZ[mnTmpPtsIdx[i][j]];
+            float cx_tmp = vnX[mnSegmPtsIdx[i][j]], cy_tmp = vnY[mnSegmPtsIdx[i][j]], cz_tmp = vnZ[mnSegmPtsIdx[i][j]];
             cx_acc += cx_tmp; cy_acc += cy_tmp; cz_acc += cz_tmp;
             if (cx_tmp < cx_min) cx_min = cx_tmp;
             if (cx_tmp > cx_max) cx_max = cx_tmp;
@@ -413,29 +356,29 @@ void TrackingPre (int nSegCnt, int nDSegmCutSize, int nCvWidth, int nCvHeight, s
             if (cz_tmp < cz_min) cz_min = cz_tmp;
             if (cz_tmp > cz_max) cz_max = cz_tmp;
         }
-        mnTmpPtsIdx[final_cnt_new] = mnTmpPtsIdx[i];
-        vnTmpPtsCnt[final_cnt_new] = vnTmpPtsCnt[i];
-        mnTmpRCenter[final_cnt_new][0] = rx_acc / vnTmpPtsCnt[i];
-        mnTmpRCenter[final_cnt_new][1] = ry_acc / vnTmpPtsCnt[i];
-        mnTmpCCenter[final_cnt_new][0] = cx_acc / vnTmpPtsCnt[i];
-        mnTmpCCenter[final_cnt_new][1] = cy_acc / vnTmpPtsCnt[i];
-        mnTmpCCenter[final_cnt_new][2] = cz_acc / vnTmpPtsCnt[i];
-        mnTmpRect[final_cnt_new][0] = rx_min;
-        mnTmpRect[final_cnt_new][1] = ry_min;
-        mnTmpRect[final_cnt_new][2] = rx_max;
-        mnTmpRect[final_cnt_new][3] = ry_max;
-        mnTmpCubic[final_cnt_new][0] = cx_min;
-        mnTmpCubic[final_cnt_new][1] = cy_min;
-        mnTmpCubic[final_cnt_new][2] = cz_min;
-        mnTmpCubic[final_cnt_new][3] = cx_max;
-        mnTmpCubic[final_cnt_new][4] = cy_max;
-        mnTmpCubic[final_cnt_new][5] = cz_max;
-        vnTmpLength[final_cnt_new] = int(sqrt(pow((cx_max - cx_min), 2) + pow((cy_max - cy_min), 2)+ pow((cz_max - cz_min), 2)) * 1000);
+        vnSegmPtsCnt[final_cnt_new] = vnSegmPtsCnt[i];
+        mnSegmPtsIdx[final_cnt_new] = mnSegmPtsIdx[i];
+        stProtoTmp.mnRCenter[final_cnt_new][0] = rx_acc / vnSegmPtsCnt[i];
+        stProtoTmp.mnRCenter[final_cnt_new][1] = ry_acc / vnSegmPtsCnt[i];
+        stProtoTmp.mnCCenter[final_cnt_new][0] = cx_acc / vnSegmPtsCnt[i];
+        stProtoTmp.mnCCenter[final_cnt_new][1] = cy_acc / vnSegmPtsCnt[i];
+        stProtoTmp.mnCCenter[final_cnt_new][2] = cz_acc / vnSegmPtsCnt[i];
+        stProtoTmp.mnRect[final_cnt_new][0] = rx_min;
+        stProtoTmp.mnRect[final_cnt_new][1] = ry_min;
+        stProtoTmp.mnRect[final_cnt_new][2] = rx_max;
+        stProtoTmp.mnRect[final_cnt_new][3] = ry_max;
+        stProtoTmp.mnCubic[final_cnt_new][0] = cx_min;
+        stProtoTmp.mnCubic[final_cnt_new][1] = cy_min;
+        stProtoTmp.mnCubic[final_cnt_new][2] = cz_min;
+        stProtoTmp.mnCubic[final_cnt_new][3] = cx_max;
+        stProtoTmp.mnCubic[final_cnt_new][4] = cy_max;
+        stProtoTmp.mnCubic[final_cnt_new][5] = cz_max;
+        stProtoTmp.vnLength[final_cnt_new] = int(sqrt(pow((cx_max - cx_min), 2) + pow((cy_max - cy_min), 2)+ pow((cz_max - cz_min), 2)) * 1000);
 
-        vnTmpMemoryCnt[final_cnt_new] = nTrackCntMem - nTrackCntStable;
-        vnTmpStableCnt[final_cnt_new] = 0;
-        vnTmpDisapCnt[final_cnt_new] = nTrackCntDisap + 10;
-        Calc3DColorHistogram(cvm_rgb_ds, mnTmpPtsIdx[final_cnt_new], nTrackHistoBin, mnTmpClrHist[final_cnt_new]);
+        stProtoTmp.vnMemoryCnt[final_cnt_new] = stTrack.CntMem - stTrack.CntStable;
+        stProtoTmp.vnStableCnt[final_cnt_new] = 0;
+        stProtoTmp.vnDisapCnt[final_cnt_new] = stTrack.CntDisap + 10;
+        Calc3DColorHistogram(cvm_rgb_ds, mnSegmPtsIdx[final_cnt_new], stTrack.HistoBin, stProtoTmp.mnColorHist[final_cnt_new]);
 
         final_cnt_new++;
     }
@@ -464,11 +407,9 @@ void TrackingAAA (int seg, int j_min, int cnt_old, int nObjsNrLimit, float nTrac
 }
 
 
-
-void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, double nTrackDPos, double nTrackDSize, double nTrackDRgb, double nTrackPFac, double nTrackSFac, double nTrackCFac, double nTrackDist, int nTrackCntMem, int nTrackCntStable, int nTrackCntDisap, int bin,
-              std::vector<int> vnTmpPtsCnt, std::vector<std::vector<int> > mnTmpPtsIdx, std::vector<std::vector<int> > mnTmpRect, std::vector<std::vector<int> > mnTmpRCenter, std::vector<std::vector<float> > mnTmpCubic, std::vector<std::vector<float> > mnTmpCCenter, std::vector<int> vnTmpLength, std::vector<std::vector<float> > mnTmpClrHist, std::vector<int> vnTmpMemoryCnt, std::vector<int> vnTmpStableCnt, std::vector<int> vnTmpDisapCnt,
-              std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx, std::vector<std::vector<int> > &mnProtoRect, std::vector<std::vector<int> > &mnProtoRCenter, std::vector<std::vector<float> > &mnProtoCubic, std::vector<std::vector<float> > &mnProtoCCenter, std::vector<int> &vnProtoLength, std::vector<std::vector<float> > &mnProtoClrHist,
-              std::vector<int> &vnProtoFound, std::vector<int> &vnProtoMemoryCnt, std::vector<int> &vProtoStableCnt, std::vector<int> &vProtoDisapCnt, int &nProtoCnt, bool flag_mat) {
+void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack, int bin,
+              std::vector<int> vnSegmPtsCnt, std::vector<std::vector<int> > mnSegmPtsIdx, ProtoProp stProtoTmp,
+              std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx, ProtoProp &stProto, std::vector<int> &vnProtoFound, int &nProtoCnt, bool flag_mat) {
 
 
     int cnt_new = 0, cnt_old = nProtoCnt;
@@ -483,21 +424,21 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, d
 
     if (nTrkSegCnt && cnt_old) {
         for (int i = 0; i < nTrkSegCnt; i++) {
-            //int size_ref = vnTmpPtsCnt[i];
+            //int size_ref = vnSegmPtsCnt[i];
             for (int j = 0; j < cnt_old; j++) {
-                //int xc = mnTmpRCenter[i][0], yc = mnTmpRCenter[i][1];
-                //float dp = sqrt(pow(xc - mnProtoRCenter[j][0], 2) + pow(yc - mnProtoRCenter[j][1], 2))/dp_dia;
-                float xc = mnTmpCCenter[i][0], yc = mnTmpCCenter[i][1], zc = mnTmpCCenter[i][2];
-                float dp = sqrt(pow(xc - mnProtoCCenter[j][0], 2) + pow(yc - mnProtoCCenter[j][1], 2) + pow(zc - mnProtoCCenter[j][2], 2));
+                //int xc = stProtoTmp.mnRCenter[i][0], yc = stProtoTmp.mnRCenter[i][1];
+                //float dp = sqrt(pow(xc - stProto.mnRCenter[j][0], 2) + pow(yc - stProto.mnRCenter[j][1], 2))/dp_dia;
+                float xc = stProtoTmp.mnCCenter[i][0], yc = stProtoTmp.mnCCenter[i][1], zc = stProtoTmp.mnCCenter[i][2];
+                float dp = sqrt(pow(xc - stProto.mnCCenter[j][0], 2) + pow(yc - stProto.mnCCenter[j][1], 2) + pow(zc - stProto.mnCCenter[j][2], 2));
                 //float ds = (float)abs(vnProtoPtsCnt[j] - size_ref)/max(vnProtoPtsCnt[j], size_ref);
-                float ds = (float)abs(vnProtoLength[j] - vnTmpLength[i])/max(vnProtoLength[j], vnTmpLength[i]);
+                float ds = (float)abs(stProto.vnLength[j] - stProtoTmp.vnLength[i])/max(stProto.vnLength[j], stProtoTmp.vnLength[i]);
                 float dc = 0;
-                for (int ii = 0; ii < bin; ii++) dc += fabs(mnProtoClrHist[j][ii] - mnTmpClrHist[i][ii]);
+                for (int ii = 0; ii < bin; ii++) dc += fabs(stProto.mnColorHist[j][ii] - stProtoTmp.mnColorHist[i][ii]);
                 mnDistClr[i][j] = dp;
-                //printf("%2d %2d %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f\n", i, j, dp, xc, yc, zc, mnProtoCCenter[j][0], mnProtoCCenter[j][0], mnProtoCCenter[j][0]);
+                //printf("%2d %2d %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f\n", i, j, dp, xc, yc, zc, stProto.mnCCenter[j][0], stProto.mnCCenter[j][0], stProto.mnCCenter[j][0]);
 
-                if (dp < nTrackDPos && ds < nTrackDSize && dc < nTrackDRgb)
-                    mnDistTotal[i][j] = nTrackPFac * dp + nTrackSFac * ds + nTrackCFac * dc;
+                if (dp < stTrack.DPos && ds < stTrack.DSize && dc < stTrack.DClr)
+                    mnDistTotal[i][j] = stTrack.FPos * dp + stTrack.FSize * ds + stTrack.FClr * dc;
             }
             //printf("\n");
         }
@@ -510,10 +451,12 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, d
             finn1.open(filename.data(), std::ios::app);
 
             sprintf(sText, "%dx%d\n", nTrkSegCnt, cnt_old);
-            finn1<< sText;
+            finn1 << sText;
+            finn1 << "dist\n";
             for (int i = 0; i < nDim; i++) {if (!i) sprintf(sText, "%11d", i); else sprintf(sText, "%8d", i); finn1<< sText;} finn1<< "\n";
             for (int i = 0; i < nDim; i++) {for (int j = 0; j < nDim; j++) {if (!j) sprintf(sText, "%2d %8.3f", i, mnDistTotal[i][j]); else sprintf(sText, "%8.3f", mnDistTotal[i][j]); finn1<< sText;} finn1<< "\n";} finn1<< "\n\n";
 
+            finn1 << "color\n";
             for (int i = 0; i < nDim; i++) {if (!i) sprintf(sText, "%11d", i); else sprintf(sText, "%8d", i); finn1<< sText;} finn1<< "\n";
             for (int i = 0; i < nDim; i++) {for (int j = 0; j < nDim; j++) {if (!j) sprintf(sText, "%2d %8.3f", i, mnDistClr[i][j]); else sprintf(sText, "%8.3f", mnDistClr[i][j]); finn1<< sText;} finn1<< "\n";} finn1<< "\n\n";
             finn1.close();
@@ -539,7 +482,7 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, d
     for (int i = 0; i < nTrkSegCnt; i++) {
         float j_min = huge;
         for (int j = 0; j < cnt_old; j++) {
-            if (mnDistTmp[i][j] >= nTrackDist) {mnDistTmp[i][j] = huge; continue;}
+            if (mnDistTmp[i][j] >= stTrack.Dist) {mnDistTmp[i][j] = huge; continue;}
 
             vnSegCandQtt[i]++;
             vnMemCandQtt[j]++;
@@ -553,7 +496,7 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, d
     for (int j = 0; j < cnt_old; j++) {
         float i_min = huge;
         for (int i = 0; i < nTrkSegCnt; i++) {
-            if (mnDistTmp[i][j] >= nTrackDist) continue;
+            if (mnDistTmp[i][j] >= stTrack.Dist) continue;
 
             if (mnDistTmp[i][j] > i_min) continue;
             if (mnDistTmp[i][j] == i_min) mnDistTmp[i][j] += offset;
@@ -571,7 +514,7 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, d
                 if (vnMatchedSeg[i] < nObjsNrLimit) printf("Error, the segment %d is already matched %d\n", i, vnSegCandMin[i]);
                 vnMatchedSeg[i] = vnSegCandMin[i];
 
-                if (vnSegCandQtt[i] > 1) TrackingAAA (i, vnSegCandMin[i], cnt_old, nObjsNrLimit, nTrackDist, huge, vnSegCandQtt, vnMemCandQtt, vnMemCandMin, vnMatchedSeg, mnDistTmp);
+                if (vnSegCandQtt[i] > 1) TrackingAAA (i, vnSegCandMin[i], cnt_old, nObjsNrLimit, stTrack.Dist, huge, vnSegCandQtt, vnMemCandQtt, vnMemCandMin, vnMatchedSeg, mnDistTmp);
             }
         }
         else {
@@ -583,13 +526,13 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, d
 
 
     ////////////// Optimaization //////////////////////////////////////////////
-    if (!nTrackMode) {
+    if (!stTrack.Mode) {
         std::vector<int> idx_seg;
         int cnt_nn = 0;
         for (int i = 0; i < nTrkSegCnt; i++) {
             if (vnMatchedSeg[i] > nObjsNrLimit) {
                 for (int j = 0; j < cnt_old; j++) {
-                    if (mnDistTmp[i][j] < nTrackDist) {
+                    if (mnDistTmp[i][j] < stTrack.Dist) {
                         vnMatchedMem[j] = 0;
                     }
                 }
@@ -681,15 +624,14 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, d
     ////////////// End of the otimization for tracking ////////////////////////////////////
 
 
-
     std::vector<bool> objs_old_flag(cnt_old, false);
     for (int i = 0; i < nTrkSegCnt; i++) {
         int cand = 0, j_tmp = 500000;
-        /////////////// Past tracking ///////////////////////////
-        if (nTrackMode) {
+        /////////////// past tracking ///////////////////////////
+        if (stTrack.Mode) {
             float d_tmp = 50000000;
             for (int j = 0; j < cnt_old; j++) {
-                if (mnDistTotal[i][j] >= nTrackDist) continue;
+                if (mnDistTotal[i][j] >= stTrack.Dist) continue;
 
                 if (mnDistTotal[i][j] < d_tmp) {
                     d_tmp = mnDistTotal[i][j];
@@ -708,14 +650,17 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, d
 
         if (cand) {
             objs_old_flag[j_tmp] = true;
-            mnProtoPtsIdx[j_tmp] = mnTmpPtsIdx[i];
-            vnProtoPtsCnt[j_tmp] = vnTmpPtsCnt[i];
-            mnProtoRCenter[j_tmp] = mnTmpRCenter[i];
-            mnProtoCCenter[j_tmp] = mnTmpCCenter[i];
-            mnProtoRect[j_tmp] = mnTmpRect[i];
-            mnProtoCubic[j_tmp] = mnTmpCubic[i];
-            vnProtoLength[j_tmp] = vnTmpLength[i];
-            mnProtoClrHist[j_tmp] = mnTmpClrHist[i];
+            vnProtoPtsCnt[j_tmp] = vnSegmPtsCnt[i];
+            mnProtoPtsIdx[j_tmp] = mnSegmPtsIdx[i];
+            stProto.mnRect[j_tmp] = stProtoTmp.mnRect[i];
+            stProto.mnRCenter[j_tmp] = stProtoTmp.mnRCenter[i];
+            stProto.mnCubic[j_tmp] = stProtoTmp.mnCubic[i];
+            stProto.mnCCenter[j_tmp] = stProtoTmp.mnCCenter[i];
+            stProto.mnColorHist[j_tmp] = stProtoTmp.mnColorHist[i];
+            stProto.vnLength[j_tmp] = stProtoTmp.vnLength[i];
+            stProto.vnStableCnt[j_tmp] = stProtoTmp.vnStableCnt[i];
+            stProto.vnDisapCnt[j_tmp] = stProtoTmp.vnDisapCnt[i];
+            stProto.vnMemoryCnt[j_tmp] = stProtoTmp.vnMemoryCnt[i];
         }
         else {
             objs_new_idx[cnt_new++] = i;
@@ -730,37 +675,38 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, d
 
     for (int i = 0; i < cnt_old; i++) {
         if (objs_old_flag[i]) {
-            vnProtoMemoryCnt[i]++;
-            if(vnProtoMemoryCnt[i] < nTrackCntMem - nTrackCntStable + 2) vnProtoMemoryCnt[i] = nTrackCntMem - nTrackCntStable + 1;
-            if(vnProtoMemoryCnt[i] > 100*nTrackCntMem) vnProtoMemoryCnt[i] = 100*nTrackCntMem;
-            vProtoStableCnt[i]++;
-            if(vProtoStableCnt[i] > 100*nTrackCntStable) vProtoStableCnt[i] = 100*nTrackCntStable;
-            vProtoDisapCnt[i] = 0;
+            stProto.vnMemoryCnt[i]++;
+            if(stProto.vnMemoryCnt[i] < stTrack.CntMem - stTrack.CntStable + 2) stProto.vnMemoryCnt[i] = stTrack.CntMem - stTrack.CntStable + 1;
+            if(stProto.vnMemoryCnt[i] > 100*stTrack.CntMem) stProto.vnMemoryCnt[i] = 100*stTrack.CntMem;
+            stProto.vnStableCnt[i]++;
+            if(stProto.vnStableCnt[i] > 100*stTrack.CntStable) stProto.vnStableCnt[i] = 100*stTrack.CntStable;
+            stProto.vnDisapCnt[i] = 0;
         }
         else {
-            vnProtoMemoryCnt[i]--;
-            vProtoDisapCnt[i]++;
-            if(vProtoDisapCnt[i] > 100*nTrackCntStable) vProtoDisapCnt[i] = 100*nTrackCntStable;
-            if (vnProtoMemoryCnt[i] >= nTrackCntMem) vnProtoMemoryCnt[i] = nTrackCntMem;
-            vProtoStableCnt[i] = 0;
+            stProto.vnMemoryCnt[i]--;
+            stProto.vnDisapCnt[i]++;
+            if(stProto.vnDisapCnt[i] > 100*stTrack.CntStable) stProto.vnDisapCnt[i] = 100*stTrack.CntStable;
+            if (stProto.vnMemoryCnt[i] >= stTrack.CntMem) stProto.vnMemoryCnt[i] = stTrack.CntMem;
+            stProto.vnStableCnt[i] = 0;
         }
     }
     int cnt_tmp = 0;
     for (int i = 0; i < cnt_old; i++) {
-        if (vnProtoMemoryCnt[i] < 0) continue;
-        vProtoStableCnt[cnt_tmp] = vProtoStableCnt[i];
-        vProtoDisapCnt[cnt_tmp] = vProtoDisapCnt[i];
-        vnProtoMemoryCnt[cnt_tmp] = vnProtoMemoryCnt[i];
-        mnProtoPtsIdx[cnt_tmp] = mnProtoPtsIdx[i];
+        if (stProto.vnMemoryCnt[i] < 0) continue;
+        vnProtoIdx[cnt_tmp] = vnProtoIdx[i];
         vnProtoPtsCnt[cnt_tmp] = vnProtoPtsCnt[i];
-        mnProtoRCenter[cnt_tmp] = mnProtoRCenter[i];
-        mnProtoCCenter[cnt_tmp] = mnProtoCCenter[i];
-        mnProtoRect[cnt_tmp] = mnProtoRect[i];
-        mnProtoCubic[cnt_tmp] = mnProtoCubic[i];
-        vnProtoLength[cnt_tmp] = vnProtoLength[i];
-        mnProtoClrHist[cnt_tmp] = mnProtoClrHist[i];
+        mnProtoPtsIdx[cnt_tmp] = mnProtoPtsIdx[i];
+        stProto.mnRect[cnt_tmp] = stProto.mnRect[i];
+        stProto.mnRCenter[cnt_tmp] = stProto.mnRCenter[i];
+        stProto.mnCubic[cnt_tmp] = stProto.mnCubic[i];
+        stProto.mnCCenter[cnt_tmp] = stProto.mnCCenter[i];
+        stProto.mnColorHist[cnt_tmp] = stProto.mnColorHist[i];
+        stProto.vnLength[cnt_tmp] = stProto.vnLength[i];
+        stProto.vnStableCnt[cnt_tmp] = stProto.vnStableCnt[i];
+        stProto.vnDisapCnt[cnt_tmp] = stProto.vnDisapCnt[i];
+        stProto.vnMemoryCnt[cnt_tmp] = stProto.vnMemoryCnt[i];
         vnProtoFound[cnt_tmp] = vnProtoFound[i];
-        vnProtoIdx[cnt_tmp++] = vnProtoIdx[i];
+        cnt_tmp++;
     }
     cnt_old = cnt_tmp;
 
@@ -783,35 +729,32 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, int nTrackMode, d
                 }
                 if (cnt_tmp_tmp >= cnt_new) break;
             }
-            if (cnt_tmp_tmp < cnt_new) {
-                for (int i = 0; i < cnt_new - cnt_tmp_tmp; i++) {
-                    proto_idx_new[cnt_tmp_tmp + i] = proto_idx[cnt_old-1] + i+1;
-                }
-            }
+            if (cnt_tmp_tmp < cnt_new)
+                for (int i = 0; i < cnt_new - cnt_tmp_tmp; i++) proto_idx_new[cnt_tmp_tmp + i] = proto_idx[cnt_old-1] + i+1;
         }
+        else printf("eeeeeeeeeeee \n");
     }
     else for (int i = 0; i < cnt_new; i++) proto_idx_new[i] = i;
     //for (int i = 0; i < cnt_new; i++) printf("%2d ", proto_idx_new[i]); printf("%4d\n\n", cnt_new);
 
 
     for (int i = 0; i < cnt_new; i++) {
-        vProtoStableCnt[cnt_old + i] = vnTmpStableCnt[objs_new_idx[i]];
-        vProtoDisapCnt[cnt_old + i] = vnTmpDisapCnt[objs_new_idx[i]];
-        vnProtoMemoryCnt[cnt_old + i] = vnTmpMemoryCnt[objs_new_idx[i]];
-        mnProtoPtsIdx[cnt_old + i] = mnTmpPtsIdx[objs_new_idx[i]];
-        vnProtoPtsCnt[cnt_old + i] = vnTmpPtsCnt[objs_new_idx[i]];
-        mnProtoRCenter[cnt_old + i] = mnTmpRCenter[objs_new_idx[i]];
-        mnProtoCCenter[cnt_old + i] = mnTmpCCenter[objs_new_idx[i]];
-        mnProtoRect[cnt_old + i] = mnTmpRect[objs_new_idx[i]];
-        mnProtoCubic[cnt_old + i] = mnTmpCubic[objs_new_idx[i]];
-        vnProtoLength[cnt_old + i] = vnTmpLength[objs_new_idx[i]];
-        mnProtoClrHist[cnt_old + i] = mnTmpClrHist[objs_new_idx[i]];
         vnProtoIdx[cnt_old + i] = proto_idx_new[i];
+        vnProtoPtsCnt[cnt_old + i] = vnSegmPtsCnt[objs_new_idx[i]];
+        mnProtoPtsIdx[cnt_old + i] = mnSegmPtsIdx[objs_new_idx[i]];
+        stProto.mnRect[cnt_old + i] = stProtoTmp.mnRect[objs_new_idx[i]];
+        stProto.mnRCenter[cnt_old + i] = stProtoTmp.mnRCenter[objs_new_idx[i]];
+        stProto.mnCubic[cnt_old + i] = stProtoTmp.mnCubic[objs_new_idx[i]];
+        stProto.mnCCenter[cnt_old + i] = stProtoTmp.mnCCenter[objs_new_idx[i]];
+        stProto.mnColorHist[cnt_old + i] = stProtoTmp.mnColorHist[objs_new_idx[i]];
+        stProto.vnLength[cnt_old + i] = stProtoTmp.vnLength[objs_new_idx[i]];
+        stProto.vnStableCnt[cnt_old + i] = stProtoTmp.vnStableCnt[objs_new_idx[i]];
+        stProto.vnDisapCnt[cnt_old + i] = stProtoTmp.vnDisapCnt[objs_new_idx[i]];
+        stProto.vnMemoryCnt[cnt_old + i] = stProtoTmp.vnMemoryCnt[objs_new_idx[i]];
     }
     nProtoCnt = cnt_old + cnt_new;
 
     if (nProtoCnt >= nObjsNrLimit) printf("Object queue exceeds object no. limit %d\n", nObjsNrLimit);
 }
-
 
 

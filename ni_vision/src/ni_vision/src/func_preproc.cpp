@@ -4,10 +4,10 @@
 
 
 
-void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nCvSize, int nCvWidth, int nCvHeight, float &nDMax, float &nDMin,
+void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nDsSize, float &nDMax, float &nDMin,
                    int &nDIdxCntTmp, std::vector<int> &vnCloudIdx_d, std::vector<float> &vnX, std::vector<float> &vnY, std::vector<float> &vnZ)
 {
-    for (int i = 1; i < nCvSize; i++) {// the first pixel has wrong depth info
+    for (int i = 1; i < nDsSize; i++) {// the first pixel has wrong depth info
         if (!pcl_isfinite (cloud.points[i].z)) continue;
         vnX[i] = cloud.points[i].x;
         vnY[i] = cloud.points[i].y;
@@ -20,10 +20,10 @@ void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nCvSize, int nCv
     vnCloudIdx_d.resize(nDIdxCntTmp);
 }
 
-void MakeDepthMap (pcl::PointCloud<pcl::PointXYZ> cloud, int nCvSize, int nCvWidth, int nCvHeight, float &nDMax, float &nDMin,
+void MakeDepthMap (pcl::PointCloud<pcl::PointXYZ> cloud, int nDsSize, float &nDMax, float &nDMin,
                    int &nDIdxCntTmp, std::vector<int> &vnCloudIdx_d, std::vector<float> &vnX, std::vector<float> &vnY, std::vector<float> &vnZ)
 {
-    for (int i = 1; i < nCvSize; i++) {// the first pixel has wrong depth info
+    for (int i = 1; i < nDsSize; i++) {// the first pixel has wrong depth info
         if (!pcl_isfinite (cloud.points[i].z)) continue;
         vnX[i] = cloud.points[i].x;
         vnY[i] = cloud.points[i].y;
@@ -38,20 +38,20 @@ void MakeDepthMap (pcl::PointCloud<pcl::PointXYZ> cloud, int nCvSize, int nCvWid
 
 
 
-void MakeDGradMap (std::vector<float> vDepth, std::vector<int> vCloudIdx_d, int nDIdxCntTmp, float nDGradConst, float nDSegmDThres, float nDGradNan, int nCvWidth,
+void MakeDGradMap (std::vector<float> vDepth, std::vector<int> vCloudIdx_d, int nDIdxCntTmp, float nDGradConst, float nDSegmDThres, float nDGradNan, int nDsWidth,
                       float &nDGradXMin, float &nDGradXMax, float &nDGradYMin, float &nDGradYMax, std::vector<float> &vDGradX, std::vector<float> &vDGradY)
 {
     /////// Processing depth map: make depth gradient map ////////////////////////////////////////////////
     for(int i = 0; i < nDIdxCntTmp; i++) {
         int x, y, idx;
         idx = vCloudIdx_d[i];
-        GetPixelPos(idx, nCvWidth, x, y);
+        GetPixelPos(idx, nDsWidth, x, y);
         if (!vDepth[idx]) continue;
 
         if (y > 0) {
-            if (vDepth[idx-nCvWidth]) {
-                //vDGradY[idx] = vDepth[idx] - vDepth[idx-nCvWidth];
-                vDGradY[idx] = (vDepth[idx] - vDepth[idx-nCvWidth]) / (vDepth[idx] + nDGradConst);
+            if (vDepth[idx-nDsWidth]) {
+                //vDGradY[idx] = vDepth[idx] - vDepth[idx-nDsWidth];
+                vDGradY[idx] = (vDepth[idx] - vDepth[idx-nDsWidth]) / (vDepth[idx] + nDGradConst);
                 if (fabs(vDGradY[idx]) > nDSegmDThres) vDGradY[idx] = nDGradNan;
                 else {
                     if (vDGradY[idx] > nDGradYMax) nDGradYMax = vDGradY[idx];

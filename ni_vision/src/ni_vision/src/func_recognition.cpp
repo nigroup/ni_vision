@@ -9,7 +9,6 @@
 
 ///////////
 //#include "flann/flann.h"
-
 #include "func_recognition_flann.cpp"
 
 #define PI 3.1415926536
@@ -76,11 +75,7 @@ void CalcDeltaScaleOri(std::vector<int> input_idx, std::vector<double> vnDeltaSc
     } //end of current key
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////Histogram Created, Now printing values
     double tmpmaxlow=tmpmaxhigh-nBinWidth1D;
-//    printf("\t\tTotal Matched Keypoints Initially : %d\n",int(vnDeltaOri.size()));
-//    printf("\t\tMin DeltaOri :%g Max DeltaOri :%g OriBinWidth :%g MaxBinCount :%d MaxBinRange [ %g, %g ] RectifiedRange [ %g , %g ]\n",nMinDeltaOri,nMaxDeltaOri,nBinWidth1D,tmpmax,tmpmaxlow,tmpmaxhigh,tmpmaxlow-T_orient,tmpmaxhigh+T_orient);
-//    printf("\t\tDeltaOri Histogram :\n");
-//    for(size_t i=0; i<vnHist.size();i++) printf("\t%d",vnHist[i]);
-//    printf("\n");
+
     ////////////////////Delta Ori Range found
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////Finding TruePositives
     std::vector<double> vnRectDeltaScale(vnDeltaScale.size(),0);
@@ -130,9 +125,8 @@ void CalcDeltaScaleOri(std::vector<int> input_idx, std::vector<double> vnDeltaSc
 
 
 
-void SwapMemory (std::vector<bool> &vbProtoCand, std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoMemoryCnt, std::vector<int> &vnProtoStableCnt, std::vector<int> &vnProtoDisapCnt, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx,
-                 std::vector<std::vector<int> > &mnProtoRCenter, std::vector<std::vector<float> > &mnProtoCCenter, std::vector<std::vector<int> > &mnProtoRect, std::vector<std::vector<float> > &mnProtoCubic,
-                 std::vector<std::vector<float> > &mnProtoClrHist, std::vector<int> &vnProtoLength, std::vector<int> &vnProtoFound, int nProtoCnt, std::vector<std::vector<float> > &vnTmpProtoDiff)
+void SwapMemory (std::vector<bool> &vbProtoCand, std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx, ProtoProp &stProto,
+                 std::vector<int> &vnProtoFound, int nProtoCnt, std::vector<std::vector<float> > &vnTmpProtoDiff)
 {
     std::vector<std::vector<float> > vnTmpProtoDiff2 = vnTmpProtoDiff;
     std::sort(vnTmpProtoDiff[0].begin(), vnTmpProtoDiff[0].end());
@@ -146,33 +140,33 @@ void SwapMemory (std::vector<bool> &vbProtoCand, std::vector<int> &vnProtoIdx, s
 
     std::vector<bool> vbAaaProtoCand = vbProtoCand;
     std::vector<int> vnAaaProtoIdx = vnProtoIdx;
-    std::vector<int> vnAaaProtoMemoryCnt = vnProtoMemoryCnt;
-    std::vector<int> vnAaaProtoStableCnt = vnProtoStableCnt;
-    std::vector<int> vnAaaProtoDisapCnt = vnProtoDisapCnt;
     std::vector<int> vnAaaProtoPtsCnt = vnProtoPtsCnt;
     std::vector<std::vector<int> > mnAaaProtoPtsIdx = mnProtoPtsIdx;
-    std::vector<std::vector<int> > mnAaaProtoCenter = mnProtoRCenter;
-    std::vector<std::vector<float> > mnAaaProtoRCenter = mnProtoCCenter;
-    std::vector<std::vector<int> > mnAaaProtoRect = mnProtoRect;
-    std::vector<std::vector<float> > mnAaaProtoCubic = mnProtoCubic;
-    std::vector<std::vector<float> > mnAaaProtoClrHist = mnProtoClrHist;
-    std::vector<int> vnAaaProtoLength = vnProtoLength;
+    std::vector<std::vector<int> > mnAaaProtoRect = stProto.mnRect;
+    std::vector<std::vector<int> > mnAaaProtoRCenter = stProto.mnRCenter;
+    std::vector<std::vector<float> > mnAaaProtoCubic = stProto.mnCubic;
+    std::vector<std::vector<float> > mnAaaProtoCCenter = stProto.mnCCenter;
+    std::vector<std::vector<float> > mnAaaProtoColorHist = stProto.mnColorHist;
+    std::vector<int> vnAaaProtoLength = stProto.vnLength;
+    std::vector<int> vnAaaProtoMemoryCnt = stProto.vnMemoryCnt;
+    std::vector<int> vnAaaProtoStableCnt = stProto.vnStableCnt;
+    std::vector<int> vnAaaProtoDisapCnt = stProto.vnDisapCnt;
     std::vector<int> vnAaaProtoFound = vnProtoFound;
 
     for (int i = 0; i < nProtoCnt; i++) {
         vbProtoCand[i] = vbAaaProtoCand[vTmpIdx[i]];
         vnProtoIdx[i] = vnAaaProtoIdx[vTmpIdx[i]];
         vnProtoPtsCnt[i] = vnAaaProtoPtsCnt[vTmpIdx[i]];
-        vnProtoMemoryCnt[i] = vnAaaProtoMemoryCnt[vTmpIdx[i]];
-        vnProtoStableCnt[i] = vnAaaProtoStableCnt[vTmpIdx[i]];
-        vnProtoDisapCnt[i] = vnAaaProtoDisapCnt[vTmpIdx[i]];
         mnProtoPtsIdx[i] = mnAaaProtoPtsIdx[vTmpIdx[i]];
-        mnProtoRCenter[i] = mnAaaProtoCenter[vTmpIdx[i]];
-        mnProtoCCenter[i] = mnAaaProtoRCenter[vTmpIdx[i]];
-        mnProtoRect[i] = mnAaaProtoRect[vTmpIdx[i]];
-        mnProtoCubic[i] = mnAaaProtoCubic[vTmpIdx[i]];
-        mnProtoClrHist[i] = mnAaaProtoClrHist[vTmpIdx[i]];
-        vnProtoLength[i] = vnAaaProtoLength[vTmpIdx[i]];
+        stProto.mnRect[i] = mnAaaProtoRect[vTmpIdx[i]];
+        stProto.mnRCenter[i] = mnAaaProtoRCenter[vTmpIdx[i]];
+        stProto.mnCubic[i] = mnAaaProtoCubic[vTmpIdx[i]];
+        stProto.mnCCenter[i] = mnAaaProtoCCenter[vTmpIdx[i]];
+        stProto.mnColorHist[i] = mnAaaProtoColorHist[vTmpIdx[i]];
+        stProto.vnLength[i] = vnAaaProtoLength[vTmpIdx[i]];
+        stProto.vnMemoryCnt[i] = vnAaaProtoMemoryCnt[vTmpIdx[i]];
+        stProto.vnStableCnt[i] = vnAaaProtoStableCnt[vTmpIdx[i]];
+        stProto.vnDisapCnt[i] = vnAaaProtoDisapCnt[vTmpIdx[i]];
         vnProtoFound[i] = vnAaaProtoFound[vTmpIdx[i]];
     }
 }
@@ -180,22 +174,21 @@ void SwapMemory (std::vector<bool> &vbProtoCand, std::vector<int> &vnProtoIdx, s
 
 
 void ResetMemory (int nObjsNrLimit, int nTrackHistoBin_max, int nRecogRtNr,
-                  std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoMemoryCnt, std::vector<int> &vnProtoStableCnt, std::vector<int> &vnProtoDisapCnt, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx,
-                  std::vector<std::vector<int> > &mnProtoRCenter, std::vector<std::vector<float> > &mnProtoCCenter, std::vector<std::vector<int> > &mnProtoRect, std::vector<std::vector<float> > &mnProtoCubic,
-                  std::vector<std::vector<float> > &mnProtoClrHist, std::vector<int> &vnProtoLength, std::vector<int> &vnProtoFound, int &nProtoCnt, int &nProtoNr, int &nFoundCnt, int &nFoundNr, std::vector<int> &vnRecogRating)
+                  std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx, ProtoProp &stProto,
+                  std::vector<int> &vnProtoFound, int &nProtoCnt, int &nProtoNr, int &nFoundCnt, int &nFoundNr, std::vector<int> &vnRecogRating)
 {
     vnProtoIdx.assign(nObjsNrLimit, 0);
-    vnProtoMemoryCnt.assign(nObjsNrLimit, 0);
-    vnProtoStableCnt.assign(nObjsNrLimit, 0);
-    vnProtoDisapCnt.assign(nObjsNrLimit, 0);
     vnProtoPtsCnt.assign(nObjsNrLimit, 0);
     mnProtoPtsIdx.assign(nObjsNrLimit, std::vector<int>(0, 0));
-    mnProtoRCenter.assign(nObjsNrLimit, std::vector<int>(2, 0));
-    mnProtoCCenter.assign(nObjsNrLimit, std::vector<float>(3, 0));
-    mnProtoRect.assign(nObjsNrLimit, std::vector<int>(4, 0));
-    mnProtoCubic.assign(nObjsNrLimit, std::vector<float>(6, 0));
-    mnProtoClrHist.assign(nObjsNrLimit, std::vector<float>(nTrackHistoBin_max, 0));
-    vnProtoLength.assign(nObjsNrLimit, 0);
+    stProto.mnRCenter.assign(nObjsNrLimit, std::vector<int>(2, 0));
+    stProto.mnCCenter.assign(nObjsNrLimit, std::vector<float>(3, 0));
+    stProto.mnRect.assign(nObjsNrLimit, std::vector<int>(4, 0));
+    stProto.mnCubic.assign(nObjsNrLimit, std::vector<float>(6, 0));
+    stProto.mnColorHist.assign(nObjsNrLimit, std::vector<float>(nTrackHistoBin_max, 0));
+    stProto.vnLength.assign(nObjsNrLimit, 0);
+    stProto.vnMemoryCnt.assign(nObjsNrLimit, 0);
+    stProto.vnStableCnt.assign(nObjsNrLimit, 0);
+    stProto.vnDisapCnt.assign(nObjsNrLimit, 0);
     vnProtoFound.assign(nObjsNrLimit, 0);
 
     nProtoCnt = 0;
@@ -220,14 +213,14 @@ void SelRecognition_Pre (int nProtoCnt, std::vector<bool> vbProtoCand, std::vect
     }
 }
 
-void SelRecognition_1 (int nCandID, int nImgScale, int nCvWidth, std::vector<int> vnProtoPtsCnt, cv::Mat cvm_rgb_org,
+void SelRecognition_1 (int nCandID, int nImgScale, int nDsWidth, std::vector<int> vnProtoPtsCnt, cv::Mat cvm_rgb_org,
                        cv::Mat &cvm_cand_tmp, std::vector<std::vector<int> > mnProtoPtsIdx, std::vector<int> &vnIdxTmp) {
     int pts_cnt = 0;
     int xx, yy;
     if (nImgScale > 1) {
         int idx;
         for (int j = 0; j < vnProtoPtsCnt[nCandID]; j++) {
-            GetPixelPos(mnProtoPtsIdx[nCandID][j], nCvWidth, xx, yy);
+            GetPixelPos(mnProtoPtsIdx[nCandID][j], nDsWidth, xx, yy);
             xx = xx*nImgScale; yy = yy*nImgScale;
 
             for (int mm = 0; mm < nImgScale; mm++) {
@@ -235,7 +228,7 @@ void SelRecognition_1 (int nCandID, int nImgScale, int nCvWidth, std::vector<int
                 for (int nn = 0; nn < nImgScale; nn++) {
                     if (xx-nn < 0) continue;
                     //if (xx-nn < 0xx+nn >= cvm_rgb_org.cols) continue;
-                    idx = (yy-mm) * nCvWidth*nImgScale + xx-nn;
+                    idx = (yy-mm) * nDsWidth*nImgScale + xx-nn;
                     //vnIdxTmp.resize(pts_cnt++);
                     vnIdxTmp[pts_cnt++] = idx;
                 }

@@ -107,8 +107,8 @@ include_directories(${ni_vision_INCLUDE_DIRS})
 add_executable(libmake src/libmake.cpp)
 target_link_libraries(libmake siftfast terminal_tools ${OpenCV_LIBRARIES})
 
-add_executable(libmake_color src/libmake_color.cpp)
-target_link_libraries(libmake_color siftfast terminal_tools ${OpenCV_LIBRARIES})
+add_executable(libmake_simple src/libmake_simple.cpp)
+target_link_libraries(libmake_simple siftfast terminal_tools ${OpenCV_LIBRARIES})
 
 add_executable(ni_image_tool src/image_tool.cpp)
 target_link_libraries(ni_image_tool terminal_tools ${OpenCV_LIBRARIES})
