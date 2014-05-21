@@ -1,8 +1,15 @@
 /*
- * Initialization of parameters
+ * Initialization of parameters with the input from the console
+ * Defining names for button, windows and trackbars
+ * Drawing the gui
+ * Handling mouse events
+ * Open and closing of windows
+ * Different trackbarhandlers
+ *
+ * Since the early version of opencv did not provide good methods to create a gui, we had to develop
+ * our own approach. The gui is basically a window on which different rectangles are drawn which
+ * represent the button.
  */
-
-// park
 
 ////////// System Paramters ///////////////////////////////////////
 bool bDepthDispMode = false, bDepthDispMode_default = false;
@@ -62,7 +69,7 @@ int nRecogMaskDispMode = 0, nRecogMaskDispMode_default = 0;
 int nRecordMode = 0, nRecordMode_default = 0;
 int nTimeMessFrmLimit = 0, nTimeMessFrmLimit_default = 50;
 int nSnapFormat = 0, nSnapFormat_default = 0;
-
+int flag_pcd = 0; // Flag for printing color distance
 
 std::string sDataDir;
 
@@ -72,7 +79,6 @@ struct ProtoProp {
     std::vector<int> vnLength; std::vector<std::vector<float> > mnColorHist;
     std::vector<int> vnMemoryCnt, vnStableCnt, vnDisapCnt;
 };
-
 
 
 /////// for User Interface /////////////////////////
@@ -166,8 +172,15 @@ double T_scale;
 
 
 
-//////////////////////BUILDING COLOR INDEX////////////////////////////////////////////////////////////////////////////////
-//This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address
+/* BUILDING COLOR INDEX
+ * This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address.
+ *
+ * Input:
+ * mFeatureSet - matrix of features which was extracted from the lib file
+ *
+ * Output:
+ * Pointer to the first address of the feature vector
+ */
 float* ReadFlannDataset_Color (cv::Mat mFeatureSet) {
     float *data;
     float *p;
@@ -193,8 +206,17 @@ float* ReadFlannDataset_Color (cv::Mat mFeatureSet) {
     return data;
 }
 
-///////////////////////////////BUILDING SIFT INDEX/////////////////////////////////////////////////////////////////////
-//This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address
+
+
+/* BUILDING SIFT INDEX
+ * This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address.
+ *
+ * Input:
+ * mFeatureSet - matrix of features which was extracted from the lib file
+ *
+ * Output:
+ * Pointer to the first address of the feature vector
+ */
 float* ReadFlannDataset_SiftOnePos (cv::Mat mFeatureSet) {
 
     nFlannLibCols_sift = 128;
@@ -233,6 +255,10 @@ float* ReadFlannDataset_SiftOnePos (cv::Mat mFeatureSet) {
     return data;
 }
 
+
+
+/* Build Flann Index
+ */
 void BuildFlannIndex (int libnr, std::string sLibFileName) {   //Read the library file
     cv::Mat mFeatureSet;
     cv::FileStorage fs(sLibFileName, cv::FileStorage::READ);
@@ -272,10 +298,12 @@ void BuildFlannIndex (int libnr, std::string sLibFileName) {   //Read the librar
 
 
 
-
-
-
-// initialize parameters
+/* Initialize parameter with the console input
+ *
+ * Input:
+ * argc - number of input arguments on the console
+ * argv - console input
+ */
 void InitParameter (int argc, char** argv) {
 
     stTrack.Mode = 0, stTrack_default.Mode = 0;
@@ -415,7 +443,8 @@ void InitParameter (int argc, char** argv) {
     terminal_tools::parse_argument (argc, argv, "-datadir", sDataDir);
 
 
-    /////////////////////////Sahils parameters /////////////////////////////////////////////////////////////////////
+
+    // Sahils parameters
     terminal_tools::parse_argument (argc, argv, "-deltabin", nDeltaBinNo);
     if(nDeltaBinNo == 0) nDeltaBinNo = 12;
     terminal_tools::parse_argument (argc, argv, "-tnumb", T_numb);
@@ -474,6 +503,10 @@ void InitParameter (int argc, char** argv) {
 }
 
 
+
+
+/* Resets all the segmentation and recognition parameter to their default value
+ */
 void ResetParameter () {
     bDepthDispMode = bDepthDispMode_default;
     nDLimit = nDLimit_default;
@@ -537,7 +570,6 @@ void ResetParameter () {
     nTimeMessFrmLimit = nTimeMessFrmLimit_default;
     nSnapFormat = nSnapFormat_default;
 
-
     if (vbFlagWnd[stTID.nPrmSegm]) {
         cvSetTrackbarPos(vsTrackbarName[20].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.Mode);
         //cvSetTrackbarPos(vsTrackbarName[21].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.ClrMode);
@@ -559,10 +591,6 @@ void ResetParameter () {
     }
     if (vbFlagWnd[stTID.nPrmRecog]) {
         cvSetTrackbarPos(vsTrackbarName[1].data(), vsWndName[stTID.nPrmRecog].data(), nSnapFormat);
-        //cvSetTrackbarPos(vsTrackbarName[2].data(), vsWndName[stTID.nPrmRecog].data(), nDLimit*10);
-        //cvSetTrackbarPos(vsTrackbarName[3].data(), vsWndName[stTID.nPrmRecog].data(), nDGradFilterSize);
-        //cvSetTrackbarPos(vsTrackbarName[11].data(), vsWndName[stTID.nPrmRecog].data(), nDSegmSizeThres);
-
         cvSetTrackbarPos(vsTrackbarName[99].data(), vsWndName[stTID.nPrmRecog].data(), nAttTDMode);
         cvSetTrackbarPos(vsTrackbarName[36].data(), vsWndName[stTID.nPrmRecog].data(), nRecogDClr*100);
         cvSetTrackbarPos(vsTrackbarName[41].data(), vsWndName[stTID.nPrmRecog].data(), nSiftScales);
@@ -587,6 +615,8 @@ void ResetParameter () {
 
 
 
+/* Initializing names for windows, buttons, trackbars. Assigning task IDs
+ */
 void InitVariables () {
     cv::namedWindow(sTitle); cvMoveWindow(sTitle.data(), 80, 20);
 
@@ -670,7 +700,7 @@ void InitVariables () {
     vsTrackbarName[51] = "Flann KNN (1-3)                             ";
     vsTrackbarName[52] = "Flann match fac. (0-1)                ";
     vsTrackbarName[53] = "Flann match cnt (0-100)            ";
-
+    vsTrackbarName[54] = "Print color distance                   ";
     vsTrackbarName[17] = "GB segm. sigma (0-1)     ";
     vsTrackbarName[18] = "GB segm. gr (0-500)        ";
     vsTrackbarName[19] = "GB segm. min (0-1000)  ";
@@ -685,6 +715,9 @@ void InitVariables () {
 
 
 
+
+/* Stores the position of the individual rectangles which represent a button in a matrix
+ */
 void SetBtnPos (int nTaskNr, int nPadSecX, int nPadSecY, int nBtnW, int nBtnH, std::vector<std::vector<int> >& mnBtnPos)
 {
     mnBtnPos[nTaskNr][0] = nPadSecX;
@@ -693,6 +726,14 @@ void SetBtnPos (int nTaskNr, int nPadSecX, int nPadSecY, int nBtnW, int nBtnH, s
     mnBtnPos[nTaskNr][3] = nBtnH;
 }
 
+
+
+/* Determines the position of the individual button in the main ni-vision window
+ *
+ * Button are represented by rectangles. The coordinates are assigned to each button and stored. If a
+ * mouse event happens a mouse listener can then evaluate in which rectangle the mouse was located
+ * when the button was pushed.
+ */
 void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, int &col1, int &col2, int &height)
 {
     int nTaskNr;
@@ -708,13 +749,6 @@ void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, i
     nPadSecX += nBtnW + 2*nBtnOffset;
     nTaskNr = stTID.nRgbDs;
     SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
-    //nPadSecY += nBtnH + nBtnOffset;
-
-    //nPadSecX = nBtnOffset;
-    //nPadSecY += nBtnOffset;
-    //nTaskNr = nNrMat; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
-    //nPadSecX += nBtnW + 2*nBtnOffset;
-    //nTaskNr = nNrInfo; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecY += nBtnH + 2*nBtnOffset;
 
     nPadSecX = nBtnOffset;
@@ -804,6 +838,8 @@ void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, i
 
 
 
+/* Draws the gui.
+ */
 void DrawPad(cv::Mat &cvm_input, std::vector<int> vnBtnProp, int nPadRow1, int nPadCol1, int nPadCol2)
 {
     int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
@@ -853,6 +889,9 @@ void DrawPad(cv::Mat &cvm_input, std::vector<int> vnBtnProp, int nPadRow1, int n
 
 
 
+
+/* Draws information about time measurements on the left side of the gui.
+ */
 void DrawInfo(cv::Mat &cvm_input, int nSegNr, int nPadRow1, int nPadCol1, int nCntFrame_tmp, double nTimeTotal,
               double nTimePre, double nTimeDepth, double nTimeBlur, double nTimePre_avr, double nTimeDepth_avr, double nTimeBlur_avr,
               double nTimeSegm, double nTimeTrack, double nTimeAtt, double nTimeRec, double nTimeSift, double nTimeFlann,
@@ -924,16 +963,12 @@ void DrawInfo(cv::Mat &cvm_input, int nSegNr, int nPadRow1, int nPadCol1, int nC
     sprintf(sText, "Flann on whole image: "); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_darkgreen, 1);
     sprintf(sText, "%8.2f", nTimeFlannWhole_avr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_darkgreen, 1);
 
-
-//    sprintf(sText, "Frame count:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=25)), nFont, nFontSize, c_green, 1);
-//    sprintf(sText, "%6d", nCntFrame_tmp); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_green, 1);
-//    sprintf(sText, "Recognition cycle:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_green, 1);
-//    sprintf(sText, "%8.2f", nTimeRecCycle_avr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_green, 1);
-//    sprintf(sText, "Recognition Found:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_green, 1);
-//    sprintf(sText, "%8.2f", nTimeRecFound_avr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_green, 1);
 }
 
 
+
+/* Draws information about different settings on the right side of the gui.
+ */
 void DrawSettings(cv::Mat &cvm_input, int IX, int nSnapFormat, double nDLimit, int nDGradFilterSize,
                   TrackProp stTrack1,
                   int nAttSizeMax, int nAttSizeMin, int nAttPtsMin, int nAttAspect1, int nAttAspect2, int nAttTDMode,
@@ -973,13 +1008,7 @@ void DrawSettings(cv::Mat &cvm_input, int IX, int nSnapFormat, double nDLimit, i
     sprintf(sText, "Tracking mode:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
     if (stTrack.Mode) sprintf(sText, "normal"); else sprintf(sText, "optimized"); cv::putText(cvm_input, sText, cv::Point(nTab+25, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Color mode:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    switch (stTrack.ClrMode) {
-    case 0: sprintf(sText, "RGB"); break;
-    case 1: sprintf(sText, "Normalized rgb"); break;
-    case 2: sprintf(sText, "Color plane directions"); break;
-    case 3: sprintf(sText, "HSV"); break;
-    case 4: sprintf(sText, "Map"); break;}
-    cv::putText(cvm_input, sText, cv::Point(nTab+25, nPosY), nFont, nFontSize, c_lemon, 1);
+    sprintf(sText, "Normalized rgb"); cv::putText(cvm_input, sText, cv::Point(nTab+25, nPosY), nFont, nFontSize, c_lemon, 1);
 
     sprintf(sText, "Position distance threshold:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "%8.2f", stTrack1.DPos); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
@@ -1033,6 +1062,13 @@ void DrawSettings(cv::Mat &cvm_input, int IX, int nSnapFormat, double nDLimit, i
 
 
 
+
+/* For Mouse events
+ *
+ * Input:
+ * event - information about the mouse event that occured
+ * x,y - coordinates of the mouse event that occured
+ */
 void MouseHandler(int event, int x, int y, int flags, void *param){
     int k;
     bool flag = false;
@@ -1056,6 +1092,7 @@ void MouseHandler(int event, int x, int y, int flags, void *param){
 
 
 
+
 void CloseWindow (int wnd_nr) {
     if (vbFlagWnd[wnd_nr]) {
         vbFlagWnd[wnd_nr] = false;
@@ -1063,11 +1100,15 @@ void CloseWindow (int wnd_nr) {
     }
 }
 
+/* Sets the flag which indicates that the window is open/closed.
+ */
 void SetFlagWnd (int wnd_nr) {
     vbFlagWnd[wnd_nr] = true;
     cv::namedWindow(vsWndName[wnd_nr]);
     cvMoveWindow(vsWndName[wnd_nr].data(), mWndPos[wnd_nr][0], mWndPos[wnd_nr][1]);
 }
+
+
 
 void OpenWindow (int wnd_nr) {if(!vbFlagWnd[wnd_nr]) SetFlagWnd (wnd_nr);}
 
@@ -1075,7 +1116,8 @@ void OpenWindow (int wnd_nr) {if(!vbFlagWnd[wnd_nr]) SetFlagWnd (wnd_nr);}
 
 
 
-
+/* Reset time values for recognition only.
+ */
 void ResetRecTime () {
     nCntRec = 0; nTimeRec_acc = 0; nTimeRec_avr = 0;
     nTimeAtt_acc = 0; nTimeAtt_avr = 0;
@@ -1090,6 +1132,9 @@ void ResetRecTime () {
     nTimeRecCycle = 0; nTimeRecFound = 0; nTimeRecFound_max = 0; nTimeRecFound_min = 10000;
 }
 
+
+/* Resets all time values both displayed and not displayed.
+ */
 void ResetTime () {
     nCntGbSegm = 0; nTimeGbSegm_acc = 0; nTimeGbSegm_avr = 0;
     nCntSiftWhole = 0; nTimeSiftWhole_acc = 0; nTimeSiftWhole_avr = 0;
@@ -1103,9 +1148,6 @@ void ResetTime () {
 
     ResetRecTime ();
 }
-
-
-
 
 
 
@@ -1129,5 +1171,4 @@ void TrackbarHandler_SiftPeak (int pos) {if (pos > 500) pos = 500; nSiftPeakThrs
 void TrackbarHandler_FlannKnn (int) {if (nFlannKnn < 1) nFlannKnn = 1; cvSetTrackbarPos(vsTrackbarName[51].data(), vsWndName[stTID.nPrmRecog].data(), nFlannKnn);}
 void TrackbarHandler_FlannMFac (int pos) {nFlannMatchFac = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[52].data(), vsWndName[stTID.nPrmRecog].data(), pos);}
 void TrackbarHandler_GSegmSigma (int pos) {nGSegmSigma = (float)pos/10; cvSetTrackbarPos(vsTrackbarName[17].data(), vsWndName[stTID.nGSegm].data(), pos);}
-
 void TrackbarHandler_DGradC (int pos) {nDGradConst = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[84].data(), vsWndName[stTID.nDepth].data(), pos);}

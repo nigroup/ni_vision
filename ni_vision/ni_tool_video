@@ -1,2 +1,6 @@
 #!/bin/bash
+<<<<<<< HEAD
 rosrun ni_tools ni_video_tool -path ~/ZZZZ/ -file aaa.avi -ext tif -mode 1 -xfr 1 -fox 1 -foy 17 -fow 292 -foh 220 -fstart 0 -fend 15720
+=======
+rosrun ni_tools ni_video_tool -path ~/ZZZZ/ -file aaa.avi -mode 1 -ext tif -fox 1 -foy 17 -fow 292 -foh 220 -fstart 0 -fend 5720
+>>>>>>> parent of 3b1d971... 4.Versuch

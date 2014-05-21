@@ -8,9 +8,12 @@
 #include "terminal_tools/parse.h"
 
 
+<<<<<<< HEAD
 
 #define DIVIDE 2
 #define MERGE 3
+=======
+>>>>>>> parent of 3b1d971... 4.Versuch
 
 int nMode = 0;
 bool bOutVideo = true, bXFrame = false;
