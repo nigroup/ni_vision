@@ -171,7 +171,6 @@ double T_orient;
 double T_scale;
 
 
-
 /* BUILDING COLOR INDEX
  * This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address.
  *
