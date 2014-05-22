@@ -1,5 +1,5 @@
 /*
- * Funktions for computing the flann
+ * Funktions for computing the flann, copied from the FLANN library
  */
 
 

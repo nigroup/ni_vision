@@ -1445,6 +1445,7 @@ void updateImage() {
                 cvCreateTrackbar(vsTrackbarName[51].data(), vsWndName[stTID.nPrmRecog].data(), &nFlannKnn, 5, TrackbarHandler_FlannKnn);
                 cvCreateTrackbar(vsTrackbarName[52].data(), vsWndName[stTID.nPrmRecog].data(), &flannmf, 100, TrackbarHandler_FlannMFac);
                 cvCreateTrackbar(vsTrackbarName[53].data(), vsWndName[stTID.nPrmRecog].data(), &nFlannMatchCnt, 100, TrackbarHandler_none);
+                cvCreateTrackbar(vsTrackbarName[54].data(), vsWndName[stTID.nPrmRecog].data(), &flag_pcd, 1, TrackbarHandler_none);
             }
         }
 

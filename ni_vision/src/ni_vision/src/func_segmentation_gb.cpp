@@ -2,6 +2,8 @@
 #include "gbsegmentation/pnmfile.h"
 
 
+/* Convert from opencv image to image format for gb seg
+ */
 image<rgb>* convertIplToNativeImage (cv::Mat cvm_input)
 {
     int width = cvm_input.cols; int height = cvm_input.rows;
@@ -20,6 +22,14 @@ image<rgb>* convertIplToNativeImage (cv::Mat cvm_input)
 }
 
 
+/* Call the graph-based segmentation function
+ *
+ * Input:
+ * cv_rgb - input image
+ * sigma, gsegk, minblob - paramter for gb seg
+ *
+ * output - set of pixels for segments
+ */
 void GbSegmentation (cv::Mat cv_rgb, double sigma, int gsegk, int minblob, std::vector<std::vector<CvPoint> > &output)
 {
     image<rgb> *converted = convertIplToNativeImage(cv_rgb);
