@@ -14,6 +14,16 @@
 #define PI 3.1415926536
 
 
+/* Getting SIFT keypoints from input image (computed by libsiftfast)
+ *
+ * Input:
+ * input - input image
+ * nSiftScales, nSiftInitSigma, nSiftPeakThrs - SIFT parameter
+ * x,y,width,height - coordinates of input area
+ *
+ * Output:
+ * keypts - SIFT keypoints (format Keypoint from Libsiftfast)
+ */
 void GetSiftKeypoints(cv::Mat input, int nSiftScales, double nSiftInitSigma, double nSiftPeakThrs, int x, int y, int width, int height, Keypoint &keypts) {
 
     Image img_sift = CreateImage(width, height);
@@ -36,6 +46,21 @@ void GetSiftKeypoints(cv::Mat input, int nSiftScales, double nSiftInitSigma, dou
 
 
 
+
+/* Calculating delta scale orientation (by Sahil)
+ *
+ * Input:
+ * input_idx - indices of input SIFT keypoints
+ * vnDeltaScale, vnDeltaOri - delta scale, delta orientation of input keypoints
+ * nDeltaBinNo - number of bins
+ * nMaxDeltaOri, nMinDeltaOri - range of delta orientation
+ * T_orient, T_scale -
+ *
+ * Output:
+ * nDeltaScale - output scale (think of an "average value")
+ * nTruePositives - count of true-positive keypoints
+ * output_flag - flag for true-positive keypoints
+ */
 void CalcDeltaScaleOri(std::vector<int> input_idx, std::vector<double> vnDeltaScale, std::vector<double> vnDeltaOri, double& nDeltaScale,
                        int nDeltaBinNo, double nMaxDeltaOri, double nMinDeltaOri, double T_orient, double T_scale, int& nTruePositives, std::vector<bool>& output_flag)
 {
@@ -124,7 +149,18 @@ void CalcDeltaScaleOri(std::vector<int> input_idx, std::vector<double> vnDeltaSc
 
 
 
-
+/* Swap object surface in the memory and all properties which belong to the objects
+ *
+ * Output:
+ * vbProtoCand - candidate flag for object surfaces (true, then candidate for attention)
+ * vnProtoIdx - indices for object surfaces
+ * vnProtoPtsCnt - count of pixels for object surfaces
+ * mnProtoPtsIdx - indices of pixels for object surfaces
+ * stProto - properties of object surfaces (ProtoProp is self-defined struct)
+ * vnProtoFound - found flag for objects surfaces
+ * nProtoCnt - count of object surfaces
+ * vnTmpProtoDiff - color differences of objects surfaces (to target object)
+ */
 void SwapMemory (std::vector<bool> &vbProtoCand, std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx, ProtoProp &stProto,
                  std::vector<int> &vnProtoFound, int nProtoCnt, std::vector<std::vector<float> > &vnTmpProtoDiff)
 {
@@ -173,6 +209,26 @@ void SwapMemory (std::vector<bool> &vbProtoCand, std::vector<int> &vnProtoIdx, s
 
 
 
+
+/* Resetting properties of object surfaces
+ *
+ * Input:
+ * nObjsNrLimit - maximum number of object surfaces that can be processed
+ * nTrackHistoBin_max - (number of bins)^number of channels
+ * nRecogRtNr -
+ *
+ * Output:
+ * vnProtoIdx - indices for object surfaces
+ * vnProtoPtsCnt - count of pixels for object surfaces
+ * mnProtoPtsIdx - indices of pixels for object surfaces
+ * stProto - properties of object surfaces (ProtoProp is self-defined struct)
+ * vnProtoFound - found flag for objects surfaces
+ * nProtoCnt - count of object surfaces
+ * nProtoNr - number of current object surface
+ * nFoundCnt - count of found object surfaces
+ * nFoundNr - number of found object surface
+ * vnRecogRating - recognition rating (like a priority) of object surfaces
+ */
 void ResetMemory (int nObjsNrLimit, int nTrackHistoBin_max, int nRecogRtNr,
                   std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx, ProtoProp &stProto,
                   std::vector<int> &vnProtoFound, int &nProtoCnt, int &nProtoNr, int &nFoundCnt, int &nFoundNr, std::vector<int> &vnRecogRating)
@@ -200,6 +256,17 @@ void ResetMemory (int nObjsNrLimit, int nTrackHistoBin_max, int nRecogRtNr,
 
 
 
+
+/* Selection of a candidate object surface
+ *
+ * Input:
+ * nProtoCnt - count of candidate object surfaces
+ * vbProtoCand - flag for candidate object surfaces
+ *
+ * Output:
+ * vProtoFound - flag for found candidate object surfaces
+ * nCandID - ID of selected candidate object surface
+ */
 void SelRecognition_Pre (int nProtoCnt, std::vector<bool> vbProtoCand, std::vector<int> &vProtoFound, int &nCandID) {
 
     for (int i = 0; i < nProtoCnt; i++) {
@@ -213,6 +280,24 @@ void SelRecognition_Pre (int nProtoCnt, std::vector<bool> vbProtoCand, std::vect
     }
 }
 
+
+
+
+/* Extraction of pixel indices for the selected candidate object surface from original image
+ * (before that the indices are from the downsampled image)
+ *
+ * Input:
+ * nCandID - ID of selected candidate object surface
+ * nImgScale - ratio between original and downsampled image
+ * nDsWidth - width of downsampled image
+ * vnProtoPtsCnt - count of pixel which belong to the object surface (of downsampled image)
+ * cvm_rgb_org - original image
+ * mnProtoPtsIdx - indices of pixel which belong to the object surfae (of downsampled image)
+ *
+ * Output:
+ * cvm_cand_tmp - image of candidate object surface
+ * vnIdxTmp - indices of pixel which belong to the object surfae (of original image)
+ */
 void SelRecognition_1 (int nCandID, int nImgScale, int nDsWidth, std::vector<int> vnProtoPtsCnt, cv::Mat cvm_rgb_org,
                        cv::Mat &cvm_cand_tmp, std::vector<std::vector<int> > mnProtoPtsIdx, std::vector<int> &vnIdxTmp) {
     int pts_cnt = 0;
@@ -245,6 +330,29 @@ void SelRecognition_1 (int nCandID, int nImgScale, int nDsWidth, std::vector<int
     }
 }
 
+
+
+/* SIFT keypoint matching with FLANN (fast library for approximate nearest neighbor) to find target object
+ *
+ * Input:
+ * tcount -
+ * nFlannKnn - parameter of FLANN
+ * nFlannLibCols_sift - dimension of library which stores the sift trajectories
+ * nFlannMatchFac - merge factor (parameter of FLANN)
+ * mnSiftExtraFeatures - matrix which stores sift trajectories (from training)
+ * FlannIdx_Sift - FLANN index (type is from flann library)
+ * FlannParam - flann parameters (struct from flann lib)
+ * keypts - input SIFT keypoints
+ *
+ * Output:
+ * nKeyptsCnt - count of matched SIFT keypoints
+ * nFlannIM - count of initial matched keypoints after flann matching
+ * vnSiftMatched - matched sift keypoints
+ * vnDeltaScale - delta scale of keypoints
+ * vnDeltaOri - delta orientation of keypoints
+ * nMaxDeltaOri, nMinDeltaOri - max and min delta orientation
+ * nMaxDeltaScale, nMinDeltaScale - max and min Scale orientation
+ */
 void SelRecognition_FlannSift (int tcount, int nFlannKnn, int nFlannLibCols_sift, double nFlannMatchFac, std::vector <std::vector <float> > mnSiftExtraFeatures, flann_index_t FlannIdx_Sift, struct FLANNParameters FLANNParam,
                           Keypoint keypts, int &nKeyptsCnt, int &nFlannIM, std::vector<int> &vnSiftMatched, std::vector<double> &vnDeltaScale, std::vector<double> &vnDeltaOri, double &nMaxDeltaOri, double &nMinDeltaOri, double &nMaxDeltaScale, double &nMinDeltaScale) {
     while (keypts) {

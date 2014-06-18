@@ -27,6 +27,11 @@ cv::Scalar c_violet(255, 0, 127);
 //cvScalar c_blue = cvScalar(255,0,0);
 
 
+
+/* Calculating distance between two trajectories
+ *
+ * Input: trajectories
+ */
 double CalTrajectoryDistance(std::vector<double> descriptor1, float descriptor2[]) {
     double distance = 0;
     for(int i = 0; i < nDescripSize ; i++)
@@ -36,6 +41,8 @@ double CalTrajectoryDistance(std::vector<double> descriptor1, float descriptor2[
     return distance;
 }
 
+/* Similiar to previous function
+ */
 double CalTrajectoryDistance(std::vector<double> descriptor1, std::vector<double> descriptor2) {
     double distance = 0;
     for(int i = 0; i < nDescripSize ; i++)
@@ -45,6 +52,11 @@ double CalTrajectoryDistance(std::vector<double> descriptor1, std::vector<double
     return distance;
 }
 
+
+
+
+/* Calculating distances between first two elements of two trajectories
+ */
 double CalcDispDistance(std::vector<int> descriptor1, std::vector<double> descriptor2) {
     double distance = 0;
     for(int i = 0; i < 2; i++)
@@ -57,7 +69,16 @@ double CalcDispDistance(std::vector<int> descriptor1, std::vector<double> descri
 
 
 
-
+/* Getting SIFT keypoints from input image (computed by libsiftfast)
+ *
+ * Input:
+ * input - input image
+ * nSiftScales, nSiftInitSigma, nSiftPeakThrs - SIFT parameter
+ * x,y,width,height - coordinates of input area
+ *
+ * Output:
+ * keypts - SIFT keypoints (format Keypoint from Libsiftfast)
+ */
 void GetSiftKeypoints(IplImage *input, int nSiftScales, double nSiftInitSigma, double nSiftPeakThrs, int x, int y, int width, int height, Keypoint &keypts) {
 
     Image img_sift = CreateImage(width, height);
@@ -100,9 +121,41 @@ void GetSiftKeypoints(cv::Mat input, int nSiftScales, double nSiftInitSigma, dou
 
 
 
-void Trajectory (cv::Mat cvm_org, int nRx, int nRy, int nRw, int nRh, int nFrameNo, int TotalFrames,
+
+/* Creating trajectories from keypoints
+ *
+ * Input:
+ * cvm_org - input image
+ * nRx,nRy,nRw,nRh - coordinates of area of interest
+ * nFrameNo - number of current frame
+ * nTotalFrames - count of total frames
+ * nDistThres - distance threshold
+ * nSiftScales, nSiftInitSigma, nSiftPeakThres - sift parameters
+ * nXDelta, nYDelta - displacement of keypoints coordinates
+ * nXPrev, nYPrev - keypoints coordinate in previous frame
+ * nDispThresh - threshold for nXDelta, nYDelta
+ * nFeatureMode -
+ * sFname -
+ * nMatchThres - threshold for matching between keypoints and trajectories
+ * nReinforce -
+ * nKeyPosThres -
+ * nTrjLBlank - size of blank for trajectory (where the trajectory is not connected)
+ *
+ * Output:
+ * vnTracker - created trajectories
+ * bEndofRotation - flag which indicates if the end of processing was reached
+ * bEndofStitching - flag which indicates if the end of stitching was reached
+ * nMatchOriginFirst -
+ * vFrameMatches -
+ * nFrameNrMax -
+ * vFirstFrameKeypts - keypoints at first frame
+ * vnKeyPrev - keypoints at previous frame
+ * vnMatchedKeyCnt -
+ * cvm_match -
+ */
+void Trajectory (cv::Mat cvm_org, int nRx, int nRy, int nRw, int nRh, int nFrameNo, int nTotalFrames,
                  std::vector<std::vector<std::vector<double> > >& vnTracker, double nDistThres,int nSiftScales,double nSiftInitSigma,
-                 double nSiftPeakThresh,bool& bEndofRotation,bool& bEndofStiching,int& nMatchOriginFirst,std::vector<int>& vFrameMatches,
+                 double nSiftPeakThresh,bool& bEndofRotation,bool& bEndofStitching,int& nMatchOriginFirst,std::vector<int>& vFrameMatches,
                  int &nFrameNrMax, int nXDelta, int nYDelta, int nXPrev,int nYPrev,int nDispThresh, int nFeatureMode, std::string sFname, std::vector<std::vector <double> >& vFirstFrameKeypts,
                  double nMatchThres, int nReinforce, int nKeyPosThres, int nTrjLBlank,
                  std::vector<std::vector<double> > &vnKeyPrev, std::vector<int> &vnMatchedKeyCnt, cv::Mat &cvm_match)
@@ -413,7 +466,7 @@ void Trajectory (cv::Mat cvm_org, int nRx, int nRy, int nRw, int nRh, int nFrame
         }
 
         /////////////////Deciding when you need to stop the loop
-        if(nFrameNo == TotalFrames-1) {
+        if(nFrameNo == nTotalFrames-1) {
             nFrameNrMax = -1;
             int nMaxMatches = 0;
             int nFrameMatchesSize = vFrameMatches.size();
@@ -430,8 +483,8 @@ void Trajectory (cv::Mat cvm_org, int nRx, int nRy, int nRw, int nRh, int nFrame
         }
 
 
-        if(bEndofRotation == true && bEndofStiching == false) {
-            bEndofStiching = true;
+        if(bEndofRotation == true && bEndofStitching == false) {
+            bEndofStitching = true;
         }
         ////////////////////End of Stitchingx
     }//end of frame loop which exectues for all frames as long as the end of rotation is not detected
@@ -443,6 +496,21 @@ void Trajectory (cv::Mat cvm_org, int nRx, int nRy, int nRw, int nRh, int nFrame
 }
 
 
+
+/* Concatenate trajectories at both end of trajectory graph
+ *
+ * Input:
+ * vnTracker - input trajectories
+ * nTrjLBlank - size of blank of trajectory
+ * nTrjLRes - size of reserve of trajectory (reserve is opposite of blank)
+ * nInterval -
+ * nTrjLMax, nTrjLMin - min and max of trajectory length
+ * nTrjStitchDist - trajectory distance for stitching
+ *
+ * Output:
+ * nFrameNrMax -
+ * vnTrajectory - stitched trajectories
+ */
 void Stitching (std::vector<std::vector<std::vector<double> > > vnTracker, int nTrjLBlank, int nTrjLRes, int nInterval, int nTrjLMax, int nTrjLMin, double nTrjStitchDist,
                 int &nFrameNrMax, std::vector<std::vector<std::vector<double> > > &vnTrajectory) {
 

@@ -83,7 +83,7 @@ int64_t timespecDiff (struct timespec *timeA_p, struct timespec *timeB_p) {
 /* Recognition process of a selected candidate. Determines if a selected object is the target object
  *
  * Input:
- * nCandID - ID of the candidate in the list candidate objects
+ * nCandID - ID of the candidate in the list candidate object surfaces
  * nImgScale - ratio of original and downsampled image
  * nTimeRatio - ratio of milli- and nanoseconds (i.e. 10⁶)
  * nProtoCnt - number of proto objects surfaces
@@ -103,8 +103,8 @@ int64_t timespecDiff (struct timespec *timeA_p, struct timespec *timeB_p) {
  * nTrackCntDisap - threshold for vnProtoDisapCnt
  *
  * Output:
- * nCandCnt - number of candidate objects
- * vnTmpProtoDiff - buffer of color histogram difference between current candidate and target object
+ * nCandCnt - number of candidate object surfaces
+ * vnTmpProtoDiff - buffer of color histogram difference between the current candidate and the target object
  * nFoundCnt - count of found objects in a recognition cycle
  * nFoundNr - number of found object
  * nFoundFrame - number of frame where the object was found
@@ -114,7 +114,7 @@ int64_t timespecDiff (struct timespec *timeA_p, struct timespec *timeB_p) {
  * bSwitchRecordTime - flag for time measurement
  * nRecogRtNr - count of frames to record
  * vnRecogRating_tmp - vector of results for time measurement
- * cvm_cand - image of the current candidate object
+ * cvm_cand - image of the current candidate
  */
 void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, int nTrackHistoBin_max, std::string sTimeDir, std::string sImgExt,
                      cv::Mat cvm_rgb_org, cv::Mat cvm_rgb_ds, cv::Mat &cvm_rec_org, cv::Mat &cvm_rec_ds,

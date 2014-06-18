@@ -79,21 +79,20 @@ int nSiftImgWidth, nSiftImgHeight;
 int nThresh = 0, nMinRect = 0;
 int nFocusX = 0, nFocusY = 0, nFocusWidth = 0, nFocusHeight = 0;
 
-bool bFlagModeSift = false;
-double nDistThres;
+double nDistThres;                          // threshold for FLANN distance
 // Global data
-IplImage *cv_image_camera = NULL;
-CvRect Sift_rect;
-int nFeatureMode;
-double nDispThresh;
-int nSiftLibMode = 0;
-int nBriefFlag = 0;
+IplImage *cv_image_camera = NULL;           // input image from camera
+CvRect Sift_rect;                           // area for SIFT calculation
+int nFeatureMode;                           //
+double nDispThresh;                         // threshold for keypoint displacement
+int nSiftLibMode = 0;                       // mode keypoint representation
+int nBriefFlag = 0;                         // flag for brief modus, only one window is shown during trainig
 
 
 
 
-double nMatchThres = 0;
-int nReinforce = 0;
+double nMatchThres = 0;                     // threshold for FLANN matching
+int nReinforce = 0;                         //
 int nKeyPosThres = 0;
 int nTrjLBlank = 0;
 int nTrjLRes = 0;
@@ -163,18 +162,6 @@ void ParameterInit(int argc, char** argv) {
         case 1: {printf ("2D SIFT - Feature Set: ..................... A special member of trajectory\n"); break;}
         }
         break;}
-    case 1: {
-        printf ("Feature Mode: .............................. RGB Color Histogram\n");
-        break;}
-    case 2: {
-        printf ("Feature Mode: ... No feature Calculation-Opponent Color Space\n");
-        break;}
-    case 3: {
-        printf ("Feature Mode: .............................. Transformed Color Space Histogram\n");
-        break;}
-    case 4: {
-        printf ("Feature Mode: .............................. Hue Sift features\n");
-        break;}
     }
 
     printf ("===============================================================\n\n\n");
@@ -183,13 +170,13 @@ void ParameterInit(int argc, char** argv) {
 
 
 
-/* Beschreibung
+/* Making object mask
  *
  * Input:
- * cvm_org -
+ * cvm_org -input image
  *
  * Output (by reference):
- * cvm_mask -
+ * cvm_mask - masked image
  */
 void MakeObjectMask (cv::Mat cvm_org, cv::Mat &cvm_mask) {
 
@@ -240,11 +227,14 @@ void MakeObjectMask (cv::Mat cvm_org, cv::Mat &cvm_mask) {
 
 
 
-/* Beschreibung
+/* Drawing rotation graph
  *
  * Input:
+ * vnMatchedKeyCnt - matched keypoints over adjacent frames
+ * nFrameNrMax - number of end frame
  *
  * Output
+ * graph - rotation graph
  */
 void DrawRotationGraph (std::vector<int> vnMatchedKeyCnt, int nFrameNrMax, cv::Mat &graph) {
 
@@ -294,11 +284,13 @@ void DrawRotationGraph (std::vector<int> vnMatchedKeyCnt, int nFrameNrMax, cv::M
 
 
 
-/* Beschreibung
+/* Drawing keypoint trajectories
  *
  * Input:
- *
- * Output
+ * nValidCnt - count of valid keypoints
+ * nFrameNrMax - number of end frame
+ * nMaxStitchedFrame - number of frame where trajectory was stitched the most
+ * vnTrajectory - trajectories of keypoints for all frames
  */
 void DrawTrajectory (int nValidCnt, int nFrameNrMax, int nMaxStitchedFrame, std::vector<std::vector<std::vector<double> > > vnTrajectory) {
     int nThickness = nTrjGraphHeight/nValidCnt;
@@ -389,11 +381,12 @@ void DrawTrajectory (int nValidCnt, int nFrameNrMax, int nMaxStitchedFrame, std:
 
 
 
-/* Beschreibung
+/* Drawing keypoint matching in current and previous frame
  *
  * Input:
- *
- * Output
+ * input - input image
+ * tlx, tly, brx, bry - coordinates for object image in current and previous frame
+ * nXDelta, nYDelta - displacement of keypoint coordinates
  */
 void DrawSiftMatching (cv::Mat input, cv::Mat &output, int tlx, int tly, int brx, int bry, int nXDelta, int nYDelta) {
 
@@ -427,9 +420,7 @@ void DrawSiftMatching (cv::Mat input, cv::Mat &output, int tlx, int tly, int brx
 
 
 
-/* Beschreibung
- *
- */
+
 int main (int argc, char** argv) {
 
     std::vector<std::vector<std::vector<double> > > vnTracker;

@@ -1,9 +1,20 @@
 /*
- * Functions for preprocessing of segmentation
+ * Functions for preprocessing of segmentation; creating depth map/depth-gradient map
  */
 
 
-
+/* Create depth map from RGB point cloud
+ *
+ * Input:
+ * cloud - RGB point cloud from kinect (vector for RGB and vector for point cloud (z coordinate is depth))
+ * nDsSize - size of point cloud
+ * nDMax, nDMin - max and min values of depth data
+ * nDIdxCntTmp - count of valid point
+ * vnCloudIdx_d - indices of valid points
+ *
+ * Output:
+ * vnX, vnY, vnZ - output vectors for point cloud coordinates
+ */
 void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nDsSize, float &nDMax, float &nDMin,
                    int &nDIdxCntTmp, std::vector<int> &vnCloudIdx_d, std::vector<float> &vnX, std::vector<float> &vnY, std::vector<float> &vnZ)
 {
@@ -20,6 +31,20 @@ void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nDsSize, float &
     vnCloudIdx_d.resize(nDIdxCntTmp);
 }
 
+
+
+/* Create depth map from monochrome point cloud
+ *
+ * Input:
+ * cloud - monochrome point cloud from kinect (vector for point cloud (z coordinate is depth))
+ * nDsSize - size of point cloud
+ * nDMax, nDMin - max and min values of depth data
+ * nDIdxCntTmp - count of valid point
+ * vnCloudIdx_d - indices of valid points
+ *
+ * Output:
+ * vnX, vnY, vnZ - output vectors for point cloud coordinates
+ */
 void MakeDepthMap (pcl::PointCloud<pcl::PointXYZ> cloud, int nDsSize, float &nDMax, float &nDMin,
                    int &nDIdxCntTmp, std::vector<int> &vnCloudIdx_d, std::vector<float> &vnX, std::vector<float> &vnY, std::vector<float> &vnZ)
 {
@@ -38,6 +63,21 @@ void MakeDepthMap (pcl::PointCloud<pcl::PointXYZ> cloud, int nDsSize, float &nDM
 
 
 
+/* Create depth-gradient map from depth map
+ *
+ * Input:
+ * vDepth - depth map
+ * vnCloudIdx_d - indices of valid points
+ * nDIdxCntTmp - count of valid points
+ * nDGradConst - constant of the weighted depth
+ * nDSegmDThres - threshold for very steep depth-gradient
+ * nDGradNan - constant for the very steep depth-gradient
+ * nDsWidth - width of depth map
+ * nDGradXMin, nDGradXMax, nDGradYMin, nDGradYMax - max and min values of depth-gradient data
+ *
+ * Output:
+ * vDGradX,vDGradY - depth-gradient maps
+ */
 void MakeDGradMap (std::vector<float> vDepth, std::vector<int> vCloudIdx_d, int nDIdxCntTmp, float nDGradConst, float nDSegmDThres, float nDGradNan, int nDsWidth,
                       float &nDGradXMin, float &nDGradXMax, float &nDGradYMin, float &nDGradYMax, std::vector<float> &vDGradX, std::vector<float> &vDGradY)
 {

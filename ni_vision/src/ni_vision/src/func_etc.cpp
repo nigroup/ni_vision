@@ -1,5 +1,5 @@
 /*
- * other functions
+ * Different functions for storing time measurements to files, process images, etc.
  */
 
 
@@ -16,6 +16,14 @@ std::vector<bool> vbTmpSmall;
 /////////////////////////////////////////////////////////////////////////
 
 
+
+
+/* Making Directories for storing the ni_vision data (like videos and snapshots)
+ *
+ * Input:
+ * input - first part of the name
+ * output - name of folder to create
+ */
 void MakeNiDirectory (std::string input, std::string &output)
 {
     time_t now = time(0); tm *ltm = localtime(&now);
@@ -24,6 +32,15 @@ void MakeNiDirectory (std::string input, std::string &output)
 }
 
 
+
+
+/* Print time measurements in special format
+ *
+ * Input:
+ * sTimeFile - file name from output file
+ * nCntRecCycle - count of recognition cycle
+ * mnTimeMeas1, mnTimeMeas2 - data from time measurement
+ */
 void PrintTimes1 (std::string sTimeFile, int nCntRecCycle, std::vector<std::vector<int> > mnTimeMeas1, std::vector<std::vector<float> > mnTimeMeas2)
 {
     char sText[168];
@@ -44,6 +61,14 @@ void PrintTimes1 (std::string sTimeFile, int nCntRecCycle, std::vector<std::vect
 }
 
 
+/* Print time measurements in special format
+ *
+ * Input:
+ * sTimeFile - file name from output file
+ * nCntRecCycle - count of recognition cycle
+ * mnTimeMeas1, mnTimeMeas2 - data from time measurement
+ * TODO
+ */
 void PrintTimes2 (std::string sTimeFile, int nCntRecCycle, double nTimeRecFound_avr, double nTimeRecFound_min, double nTimeRecFound_max, std::vector<int> vnRecogRating, std::vector<std::vector<float> > mnTimeMeas2,
                   int nCntFrame_tmp, double nTimeTotal_avr, double nFrameRate_avr, double nTimeDepth_avr, double nTimeBlur_avr, double nTimeSegm_avr, double nTimeTrack_avr, double nTimeAtt_avr, double nTimeRec_avr, double nTimeSift_avr, double nTimeFlann_avr)
 {
@@ -93,6 +118,13 @@ void PrintTimes2 (std::string sTimeFile, int nCntRecCycle, double nTimeRecFound_
 }
 
 
+
+/* Print time measurements in special format
+ *
+ * Input:
+ * sTimeFile_detail - output file name
+ * mnTimeMeas3 - data from time measurement
+ */
 void PrintTimes3 (std::string sTimeFile_detail, std::vector<std::vector<float> > mnTimeMeas3)
 {
     char sText[128];
@@ -183,6 +215,13 @@ void PrintTimes3 (std::string sTimeFile_detail, std::vector<std::vector<float> >
 }
 
 
+
+/* Print time measurements from vector
+ *
+ * Input:
+ * file - file name from output file
+ * input - input vector with time measurements
+ */
 void PrintTimesFromVector (std::string file, std::vector<float> input)
 {
     char sText[128];
@@ -201,6 +240,15 @@ void PrintTimesFromVector (std::string file, std::vector<float> input)
     finn.close();
 }
 
+
+
+/* Print time measurements for SIFT calculation on the whole image
+ *
+ * Input:
+ * file - file name from output file
+ * input - input matrix with time measurements
+ * width, height - dimension of image
+ */
 void PrintTimesSiftWhole (std::string file, std::vector<std::vector<float> > input, int width, int height)
 {
     char sText[128];
@@ -248,6 +296,15 @@ void ResetTime (int nCntDepth, int nCntBlur, int nCntSegm, int nCntTrack, int nC
 
 
 
+
+/* Concatenate images to one image
+ *
+ * Input:
+ * cvm_sec - input images
+ * nDsWidth, nDsHeight - dimension of input images
+ *
+ * cvm_out - output image
+ */
 void AttachImgs (cv::Mat cvm_sec1, cv::Mat cvm_sec2, cv::Mat cvm_sec3, cv::Mat cvm_sec4, int nDsWidth, int nDsHeight, cv::Mat &cvm_out) {
     cv::Mat tmp;
     tmp = cvm_out(cv::Rect(0, 0, nDsWidth, nDsHeight)); cvm_sec1.copyTo(tmp);
@@ -258,7 +315,11 @@ void AttachImgs (cv::Mat cvm_sec1, cv::Mat cvm_sec2, cv::Mat cvm_sec3, cv::Mat c
 }
 
 
-
+/* Crop image
+ *
+ * Input:
+ * nDepthX, nDepthY, nDepthWidth, nDepthHeight - coordinates for cropped area
+ */
 void accCutImage(cv::Mat cvm_input, cv::Mat &cvm_out, int nDepthX, int nDepthY, int nDepthWidth, int nDepthHeight)
 {
     cvm_out = cv::Scalar(0, 0, 0);

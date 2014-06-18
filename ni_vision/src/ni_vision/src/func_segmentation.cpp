@@ -5,7 +5,19 @@
 
 #include "munkres/munkres.h"
 
-
+/* Flattening depth-gradient map
+ *
+ * Input:
+ * cvm_input - depth-gradient map
+ * index - indices of pixels of depth-gradient map which should be processed
+ * max, min - range of grayscale depth-gradient
+ * mode - flattening mode
+ * scenter, sband1, sband2, factor - center, range and factor of bandwidth for flattening
+ *
+ * Output:
+ * output_blur - depth-gradient map after blurring
+ * output_ct - depth-gradient map after flattening
+ */
 void DSegm_FlatDepthGrad (cv::Mat cvm_input, std::vector<int> index, float max, float min, int mode, int scenter, int sband1, int sband2, float factor, std::vector<float> &output_blur, std::vector<float> &output_ct)
 {
     float scale =  (max-min), x;
@@ -47,6 +59,25 @@ void DSegm_FlatDepthGrad (cv::Mat cvm_input, std::vector<int> index, float max, 
     }
 }
 
+
+
+
+/* Smoothing depth-gradient map
+ *
+ * Input:
+ * vInput -
+ * index - indices of pixels of depth-gradient map which should be processed
+ * size - size of input image
+ * max, min - range of depth-gradient
+ * none - constant for invalid depth and depth-gradient
+ * fmode - filter mode
+ * fsize - size of filter
+ * smode, scenter, sband1, sband2, clfac - mode center, range and factor for flattening
+ *
+ * Output:
+ * output_blur - depth-gradient map after blurring
+ * output_ct - depth-gradient map after flattening
+ */
 void DSegm_SmoothDepthGrad (std::vector<float> vInput, std::vector<int> index, cv::Size size, float max, float min, float none, int fmode, int fsize, int smode, int scenter, int sband1, int sband2, float clfac, std::vector<float> &output_blur, std::vector<float> &output_ct)
 {
     cv::Mat input_gray(size, CV_8UC1, cv::Scalar(0));
@@ -69,6 +100,20 @@ void DSegm_SmoothDepthGrad (std::vector<float> vInput, std::vector<int> index, c
     input_gray.release(); input_gray_blur.release();
 }
 
+
+
+
+/* Creating matrix about information of adjacent segments
+ *
+ * Input:
+ * vInputMap - input map
+ * input idx - indices of input map which should be processed
+ * range - distance of adjacent segments
+ * width - width of input map
+ *
+ * Output:
+ * mnOut - neighborhood matrix
+ */
 void DSegm_NeighborMatrix (std::vector<int> vInputMap, std::vector<int> input_idx, int range, int width, std::vector<std::vector<bool> >& mnOut) {
     for (size_t i = 0; i < input_idx.size() ; i++) {
         int x, y;
@@ -94,6 +139,20 @@ void DSegm_NeighborMatrix (std::vector<int> vInputMap, std::vector<int> input_id
     }
 }
 
+
+
+
+/* Creating matrix about information of adjacent segments (for saliency program)
+*
+* Input:
+* vInputMap - input map
+* input idx - indices of input map which should be processed
+* range - distance of adjacent segments
+* width - width of input map
+*
+* Output:
+* mnOut - neighborhood matrix
+*/
 void DSegm_NeighborMatrix1 (std::vector<int> vInputMap, std::vector<int> input_idx, int range, int width, std::vector<std::vector<bool> >& mnOut) {
     for (size_t i = 0; i < input_idx.size() ; i++) {
         int x, y;
@@ -121,6 +180,16 @@ void DSegm_NeighborMatrix1 (std::vector<int> vInputMap, std::vector<int> input_i
 
 
 
+/* Checking if two points are in the same segment
+ *
+ * Input:
+ * idx_ref - reference point
+ * idx_cand - candidate point
+ * nSegCnt - count of segments
+ *
+ * Output:
+ * seg_map - segment map (which maps every point to the segment number it lies in)
+ * seg_list - segment buffer */
 void DSegm_MatchPoints (int idx_ref, int idx_cand, int nSegCnt, std::vector<int>& seg_map, std::vector<int>& seg_list) {
     if (seg_map[idx_ref]) {
         if(seg_list[seg_map[idx_ref]] != seg_list[seg_map[idx_cand]]) {
@@ -139,6 +208,20 @@ void DSegm_MatchPoints (int idx_ref, int idx_cand, int nSegCnt, std::vector<int>
 
 
 
+
+/* Merging two segments
+ *
+ * Input:
+ * ref - reference segment
+ * cand - candidate segment
+ * clear - flag for merging (true, then merging)
+ * n - count segments
+ *
+ * Output:
+ * vnLB - label buffer, contains segments labels
+ * vnSB - size buffer, contains segments sizes
+ * vbCB - clearing buffer, contains merging flags (indicate if a segment was merged)
+ */
 void DSegm_MergeSegments(int ref, int cand, bool clear, int n, std::vector<int> &vnLB, std::vector<int> &vnSB, std::vector<bool> &vbCB) {
     if (vnLB[ref] < vnLB[cand]) {
         vnSB[ref] = vnSB[ref] + vnSB[cand];
@@ -164,6 +247,25 @@ void DSegm_MergeSegments(int ref, int cand, bool clear, int n, std::vector<int> 
 }
 
 
+
+
+/* Main segmentation function
+ *
+ * Input:
+ * vnDGrad - depth-gradient map
+ * input_idx - indices of the pixel which should be processed
+ * tau_s - threshold for size differences
+ * nDSegmGradDist - threshold for segmentation (if depth-gradient between two pixel is greater than threshold, they get segmented)
+ * nDepthGradNone -  constant for invalid depth-gradient
+ * width - width of depth-gradient map
+ * nMapSize - size of depth-gradient map
+ * x_min, x_max, y_min, y_max - coordinates of the area of the map which should be processed
+ *
+ * Output:
+ * vnLblMap - segment map before post-processing
+ * vnLblMapFinal - segment map
+ * nSegCnt - count of segments
+ */
 void DSegmentation (std::vector<float> vnDGrad, std::vector<int> input_idx, int tau_s, float nDSegmGradDist, float nDepthGradNone,
                         int width, int nMapSize, int x_min, int x_max, int y_min, int y_max, std::vector<int> &vnLblMap, std::vector<int> &vnLblMapFinal, int &nSegCnt) {
 
@@ -329,6 +431,22 @@ void DSegmentation (std::vector<float> vnDGrad, std::vector<int> input_idx, int 
 
 
 
+/* Pre-processing of the tracking, extracting object properties in current scene
+ *
+ * Input:
+ * nSegCnt - count of segmented object surfaces
+ * nDSegmCutSize - minimum pixel count for objects to be processed
+ * nDsWidth, nDsHeight - width and height of downsampled segment map
+ * vnX, vnY, vnZ - coordinate values for point cloud
+ * cvm_rgb_ds - downsampled image
+ * stTrack - parameters of tracking process
+ *
+ * Output:
+ * vnSegmPtsCnt - count of pixels of segments
+ * mnSegmPtsIdx - indices of pixels of segments
+ * stProtoTmp - properties for object surfaces for tracking (siehe struct ProtoProp)
+ * nTrkSegCnt - count of segments for tracking
+ */
 void TrackingPre (int nSegCnt, int nDSegmCutSize, int nDsWidth, int nDsHeight, std::vector<float> vnX, std::vector<float> vnY, std::vector<float> vnZ, cv:: Mat cvm_rgb_ds, TrackProp stTrack,
                   std::vector<int> &vnSegmPtsCnt, std::vector<std::vector<int> > &mnSegmPtsIdx, ProtoProp &stProtoTmp, int &nTrkSegCnt) {
     int final_cnt_new = 0;
@@ -386,6 +504,10 @@ void TrackingPre (int nSegCnt, int nDSegmCutSize, int nDsWidth, int nDsHeight, s
 }
 
 
+
+
+/* TODO
+ */
 void TrackingAAA (int seg, int j_min, int cnt_old, int nObjsNrLimit, float nTrackDist, float huge, std::vector<int> &vnSegCandQtt, std::vector<int> &vnMemCandQtt, std::vector<int> &vnMemCandMin, std::vector<int> &vnMatchedSeg, std::vector<std::vector<float> > &mnDistTmp) {
     for (int j = 0; j < cnt_old; j++) {
         if (j == j_min) continue;
@@ -407,6 +529,27 @@ void TrackingAAA (int seg, int j_min, int cnt_old, int nObjsNrLimit, float nTrac
 }
 
 
+
+/* Main tracking function, matching objects surfaces in current frame to object surfaces in memory
+ *
+ * Input:
+ * nTrkSegCnt - count of object surfaces in current scene
+ * nObjsNrLimit - maximum count of object surfaces which can be handled by the system
+ * dp_dia - position displacement
+ * stTrack -  tracking parameters
+ * bin - number of bins for color histogram
+ * vnSegmPtsCnt - count of pixel of segmented object surfaces
+ * mnSegmPtsIdx - indices of pixel of segmented object surfaces
+ * stProtoTmp - object properties for tracking (siehe struct ProtoProp)
+ *
+ * Output:
+ * vnProtoIdx - indices for object surfaces
+ * vnProtoPtsCnt - count of pixels for object surfaces
+ * mnProtoPtsIdx - indices of pixels for object surfaces
+ * stProto - properties of object surfaces (ProtoProp is self-defined struct)
+ * vnProtoFound - found flag for objects surfaces
+ * nProtoCnt - count of object surfaces
+ */
 void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack, int bin,
               std::vector<int> vnSegmPtsCnt, std::vector<std::vector<int> > mnSegmPtsIdx, ProtoProp stProtoTmp,
               std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx, ProtoProp &stProto, std::vector<int> &vnProtoFound, int &nProtoCnt, bool flag_mat) {
@@ -525,7 +668,7 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack
 
 
 
-    ////////////// Optimaization //////////////////////////////////////////////
+    ////////////// Optimization //////////////////////////////////////////////
     if (!stTrack.Mode) {
         std::vector<int> idx_seg;
         int cnt_nn = 0;
@@ -621,7 +764,7 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack
             }
         }
     }
-    ////////////// End of the otimization for tracking ////////////////////////////////////
+    ////////////// End of the optimization for tracking ////////////////////////////////////
 
 
     std::vector<bool> objs_old_flag(cnt_old, false);
