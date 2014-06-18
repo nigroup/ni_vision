@@ -72,7 +72,7 @@ int startbox_y;
 std::string sPath;               //
 std::string sInputPath;
 std::string sOutputPath;
-std::string sOutputFileName;
+std::string sObjectName;
 
 int nFocusX = 0, nFocusY = 0, nFocusWidth = 0, nFocusHeight = 0;
 int nHistBinNr = 0;
@@ -177,7 +177,7 @@ void changeImage(int threshold) {
 void parameter_init(int argc, char** argv) {
 
     terminal_tools::parse_argument (argc, argv, "-dir", sPath);
-    terminal_tools::parse_argument (argc, argv, "-obj", sOutputFileName);
+    terminal_tools::parse_argument (argc, argv, "-obj", sObjectName);
 
     terminal_tools::parse_argument (argc, argv, "-bin", nHistBinNr);
     if(nHistBinNr == 0) nHistBinNr = 8;
@@ -447,7 +447,7 @@ void Save2Disk()
 
     std::string sLibFile;
 
-    sLibFile = sOutputPath + "simplelib_3dch_" + sOutputFileName + ".yaml";
+    sLibFile = sOutputPath + "simplelib_3dch_" + sObjectName + ".yaml";
     cv::FileStorage fs(sLibFile,cv::FileStorage::WRITE);
     fs << "TestObjectFeatureVectors" << histo;
 
@@ -760,7 +760,7 @@ int main (int argc, char** argv)
     }
     printf ("Scanning Directory...\n");
 
-    sInputPath = sPath + sOutputFileName + "/OnePos/";
+    sInputPath = sPath + "Color/";
     sOutputPath = sPath;
 
 

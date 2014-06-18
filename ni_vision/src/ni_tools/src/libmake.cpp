@@ -86,7 +86,7 @@ CvRect Sift_rect;                           // area for SIFT calculation
 int nFeatureMode;                           //
 double nDispThresh;                         // threshold for keypoint displacement
 int nSiftLibMode = 0;                       // mode keypoint representation
-int nBriefFlag = 0;                         // flag for brief modus, only one window is shown during trainig
+int nBriefFlag = 0;                         // flag for brief modus, only one window is shown during training
 
 
 
@@ -111,10 +111,10 @@ int nTrjGraphHeight = 0;
  */
 void ParameterInit(int argc, char** argv) {
 
-    terminal_tools::parse_argument (argc, argv, "-path", sPath);
-    terminal_tools::parse_argument (argc, argv, "-file", sFileName);
+    terminal_tools::parse_argument (argc, argv, "-inPath", sPath);
+    terminal_tools::parse_argument (argc, argv, "-obj", sFileName);
     terminal_tools::parse_argument (argc, argv, "-ext", sExten);
-    terminal_tools::parse_argument (argc, argv, "-oppath", sOutputPath);
+    terminal_tools::parse_argument (argc, argv, "-outPath", sOutputPath);
     terminal_tools::parse_argument (argc, argv, "-opfile", sOutputFileName);
     terminal_tools::parse_argument (argc, argv, "-siftsc", nSiftScales); if(nSiftScales == 0) nSiftScales = 3;
     terminal_tools::parse_argument (argc, argv, "-siftis", nSiftInitSigma); if(nSiftInitSigma == 0) nSiftInitSigma = 1.6;

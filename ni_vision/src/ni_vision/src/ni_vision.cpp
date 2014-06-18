@@ -486,7 +486,7 @@ void updateImage() {
     while (true) {
 
         d.sleep ();
-        if(bFlagEnd) printf("%d", 1/0);   // finish the program
+        if(bFlagEnd) std::terminate();   // finish the program
 
         if (!cloud_) continue;
         //if (cloud_old_ == cloud_) continue;
@@ -1606,6 +1606,7 @@ public:
     void imageCb(const sensor_msgs::ImageConstPtr& msg) {
         cv_bridge::CvImagePtr cv_ptr;
         try {
+
             if (bFlagWait && cloud_){
                 bFlagWait = false;
                 printf("O.K.\n\n\n");
