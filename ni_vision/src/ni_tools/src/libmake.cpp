@@ -91,6 +91,7 @@ int nBriefFlag = 0;                         // flag for brief modus, only one wi
 
 
 
+
 double nMatchThres = 0;                     // threshold for FLANN matching
 int nReinforce = 0;                         //
 int nKeyPosThres = 0;
