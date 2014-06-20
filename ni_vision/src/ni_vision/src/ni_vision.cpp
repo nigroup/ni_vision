@@ -147,8 +147,11 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
         std::vector<float> vnHistTmp(nTrackHistoBin_max, 0);
         Calc3DColorHistogram (cvm_rgb_org, vnIdxTmp, stTrack.HistoBin, vnHistTmp);
 
+
         for (int i = 0; i< nTrackHistoBin_max; i++) {
-            if (mnColorHistY_lib.size() == 1) nColorDistMaskOrg += fabs(mnColorHistY_lib[0][i] - vnHistTmp[i]);
+            if (mnColorHistY_lib.size() == 1) {
+                nColorDistMaskOrg += fabs(mnColorHistY_lib[0][i] - vnHistTmp[i]);
+            }
             else nColorDistMaskOrg += fabs(mnColorHistY_lib[stTrack.ClrMode][i] - vnHistTmp[i]);
         }
         nColorDistMaskOrg = nColorDistMaskOrg/2;

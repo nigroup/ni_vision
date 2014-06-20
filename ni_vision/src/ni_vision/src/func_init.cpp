@@ -201,7 +201,7 @@ float* ReadFlannDataset_Color (cv::Mat mFeatureSet) {
         }
     }
 
-    stTrack.HistoBin = pow(mFeatureSet.cols,(1/3.0));
+    stTrack.HistoBin = round(pow(mFeatureSet.cols,(1/3.0)));
     return data;
 }
 
