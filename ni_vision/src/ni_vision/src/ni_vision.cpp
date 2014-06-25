@@ -641,7 +641,7 @@ void updateImage() {
                         cvCreateTrackbar(vsTrackbarName[81].data(), vsWndName[stTID.nDepth].data(), &nDGradSmthCenter, 255, TrackbarHandler_none);
                         cvCreateTrackbar(vsTrackbarName[82].data(), vsWndName[stTID.nDepth].data(), &nDGradSmthBnd1, 30, TrackbarHandler_none);
                         cvCreateTrackbar(vsTrackbarName[83].data(), vsWndName[stTID.nDepth].data(), &nDGradSmthBnd2, 30, TrackbarHandler_none);
-                        cvCreateTrackbar(vsTrackbarName[84].data(), vsWndName[stTID.nDepth].data(), &dgc, 100, TrackbarHandler_DGradC);
+                        //cvCreateTrackbar(vsTrackbarName[84].data(), vsWndName[stTID.nDepth].data(), &dgc, 100, TrackbarHandler_DGradC);
                     }
                 }
                 if (nDMax > nDRange) DrawDepth(vnZ, vnCloudIdx_d, bDepthDispMode, nDRange, nDMin, cvm_depth);

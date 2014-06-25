@@ -307,7 +307,7 @@ void InitParameter (int argc, char** argv) {
 
     stTrack.Mode = 0, stTrack_default.Mode = 0;
     stTrack.ClrMode = 0, stTrack_default.ClrMode = 1;
-    stTrack.HistoBin = 0, stTrack_default.HistoBin = 4;
+    stTrack.HistoBin = 0, stTrack_default.HistoBin = 8;
     stTrack.DPos = 0, stTrack_default.DPos = 0.2;
     stTrack.DSize = 0, stTrack_default.DSize = 0.15;
     stTrack.DClr = 0, stTrack_default.DClr = 0.2;
@@ -532,7 +532,7 @@ void ResetParameter () {
 
     stTrack.Mode = stTrack_default.Mode;
     stTrack.ClrMode = stTrack_default.ClrMode;
-    stTrack.HistoBin = stTrack_default.HistoBin;
+    //stTrack.HistoBin = stTrack_default.HistoBin;
     stTrack.DPos = stTrack_default.DPos;
     stTrack.DSize = stTrack_default.DSize;
     stTrack.DClr = stTrack_default.DClr;
@@ -568,6 +568,7 @@ void ResetParameter () {
     nRecordMode = nRecordMode_default;
     nTimeMessFrmLimit = nTimeMessFrmLimit_default;
     nSnapFormat = nSnapFormat_default;
+    flag_pcd = 0;
 
     if (vbFlagWnd[stTID.nPrmSegm]) {
         cvSetTrackbarPos(vsTrackbarName[20].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.Mode);
@@ -598,12 +599,13 @@ void ResetParameter () {
         cvSetTrackbarPos(vsTrackbarName[51].data(), vsWndName[stTID.nPrmRecog].data(), nFlannKnn);
         cvSetTrackbarPos(vsTrackbarName[52].data(), vsWndName[stTID.nPrmRecog].data(), nFlannMatchFac*100);
         cvSetTrackbarPos(vsTrackbarName[53].data(), vsWndName[stTID.nPrmRecog].data(), nFlannMatchCnt);
+        cvSetTrackbarPos(vsTrackbarName[54].data(), vsWndName[stTID.nPrmRecog].data(), 0);
     }
     if (vbFlagWnd[stTID.nDepth]) {
         cvSetTrackbarPos(vsTrackbarName[81].data(), vsWndName[stTID.nDepth].data(), nDGradSmthCenter);
         cvSetTrackbarPos(vsTrackbarName[82].data(), vsWndName[stTID.nDepth].data(), nDGradSmthBnd1);
         cvSetTrackbarPos(vsTrackbarName[83].data(), vsWndName[stTID.nDepth].data(), nDGradSmthBnd2);
-        cvSetTrackbarPos(vsTrackbarName[84].data(), vsWndName[stTID.nDepth].data(), nDGradConst*100);
+        //cvSetTrackbarPos(vsTrackbarName[84].data(), vsWndName[stTID.nDepth].data(), nDGradConst*100);
     }
     if (vbFlagWnd[stTID.nGSegm]) {
         cvSetTrackbarPos(vsTrackbarName[17].data(), vsWndName[stTID.nGSegm].data(), nGSegmSigma*10);
