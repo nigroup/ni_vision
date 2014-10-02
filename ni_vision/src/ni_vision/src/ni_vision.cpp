@@ -32,15 +32,15 @@
 // -----------------------------------------
 // -----Sub functions-----------------------
 // -----------------------------------------
-#include "func_header.cpp"
-#include "func_operations.cpp"
+#include "func_header.hpp"
+#include "func_operations.hpp"
 
-#include "func_init.cpp"
-#include "func_preproc.cpp"
-#include "func_segmentation.cpp"
-#include "func_segmentation_gb.cpp"
-#include "func_recognition.cpp"
-#include "func_etc.cpp"
+#include "func_init.hpp"
+#include "func_preproc.hpp"
+#include "func_segmentation.hpp"
+#include "func_segmentation_gb.hpp"
+#include "func_recognition.hpp"
+#include "func_etc.hpp"
 
 
 
@@ -116,10 +116,10 @@ int64_t timespecDiff (struct timespec *timeA_p, struct timespec *timeB_p) {
  * vnRecogRating_tmp - vector of results for time measurement
  * cvm_cand - image of the current candidate
  */
-void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, int nTrackHistoBin_max, std::string sTimeDir, std::string sImgExt,
-                     cv::Mat cvm_rgb_org, cv::Mat cvm_rgb_ds, cv::Mat &cvm_rec_org, cv::Mat &cvm_rec_ds,
+void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, int nTrackHistoBin_max,
+                     cv::Mat cvm_rgb_org, cv::Mat &cvm_rec_org, cv::Mat &cvm_rec_ds,
                      std::vector<int> vnProtoPtsCnt, std::vector<std::vector<int> > mnProtoPtsIdx, std::vector<std::vector<int> > mnProtoRect, std::vector<int> &vnProtoFound,
-                     std::vector<int> vnProtoLength, std::vector<int> vnProtoDisapCnt, int nTrackCntDisap, int &nCandCnt, std::vector<std::vector<float> > vnTmpProtoDiff, int &nFoundCnt, int &nFoundNr, int &nFoundFrame,
+                     std::vector<int> vnProtoDisapCnt, int nTrackCntDisap, int &nCandCnt, std::vector<std::vector<float> > vnTmpProtoDiff, int &nFoundCnt, int &nFoundNr, int &nFoundFrame,
                      int &nCandKeyCnt, int &nCandRX, int &nCandRY, int &nCandRW, int &nCandRH,
                      struct timespec t_rec_found_start, struct timespec t_rec_found_end, bool bSwitchRecordTime, int nRecogRtNr, std::vector<int> &vnRecogRating_tmp, cv::Mat cvm_cand) {
 
@@ -454,8 +454,7 @@ void updateImage() {
     bool bSwitchRecordTime = false;
     bool bSwitchRecordVideo = false;
 
-    std::string sTitleDir = "/home/ni/Video/Objektfotos/";
-    std::string sTitleFile = sTitleDir + sTarget + "/Title/" + sTarget + "." + "jpg";
+    std::string sTitleFile = sTargetImgPath + sTarget + "." + "jpg";
     cv::Mat cvm_target_org = cv::imread(sTitleFile.data(), CV_LOAD_IMAGE_COLOR);
     cv::Mat cvm_target;
     if(cvm_target_org.data) {
@@ -977,8 +976,8 @@ void updateImage() {
 
 
                     int nCandKeyCnt, nCandRX, nCandRY, nCandRW, nCandRH;
-                    SelRecognition (nCandID, nImgScale, nTimeRatio, nProtoCnt, nTrackHistoBin_max, sTimeDir, sImgExt, cvm_rgb_org, cvm_rgb_ds, cvm_rec_org, cvm_rec_ds,
-                                    vnProtoPtsCnt, mnProtoPtsIdx, stProto.mnRect, vnProtoFound, stProto.vnLength, stProto.vnDisapCnt, stTrack.CntDisap, nCandCnt, vnTmpProtoDiff, nFoundCnt, nFoundNr, nFoundFrame,
+                    SelRecognition (nCandID, nImgScale, nTimeRatio, nProtoCnt, nTrackHistoBin_max, cvm_rgb_org, cvm_rec_org, cvm_rec_ds,
+                                    vnProtoPtsCnt, mnProtoPtsIdx, stProto.mnRect, vnProtoFound, stProto.vnDisapCnt, stTrack.CntDisap, nCandCnt, vnTmpProtoDiff, nFoundCnt, nFoundNr, nFoundFrame,
                                     nCandKeyCnt, nCandRX, nCandRY, nCandRW, nCandRH,
                                     t_rec_found_start, t_rec_found_end, bSwitchRecordTime, nRecogRtNr, vnRecogRating_tmp, cvm_cand);
                     nTmpAttKeyCnt = nCandKeyCnt; nTmpAttWidth = nCandRW; nTmpAttHeight = nCandRH;
