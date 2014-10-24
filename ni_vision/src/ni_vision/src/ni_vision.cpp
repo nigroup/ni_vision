@@ -118,7 +118,7 @@ int64_t timespecDiff (struct timespec *timeA_p, struct timespec *timeB_p) {
  */
 void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, int nTrackHistoBin_max,
                      cv::Mat cvm_rgb_org, cv::Mat &cvm_rec_org, cv::Mat &cvm_rec_ds,
-                     std::vector<int> vnProtoPtsCnt, std::vector<std::vector<int> > mnProtoPtsIdx, std::vector<std::vector<int> > mnProtoRect, std::vector<int> &vnProtoFound,
+                     std::vector<int> vnProtoPtsCnt, std::vector<std::vector<int> > mnProtoPtsIdx, std::vector<std::vector<int> > mnProtoRect, std::vector<float> vnProtoLength, std::vector<int> &vnProtoFound,
                      std::vector<int> vnProtoDisapCnt, int nTrackCntDisap, int &nCandCnt, std::vector<std::vector<float> > vnTmpProtoDiff, int &nFoundCnt, int &nFoundNr, int &nFoundFrame,
                      int &nCandKeyCnt, int &nCandRX, int &nCandRY, int &nCandRW, int &nCandRH,
                      struct timespec t_rec_found_start, struct timespec t_rec_found_end, bool bSwitchRecordTime, int nRecogRtNr, std::vector<int> &vnRecogRating_tmp, cv::Mat cvm_cand) {
@@ -208,7 +208,7 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
     if (bRecogClrMask) nColorDist = nColorDistMaskOrg; else nColorDist = vnTmpProtoDiff[0][nCandID];
     if(nFlannTP >= nFlannMatchCnt && nColorDist < nRecogDClr) { //If the number of matches for the current object are more than or equal to the threshhold for matches
         clock_gettime(CLOCK_MONOTONIC_RAW, &t_rec_found_end); nTimeRecFound = double(timespecDiff(&t_rec_found_end, &t_rec_found_start)/nTimeRatio);
-        //printf("%d. object with %3d keypoints (%d %d) at frame %d (%d), Color dist: %4.3f (%4.3f), Object size: %d mm\n", nCandCnt, nFlannTP, nFlannIM, nKeyptsCnt, nCntFrame, nCntFrame_tmp, vnTmpProtoDiff[0][nCandID], nColorDist, vnProtoLength[nCandID]);
+        printf("%d. object with %3d keypoints (%d %d) at frame %d (%d), Color dist: %4.3f (%4.3f), Object size: %4.0f mm\n", nCandCnt, nFlannTP, nFlannIM, nKeyptsCnt, nCntFrame, nCntFrame_tmp, vnTmpProtoDiff[0][nCandID], nColorDist, vnProtoLength[nCandID]*1000);
 
         nFoundCnt++;
         nFoundNr = nCandCnt;
@@ -613,7 +613,7 @@ void updateImage() {
             struct timespec t_depth_start, t_depth_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_depth_start); bTimeDepth = true;
 
             //////*  Making depth map: storing coordinates from point cloud  *////////////
-            if (bPointRgb) MakeDepthMap (cloud_Input_rgb, nDsSize, nDMax, nDMin, nDIdxCntTmp, vnCloudIdx_d, vnX, vnY, vnZ);
+            if (bPointRgb) MakeDepthMap (cloud_Input_rgb, nDsSize, nDsWidth, nDMax, nDMin, nDIdxCntTmp, vnCloudIdx_d, vnX, vnY, vnZ);
             else MakeDepthMap (cloud_Input, nDsSize, nDMax, nDMin, nDIdxCntTmp, vnCloudIdx_d, vnX, vnY, vnZ);
 
             //////*  Making depth-gradient map  *////////////////////////////////////////
@@ -759,7 +759,7 @@ void updateImage() {
                 int xx, yy;
                 for (int i = 0; i < nProtoCnt; i++) {
                     if (stProto.vnStableCnt[i] < stTrack.CntStable || stProto.vnDisapCnt[i] > stTrack.CntDisap) continue;
-                    if (stProto.vnLength[i] > nAttSizeMax || stProto.vnLength[i] < nAttSizeMin || vnProtoPtsCnt[i] < nAttPtsMin) continue;
+                    if (stProto.vnLength[i]*1000 > nAttSizeMax || stProto.vnLength[i]*1000 < nAttSizeMin || vnProtoPtsCnt[i] < nAttPtsMin) continue;
 
                     for (int j = 0; j < vnProtoPtsCnt[i]; j++) {
                         GetPixelPos(mnProtoPtsIdx[i][j], nDsWidth, xx, yy);
@@ -810,7 +810,7 @@ void updateImage() {
                     for (int i = 0; i < nProtoCnt; i++) {
                         vnTmpProtoDiff[1][i] = (float)i;
                         if (stProto.vnStableCnt[i] < stTrack.CntStable || stProto.vnDisapCnt[i] > stTrack.CntDisap) {vnTmpProtoDiff[0][i] = tmp_diff++; continue;}
-                        if (stProto.vnLength[i] > nAttSizeMax || stProto.vnLength[i] < nAttSizeMin || vnProtoPtsCnt[i] < nAttPtsMin) {vnTmpProtoDiff[0][i] = tmp_diff++; continue;}
+                        if (stProto.vnLength[i]*1000 > nAttSizeMax || stProto.vnLength[i]*1000 < nAttSizeMin || vnProtoPtsCnt[i] < nAttPtsMin) {vnTmpProtoDiff[0][i] = tmp_diff++; continue;}
 
                         vbProtoCand[i] = true;
                         float dc = 0;
@@ -829,7 +829,7 @@ void updateImage() {
                     for (int i = 0; i < nProtoCnt; i++) {
                         if (stProto.vnStableCnt[i] < stTrack.CntStable && stProto.vnDisapCnt[i] > stTrack.CntDisap) {vnTmpProtoDiff[0][i] = tmp_diff++; continue;}
                         if (nAttTDMode == 1)
-                            if (stProto.vnLength[i] > nAttSizeMax || stProto.vnLength[i] < nAttSizeMin || vnProtoPtsCnt[i] < nAttPtsMin) {vnTmpProtoDiff[0][i] = tmp_diff++; continue;}
+                            if (stProto.vnLength[i]*1000 > nAttSizeMax || stProto.vnLength[i]*1000 < nAttSizeMin || vnProtoPtsCnt[i] < nAttPtsMin) {vnTmpProtoDiff[0][i] = tmp_diff++; continue;}
 
                         vbProtoCand[i] = true;
                         vnTmpProtoDiff[1][i] = (float)i;
@@ -977,7 +977,7 @@ void updateImage() {
 
                     int nCandKeyCnt, nCandRX, nCandRY, nCandRW, nCandRH;
                     SelRecognition (nCandID, nImgScale, nTimeRatio, nProtoCnt, nTrackHistoBin_max, cvm_rgb_org, cvm_rec_org, cvm_rec_ds,
-                                    vnProtoPtsCnt, mnProtoPtsIdx, stProto.mnRect, vnProtoFound, stProto.vnDisapCnt, stTrack.CntDisap, nCandCnt, vnTmpProtoDiff, nFoundCnt, nFoundNr, nFoundFrame,
+                                    vnProtoPtsCnt, mnProtoPtsIdx, stProto.mnRect, stProto.vnLength, vnProtoFound, stProto.vnDisapCnt, stTrack.CntDisap, nCandCnt, vnTmpProtoDiff, nFoundCnt, nFoundNr, nFoundFrame,
                                     nCandKeyCnt, nCandRX, nCandRY, nCandRW, nCandRH,
                                     t_rec_found_start, t_rec_found_end, bSwitchRecordTime, nRecogRtNr, vnRecogRating_tmp, cvm_cand);
                     nTmpAttKeyCnt = nCandKeyCnt; nTmpAttWidth = nCandRW; nTmpAttHeight = nCandRH;
@@ -1416,8 +1416,6 @@ void updateImage() {
                 cvCreateTrackbar(vsTrackbarName[31].data(), vsWndName[stTID.nPrmSegm].data(), &nAttSizeMax, 1000, TrackbarHandler_ProMax);
                 cvCreateTrackbar(vsTrackbarName[32].data(), vsWndName[stTID.nPrmSegm].data(), &nAttSizeMin, 1000, TrackbarHandler_ProMin);
                 cvCreateTrackbar(vsTrackbarName[33].data(), vsWndName[stTID.nPrmSegm].data(), &nAttPtsMin, 1000, TrackbarHandler_none);
-                //cvCreateTrackbar(vsTrackbarName[34].data(), vsWndName[stTID.nPrmSegm].data(), &nAttAspect1, 100, TrackbarHandler_none);
-                //cvCreateTrackbar(vsTrackbarName[35].data(), vsWndName[stTID.nPrmSegm].data(), &nAttAspect2, 100, TrackbarHandler_none);
             }
         }
 
@@ -1533,7 +1531,7 @@ void updateImage() {
         if(vbFlagTask[stTID.nPrmInfo]) {
             DrawSettings(cvm_main, nPadCol2, nSnapFormat, nDLimit, nDGradFilterSize,
                          stTrack,
-                         nAttSizeMax, nAttSizeMin, nAttPtsMin, nAttAspect1, nAttAspect2, nAttTDMode,
+                         nAttSizeMax, nAttSizeMin, nAttPtsMin, nAttTDMode,
                          nRecogDClr, nSiftScales, nSiftInitSigma, nSiftPeakThrs, nFlannKnn, nFlannMatchFac, nFlannMatchCnt,
                          nGSegmSigma, nGSegmGrThrs, nGSegmMinSize);
         }

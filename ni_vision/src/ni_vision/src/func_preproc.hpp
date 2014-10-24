@@ -15,20 +15,39 @@
  * Output:
  * vnX, vnY, vnZ - output vectors for point cloud coordinates
  */
-void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nDsSize, float &nDMax, float &nDMin,
+void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nDsSize, int nDsWidth, float &nDMax, float &nDMin,
                    int &nDIdxCntTmp, std::vector<int> &vnCloudIdx_d, std::vector<float> &vnX, std::vector<float> &vnY, std::vector<float> &vnZ)
 {
-    for (int i = 1; i < nDsSize; i++) {// the first pixel has wrong depth info
-        if (!pcl_isfinite (cloud.points[i].z)) continue;
-        vnX[i] = cloud.points[i].x;
-        vnY[i] = cloud.points[i].y;
-        vnZ[i] = fabs(cloud.points[i].z);
-        if (vnZ[i] > nDLimit) vnZ[i] = nDLimit;
-        if (vnZ[i] > nDMax) nDMax = vnZ[i];
-        if (vnZ[i] < nDMin) nDMin = vnZ[i];
-        vnCloudIdx_d[nDIdxCntTmp++] = i;
+    if (nDsWidth <= 320) {
+        for (int i = 1; i < nDsSize; i++) {// the first pixel has wrong depth info
+            if (!pcl_isfinite (cloud.points[i].z)) continue;
+            vnX[i] = cloud.points[i].x;
+            vnY[i] = cloud.points[i].y;
+            vnZ[i] = fabs(cloud.points[i].z);
+            if (vnZ[i] > nDLimit) vnZ[i] = nDLimit;
+            if (vnZ[i] > nDMax) nDMax = vnZ[i];
+            if (vnZ[i] < nDMin) nDMin = vnZ[i];
+            vnCloudIdx_d[nDIdxCntTmp++] = i;
+        }
+        vnCloudIdx_d.resize(nDIdxCntTmp);
     }
-    vnCloudIdx_d.resize(nDIdxCntTmp);
+    else {
+        for (int i = 1; i < nDsSize; i++) {// the first pixel has wrong depth info
+            int x, y, idx;
+            GetPixelPos(i, nDsWidth, x, y);
+            if (!pcl_isfinite (cloud.points[i].z)) continue;
+            vnCloudIdx_d[nDIdxCntTmp++] = i;
+            if (x%2) continue;
+            if (y%2) continue;
+            vnX[i] = cloud.points[i].x; vnX[i+1] = vnX[i]; vnX[i+nDsWidth] = vnX[i]; vnX[i+nDsWidth+1] = vnX[i];
+            vnY[i] = cloud.points[i].y; vnY[i+1] = vnY[i]; vnY[i+nDsWidth] = vnY[i]; vnY[i+nDsWidth+1] = vnY[i];
+            vnZ[i] = fabs(cloud.points[i].z); vnZ[i+1] = vnZ[i]; vnZ[i+nDsWidth] = vnZ[i]; vnZ[i+nDsWidth+1] = vnZ[i];
+            if (vnZ[i] > nDLimit) vnZ[i] = nDLimit;
+            if (vnZ[i] > nDMax) nDMax = vnZ[i];
+            if (vnZ[i] < nDMin) nDMin = vnZ[i];
+        }
+        vnCloudIdx_d.resize(nDIdxCntTmp);
+    }
 }
 
 
