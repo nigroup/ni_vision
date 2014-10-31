@@ -42,7 +42,7 @@
 #include "func_recognition.cpp"
 #include "func_etc.cpp"
 
-
+#include "func_RecPcl.cpp"
 
 
 //////// Dimension of downsampled image /////////////
@@ -341,7 +341,6 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
 /* Updates the gui and every window that is opend in the gui.
  */
 void updateImage() {
-
     ros::Duration d (0.001);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -588,6 +587,12 @@ void updateImage() {
         //////////////////                                                                              /////////////////////////
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        // save PointClouds ////////////////////////////////////////
+        if (vbFlagTask[stTID.nRecPcl])
+        {
+            RecPcl( cloud_, m );
+            vbFlagTask[stTID.nRecPcl] = false; //unclick button when recording is completed
+        }
 
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

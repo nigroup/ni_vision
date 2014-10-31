@@ -86,7 +86,7 @@ int nFont = CV_FONT_HERSHEY_SIMPLEX;
 float nFontSize = 0.4;
 int nBtnSize = 80;
 float nBtnFontSize = 0.5*nBtnSize/100;
-int nTaskNrMax = 40;
+int nTaskNrMax = 41;
 bool bFlagEnd = false;
 std::vector<bool> vbFlagTask(nTaskNrMax, 0);
 std::vector<bool> vbFlagWnd(nTaskNrMax, 0);
@@ -126,6 +126,7 @@ struct TaskID {
     int nSegmentation, nDSegm, nGSegm, nTrack, nProto;
     int nRecognition, nRecogOrg, nRecogDs, nSIFT;
     int nRecTime, nRstTime, nPrmInfo, nPrmSett, nPrmSegm, nPrmRecog, nRstPrm;
+    int nRecPcl;
 }; struct TaskID stTID;
 
 
@@ -625,6 +626,7 @@ void InitVariables () {
     stTID.nSegmentation = 10, stTID.nDSegm = 12, stTID.nGSegm = 13, stTID.nTrack = 15, stTID.nProto = 16;
     stTID.nRecognition = 20, stTID.nRecogOrg = 21, stTID.nRecogDs = 22, stTID.nSIFT = 23;
     stTID.nRecTime = 31, stTID.nRstTime = 33, stTID.nPrmInfo = 34, stTID.nPrmSett = 35, stTID.nPrmSegm = 36, stTID.nPrmRecog = 37, stTID.nRstPrm = 38;
+    stTID.nRecPcl = 39;
 
     vsWndName[stTID.nRgbOrg] = "Original RGB";
     vsWndName[stTID.nRgbDs] = "Downsampled RGB";
@@ -661,6 +663,7 @@ void InitVariables () {
     vsBtnName[stTID.nPrmSegm] = "Segm Prm";
     vsBtnName[stTID.nPrmRecog] = "Recog Prm";
     vsBtnName[stTID.nRstPrm] = "Reset Prm";
+    vsBtnName[stTID.nRecPcl] = "Rec Pcl";
     vsBtnName[nTaskNrMax-1] = "Abandon Ship!";
 
     vbFlagTask[stTID.nInfo] = true;
@@ -776,7 +779,6 @@ void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, i
     nTaskNr = stTID.nGSegm; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecY += nBtnH + 3*nBtnOffset;
 
-
     nBtnOffset = 5;
     nBtnW = 2*nBtnSize - 2*nBtnOffset;
     nBtnH = nBtnSize - 2*nBtnOffset;
@@ -794,6 +796,8 @@ void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, i
     nPadSecY += nBtnH + nBtnOffset;
     nPadSecX = nBtnOffset;
     nTaskNr = stTID.nSIFT; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
+    nPadSecY += 2*nBtnH + 2*nBtnOffset;
+    nTaskNr = stTID.nRecPcl; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecY += nBtnH + 4*nBtnOffset;
 
     row1 = nPadSecY + 15;
