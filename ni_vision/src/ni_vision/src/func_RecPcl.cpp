@@ -1,4 +1,5 @@
 #include <pcl/io/pcd_io.h>
+#include <ctime>
 
 
 void RecPcl(const sensor_msgs::PointCloud2ConstPtr cloud_, boost::mutex & m)
@@ -32,59 +33,44 @@ void RecPcl(const sensor_msgs::PointCloud2ConstPtr cloud_, boost::mutex & m)
 }
 
 
-/*
-struct CloudPtr
+/* store point cloud data to pcd file
+ *returns false while the process is not yet finished
+ *returns true if all point clouds have been stored
+ */
+template <typename PointT>
+bool RecPcl2(pcl::PointCloud<PointT> & cloud)
 {
-    pcl::PointCloud<pcl::PointXYZ> * XYZPtr;
-    pcl::PointCloud<pcl::PointXYZRGB> * XYZRGBPtr;
-
-    CloudPtr(pcl::PointCloud<pcl::PointXYZ> & inp){XYZPtr = &inp; XYZRGBPtr = NULL;}
-    CloudPtr(pcl::PointCloud<pcl::PointXYZRGB> & inp){XYZRGBPtr = &inp; XYZPtr = NULL;}
-};
-
-
-void RecPcl2(CloudPtr cloudP)
-{
-    static struct timespec curTime;
-    static struct timespec lastTime = -1;
-
-    clock_gettime(CLOCK_MONOTONIC_RAW, curTime);
-
-
-    bool isRgb;
-    if (cloudP.XYZRGBPtr != NULL)
-    {
-        isRgb = true;
-        pcl::PointCloud<pcl::PointXYZRGB> * cloud = cloudP.XYZRGBPtr;
-    }
-    else
-    {
-        iRgb = false;
-        pcl::PointCloud<pcl::PointXYZ> * cloud = cloudP.XYZPtr;
-    }
-
+    // directory and file name
     static const std::string sPclDir = "Pcl_data";
     mkdir (sPclDir.data(), 0777);
     std::string sPcl_fn;
+    string ext;
 
-    char cExt[] = "0";
+    //time control
+    static clock_t curTime;
+    static clock_t lastTime;
+    static int count = 0;
+    int maxnum = 10; //number of point clouds to be recorded
 
-    for (int nPclIdx = 1; nPclIdx <= 5; nPclIdx++)
+    clock_t delay = 5 * CLOCKS_PER_SEC; //delay time in clock units
+    curTime = clock();
+
+    if (curTime - lastTime > delay)
     {
-        cExt[0]++;
-        sPcl_fn = sPclDir + "/" + "PointCloud_" + std::string(cExt) + ".pcd";
-        m.lock ();
-        if (pcl::getFieldIndex (*cloud_, "rgb") != -1)
+        lastTime = curTime;
+        ext = static_cast<ostringstream*>( &(ostringstream() << (count + 1)))->str();
+        sPcl_fn = sPclDir + "/" + "PointCloud_" + ext + ".pcd";
+        pcl::io::savePCDFileASCII(sPcl_fn, cloud);
+        count++;
+        if (count == maxnum)
         {
-            pcl::fromROSMsg (*cloud_, cloud_xyz_rgb);
-            pcl::io::savePCDFileASCII(sPcl_fn, cloud_xyz_rgb);
+            count = 0;
+            return true;
         }
         else
-        {
-            pcl::fromROSMsg (*cloud_, cloud_xyz);
-            pcl::io::savePCDFileASCII(sPcl_fn, cloud_xyz);
-        }
-        m.unlock ();
+            return false;
     }
+    return false;
 }
-*/
+
+

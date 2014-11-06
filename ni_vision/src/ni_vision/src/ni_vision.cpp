@@ -590,8 +590,9 @@ void updateImage() {
         // save PointClouds ////////////////////////////////////////
         if (vbFlagTask[stTID.nRecPcl])
         {
-            RecPcl( cloud_, m );
-            vbFlagTask[stTID.nRecPcl] = false; //unclick button when recording is completed
+            // RecPcl( cloud_, m );
+            if((bPointRgb && RecPcl2(cloud_xyz_rgb)) || (!bPointRgb && RecPcl2(cloud_xyz)) )
+                vbFlagTask[stTID.nRecPcl] = false; //unclick button when recording is completed
         }
 
 
