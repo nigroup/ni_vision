@@ -1,8 +1,14 @@
 #include <pcl/io/pcd_io.h>
 #include <ctime>
+#include "gnuplot-iostream.h"
 
+/*
+#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/visualization/image_viewer.h>
+ */ //did not work
 
-void RecPcl(const sensor_msgs::PointCloud2ConstPtr cloud_, boost::mutex & m)
+void RecPcl2(const sensor_msgs::PointCloud2ConstPtr cloud_, boost::mutex & m)
 {
     pcl::PointCloud<pcl::PointXYZ> cloud_xyz;
     pcl::PointCloud<pcl::PointXYZRGB> cloud_xyz_rgb;
@@ -37,8 +43,8 @@ void RecPcl(const sensor_msgs::PointCloud2ConstPtr cloud_, boost::mutex & m)
  *returns false while the process is not yet finished
  *returns true if all point clouds have been stored
  */
-template <typename PointT>
-bool RecPcl2(pcl::PointCloud<PointT> & cloud)
+//template <typename PointT>
+bool RecPcl(pcl::PointCloud<pcl::PointXYZRGB> & cloud)
 {
     // directory and file name
     static const std::string sPclDir = "Pcl_data";
@@ -61,6 +67,43 @@ bool RecPcl2(pcl::PointCloud<PointT> & cloud)
         ext = static_cast<ostringstream*>( &(ostringstream() << (count + 1)))->str();
         sPcl_fn = sPclDir + "/" + "PointCloud_" + ext + ".pcd";
         pcl::io::savePCDFileASCII(sPcl_fn, cloud);
+
+
+        /*
+        //show PointCloud;  does not work: illegal instruction (core dumped)
+        pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr ptrCloud(&cloud);
+        pcl::visualization::CloudViewer viewer("Simple Cloud Viewer");
+        viewer.showCloud(ptrCloud);
+        while (!viewer.wasStopped())
+        {
+        }
+        */
+
+        /*
+        //try pcl_visualizer class;  does not work: illegal instruction (core dumped)
+        boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+        pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr ptrCloud(&cloud);
+        viewer->addPointCloud<pcl::PointXYZRGB> (ptrCloud, "sample cloud");
+        viewer->initCameraParameters ();
+        while (!viewer->wasStopped ())
+        {
+          viewer->spinOnce (100);
+          boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+        }
+        //end of visualization   */
+
+        /*  //try to convert point cloud to 2D image;  does not work: illegal instruction (core dumped)
+        pcl::visualization::ImageViewer viewer("View Clouds");
+        viewer.showRGBImage(cloud);
+        */
+
+        //try sending data to gnuplot
+        Gnuplot gp;
+        gp << "splot \"" << sPcl_fn << "\" using 1:2:3:4 with dots palette\n";
+
+
+
+
         count++;
         if (count == maxnum)
         {
@@ -72,5 +115,9 @@ bool RecPcl2(pcl::PointCloud<PointT> & cloud)
     }
     return false;
 }
+
+
+
+
 
 

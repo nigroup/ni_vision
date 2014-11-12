@@ -58,6 +58,7 @@ boost::mutex m;
 pcl::PointCloud<pcl::PointXYZ> cloud_xyz;
 pcl::PointCloud<pcl::PointXYZRGB> cloud_xyz_rgb;
 
+
 cv::Mat cvm_image_camera;
 
 int nCvCurrentkey = -1;
@@ -590,8 +591,8 @@ void updateImage() {
         // save PointClouds ////////////////////////////////////////
         if (vbFlagTask[stTID.nRecPcl])
         {
-            // RecPcl( cloud_, m );
-            if((bPointRgb && RecPcl2(cloud_xyz_rgb)) || (!bPointRgb && RecPcl2(cloud_xyz)) )
+            // RecPcl2( cloud_, m );
+            if((bPointRgb && RecPcl(cloud_xyz_rgb)))
                 vbFlagTask[stTID.nRecPcl] = false; //unclick button when recording is completed
         }
 
