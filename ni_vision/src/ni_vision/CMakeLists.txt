@@ -182,4 +182,4 @@ target_link_libraries(ni_vision ${catkin_LIBRARIES} siftfast terminal_tools ${Op
 
 
 # required for usage of pcl::visualization::PCLVisualizer class
- target_link_libraries(ni_vision ${PCL_LIBRARIES} libvtkCommon.so libvtkFiltering.so )
+target_link_libraries(ni_vision ${PCL_LIBRARIES} libvtkCommon.so libvtkFiltering.so )
