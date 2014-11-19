@@ -2,6 +2,7 @@
 #include <ctime>
 #include "gnuplot-iostream.h"
 #include <pcl_ros/filters/filter.h>
+#include <limits>
 
 
 #include <pcl/visualization/cloud_viewer.h>
@@ -45,7 +46,7 @@ void RecPcl2(const sensor_msgs::PointCloud2ConstPtr cloud_, boost::mutex & m)
  *returns true if all point clouds have been stored
  */
 //template <typename PointT>
-bool RecPcl(pcl::PointCloud<pcl::PointXYZRGB> & cloud)
+bool RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud)
 {
     // directory and file name
     static const std::string sPclDir = "Pcl_data";
@@ -57,7 +58,7 @@ bool RecPcl(pcl::PointCloud<pcl::PointXYZRGB> & cloud)
     static clock_t curTime;
     static clock_t lastTime;
     static int count = 0;
-    int maxnum = 10; //number of point clouds to be recorded
+    int maxnum = 2; //number of point clouds to be recorded
 
     clock_t delay = 5 * CLOCKS_PER_SEC; //delay time in clock units
     curTime = clock();
@@ -69,15 +70,38 @@ bool RecPcl(pcl::PointCloud<pcl::PointXYZRGB> & cloud)
         sPcl_fn = sPclDir + "/" + "PointCloud_" + ext + ".pcd";
 
         //edit point cloud
-        //apply threshold, remove nan and resize
+        //apply threshold
+        pcl::PointCloud<pcl::PointXYZRGB> cloud_thresh = cloud;
+        pcl::PointCloud<pcl::PointXYZRGB>::iterator it;
+        //find range of the rgb values
+        double min, max;
+        it = cloud_thresh.points.begin();
+        min = max = it->rgb;
+        for (it = cloud_thresh.points.begin(); it < cloud_thresh.points.end(); it++)
+        {
+            if(it->rgb > max)
+                max = it->rgb;
+            else if(it->rgb < min)
+                min = it->rgb;
+        }
+
+        //remove values which are too small
+        double threshold = 0.5 * max;
+        const float nan = std::numeric_limits<float>::quiet_NaN();
+        for (it = cloud_thresh.points.begin(); it < cloud_thresh.points.end(); it++)
+        {
+            if(it->rgb < threshold)
+                it->x = nan;
+        }
+
+        //remove nan
         pcl::PointCloud<pcl::PointXYZRGB> cloud_mod;
         std::vector<int> index;
-        pcl::removeNaNFromPointCloud(cloud, cloud_mod, index);
-
+        pcl::removeNaNFromPointCloud(cloud_thresh, cloud_mod, index);
 
 
         //write point cloud data to .pcd file
-        pcl::io::savePCDFileASCII(sPcl_fn, cloud);
+        pcl::io::savePCDFileASCII(sPcl_fn, cloud_mod);
 
 
         /*
@@ -93,21 +117,22 @@ bool RecPcl(pcl::PointCloud<pcl::PointXYZRGB> & cloud)
 
         /*
         //try pcl_visualizer class; does this work in a thread?
-        boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+        static boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
         pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr ptrCloud(&cloud);
         viewer->addPointCloud<pcl::PointXYZRGB> (ptrCloud, "sample cloud");
         viewer->initCameraParameters ();
-        while (!viewer->wasStopped ())
+        if (!viewer->wasStopped ())
         {
           viewer->spinOnce (100);
           boost::this_thread::sleep (boost::posix_time::microseconds (100000));
-        }  */
+        }
+        viewer->removePointCloud();   */
 
+        /*
+        //try to convert point cloud to 2D image; works in thread; viewer can also be declared static
+        static pcl::visualization::ImageViewer viewer("View Clouds");
+        viewer.showRGBImage(cloud);   */
 
-        /*  //try to convert point cloud to 2D image;  does not work: illegal instruction (core dumped)
-        pcl::visualization::ImageViewer viewer("View Clouds");
-        viewer.showRGBImage(cloud);
-        */
 
         //try sending data to gnuplot
         //Gnuplot gp;
@@ -122,7 +147,10 @@ bool RecPcl(pcl::PointCloud<pcl::PointXYZRGB> & cloud)
             return true;
         }
         else
+        {
             return false;
+        }
+
     }
     return false;
 }
