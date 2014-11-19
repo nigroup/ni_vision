@@ -9,7 +9,7 @@
 
 ///////////
 //#include "flann/flann.h"
-#include "func_recognition_flann.cpp"
+#include "func_recognition_flann.hpp"
 
 #define PI 3.1415926536
 
@@ -183,7 +183,7 @@ void SwapMemory (std::vector<bool> &vbProtoCand, std::vector<int> &vnProtoIdx, s
     std::vector<std::vector<float> > mnAaaProtoCubic = stProto.mnCubic;
     std::vector<std::vector<float> > mnAaaProtoCCenter = stProto.mnCCenter;
     std::vector<std::vector<float> > mnAaaProtoColorHist = stProto.mnColorHist;
-    std::vector<int> vnAaaProtoLength = stProto.vnLength;
+    std::vector<float> vnAaaProtoLength = stProto.vnLength;
     std::vector<int> vnAaaProtoMemoryCnt = stProto.vnMemoryCnt;
     std::vector<int> vnAaaProtoStableCnt = stProto.vnStableCnt;
     std::vector<int> vnAaaProtoDisapCnt = stProto.vnDisapCnt;

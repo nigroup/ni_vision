@@ -3,7 +3,7 @@
  */
 
 
-#include "munkres/munkres.h"
+#include "munkres/munkres.hpp"
 
 /* Flattening depth-gradient map
  *
@@ -476,11 +476,6 @@ void TrackingPre (int nSegCnt, int nDSegmCutSize, int nDsWidth, int nDsHeight, s
         }
         vnSegmPtsCnt[final_cnt_new] = vnSegmPtsCnt[i];
         mnSegmPtsIdx[final_cnt_new] = mnSegmPtsIdx[i];
-        stProtoTmp.mnRCenter[final_cnt_new][0] = rx_acc / vnSegmPtsCnt[i];
-        stProtoTmp.mnRCenter[final_cnt_new][1] = ry_acc / vnSegmPtsCnt[i];
-        stProtoTmp.mnCCenter[final_cnt_new][0] = cx_acc / vnSegmPtsCnt[i];
-        stProtoTmp.mnCCenter[final_cnt_new][1] = cy_acc / vnSegmPtsCnt[i];
-        stProtoTmp.mnCCenter[final_cnt_new][2] = cz_acc / vnSegmPtsCnt[i];
         stProtoTmp.mnRect[final_cnt_new][0] = rx_min;
         stProtoTmp.mnRect[final_cnt_new][1] = ry_min;
         stProtoTmp.mnRect[final_cnt_new][2] = rx_max;
@@ -491,7 +486,13 @@ void TrackingPre (int nSegCnt, int nDSegmCutSize, int nDsWidth, int nDsHeight, s
         stProtoTmp.mnCubic[final_cnt_new][3] = cx_max;
         stProtoTmp.mnCubic[final_cnt_new][4] = cy_max;
         stProtoTmp.mnCubic[final_cnt_new][5] = cz_max;
-        stProtoTmp.vnLength[final_cnt_new] = int(sqrt(pow((cx_max - cx_min), 2) + pow((cy_max - cy_min), 2)+ pow((cz_max - cz_min), 2)) * 1000);
+        stProtoTmp.mnRCenter[final_cnt_new][0] = rx_acc / vnSegmPtsCnt[i];
+        stProtoTmp.mnRCenter[final_cnt_new][1] = ry_acc / vnSegmPtsCnt[i];
+        stProtoTmp.mnCCenter[final_cnt_new][0] = cx_acc / vnSegmPtsCnt[i];
+        stProtoTmp.mnCCenter[final_cnt_new][1] = cy_acc / vnSegmPtsCnt[i];
+        stProtoTmp.mnCCenter[final_cnt_new][2] = cz_acc / vnSegmPtsCnt[i];
+        stProtoTmp.vnLength[final_cnt_new] = sqrt(pow((cx_max - cx_min), 2) + pow((cy_max - cy_min), 2)+ pow((cz_max - cz_min), 2));
+        //printf("x %5.3f     y %5.3f     z %5.3f\n", (cx_max + cx_min)/2, (cy_max + cy_min)/2, (cz_max + cz_min)/2);
 
         stProtoTmp.vnMemoryCnt[final_cnt_new] = stTrack.CntMem - stTrack.CntStable;
         stProtoTmp.vnStableCnt[final_cnt_new] = 0;

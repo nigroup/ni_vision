@@ -46,8 +46,6 @@ int nAttTDMode = 0, nAttTDMode_default = 0;
 int nAttSizeMax = 0, nAttSizeMax_default = 350;
 int nAttSizeMin = 0, nAttSizeMin_default = 100;
 int nAttPtsMin = 0, nAttPtsMin_default = 200;
-int nAttAspect1 = 0, nAttAspect1_default = 20;
-int nAttAspect2 = 0, nAttAspect2_default = 30;
 
 
 int nSiftScales = 0, nSiftScales_default = 3;
@@ -76,7 +74,7 @@ std::string sDataDir;
 
 struct ProtoProp {
     std::vector<std::vector<int> > mnRect, mnRCenter; std::vector<std::vector<float> > mnCubic, mnCCenter;
-    std::vector<int> vnLength; std::vector<std::vector<float> > mnColorHist;
+    std::vector<float> vnLength; std::vector<std::vector<float> > mnColorHist;
     std::vector<int> vnMemoryCnt, vnStableCnt, vnDisapCnt;
 };
 
@@ -154,6 +152,7 @@ double nTimeRecFound_max = 0, nTimeRecFound_min = 100000;
 std::string sTarget;
 std::string sSIFTLibFileName;
 std::string sColorLibFileName;
+std::string sTargetImgPath;
 std::string sLibFilePath;
 std::vector<std::vector<float> > mnColorHistY_lib;
 
@@ -395,10 +394,6 @@ void InitParameter (int argc, char** argv) {
     if(nAttSizeMin == 0) nAttSizeMin = nAttSizeMin_default; nAttSizeMin_default = nAttSizeMin;
     terminal_tools::parse_argument (argc, argv, "-candpm", nAttPtsMin);
     if(nAttPtsMin == 0) nAttPtsMin = nAttPtsMin_default; nAttPtsMin_default = nAttPtsMin;
-    terminal_tools::parse_argument (argc, argv, "-candar1", nAttAspect1);
-    if(nAttAspect1 == 0) nAttAspect1 = nAttAspect1_default; nAttAspect1_default = nAttAspect1;
-    terminal_tools::parse_argument (argc, argv, "-candar2", nAttAspect2);
-    if(nAttAspect2 == 0) nAttAspect2 = nAttAspect2_default; nAttAspect2_default = nAttAspect2;
 
 
     terminal_tools::parse_argument (argc, argv, "-siftsc", nSiftScales);
@@ -440,6 +435,7 @@ void InitParameter (int argc, char** argv) {
     terminal_tools::parse_argument (argc, argv, "-libpath", sLibFilePath);
 
     terminal_tools::parse_argument (argc, argv, "-target", sTarget);
+    terminal_tools::parse_argument (argc, argv, "-targetpath", sTargetImgPath);
     terminal_tools::parse_argument (argc, argv, "-datadir", sDataDir);
 
 
@@ -550,8 +546,6 @@ void ResetParameter () {
     nAttSizeMax = nAttSizeMax_default;
     nAttSizeMin = nAttSizeMin_default;
     nAttPtsMin = nAttPtsMin_default;
-    nAttAspect1 = nAttAspect1_default;
-    nAttAspect2 = nAttAspect2_default;
 
     nSiftScales = nSiftScales_default;
     nSiftInitSigma = nSiftInitSigma_default;
@@ -587,8 +581,6 @@ void ResetParameter () {
         cvSetTrackbarPos(vsTrackbarName[31].data(), vsWndName[stTID.nPrmSegm].data(), nAttSizeMax);
         cvSetTrackbarPos(vsTrackbarName[32].data(), vsWndName[stTID.nPrmSegm].data(), nAttSizeMin);
         cvSetTrackbarPos(vsTrackbarName[33].data(), vsWndName[stTID.nPrmSegm].data(), nAttPtsMin);
-        //cvSetTrackbarPos(vsTrackbarName[34].data(), vsWndName[stTID.nPrmSegm].data(), nAttAspect1);
-        //cvSetTrackbarPos(vsTrackbarName[35].data(), vsWndName[stTID.nPrmSegm].data(), nAttAspect2);
     }
     if (vbFlagWnd[stTID.nPrmRecog]) {
         cvSetTrackbarPos(vsTrackbarName[1].data(), vsWndName[stTID.nPrmRecog].data(), nSnapFormat);
@@ -976,7 +968,7 @@ void DrawInfo(cv::Mat &cvm_input, int nSegNr, int nPadRow1, int nPadCol1, int nC
  */
 void DrawSettings(cv::Mat &cvm_input, int IX, int nSnapFormat, double nDLimit, int nDGradFilterSize,
                   TrackProp stTrack1,
-                  int nAttSizeMax, int nAttSizeMin, int nAttPtsMin, int nAttAspect1, int nAttAspect2, int nAttTDMode,
+                  int nAttSizeMax, int nAttSizeMin, int nAttPtsMin, int nAttTDMode,
                   double nRecogDClr, int nSiftScales, double nSiftInitSigma, double nSiftPeakThrs, int nFlannKnn, double nFlannMatchFac, int nFlannMatchCnt,
                   double nGSegmSigma, int nGSegmGrThs, int nGSegmMinSize)
 {
@@ -1037,10 +1029,6 @@ void DrawSettings(cv::Mat &cvm_input, int IX, int nSnapFormat, double nDLimit, i
     sprintf(sText, "%5d mm", nAttSizeMin); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Objects pixel size lower limit:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "%5d mm", nAttPtsMin); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "Objects aspect ratio 1:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%5d", nAttAspect1); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "Objects aspect ratio 2:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    sprintf(sText, "%5d", nAttAspect2); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Selection Mode:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
     switch (nAttTDMode) {
     case 0: sprintf(sText, "Top-down selection"); break;

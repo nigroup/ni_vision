@@ -110,11 +110,6 @@ target_link_libraries(libmake siftfast terminal_tools ${OpenCV_LIBRARIES})
 add_executable(libmake_color src/libmake_color.cpp)
 target_link_libraries(libmake_color siftfast terminal_tools ${OpenCV_LIBRARIES})
 
-add_executable(ni_image_tool src/image_tool.cpp)
-target_link_libraries(ni_image_tool terminal_tools ${OpenCV_LIBRARIES})
-
-add_executable(ni_video_tool src/video_tool.cpp)
-target_link_libraries(ni_video_tool terminal_tools ${OpenCV_LIBRARIES})
 
 ## Declare a cpp executable
 # add_executable(ni_tools_node src/ni_tools_node.cpp)
