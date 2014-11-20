@@ -69,6 +69,15 @@ int nTimeMessFrmLimit = 0, nTimeMessFrmLimit_default = 50;
 int nSnapFormat = 0, nSnapFormat_default = 0;
 int flag_pcd = 0; // Flag for printing color distance
 
+int nNoSnap = 0, nNoSnap_default = 1;
+int nDelay = 0, nDelay_default = 5;
+int nBbWidth = 0, nBbWidth_default = 20;
+int nBbHeight = 0, nBbHeight_default = 20;
+int nBbDepth = 0, nBbDepth_default = 100;
+int nRGBThresh = 0, nRGBThresh_default = 0;
+
+
+
 std::string sDataDir;
 
 
@@ -84,7 +93,7 @@ int nFont = CV_FONT_HERSHEY_SIMPLEX;
 float nFontSize = 0.4;
 int nBtnSize = 80;
 float nBtnFontSize = 0.5*nBtnSize/100;
-int nTaskNrMax = 41;
+int nTaskNrMax = 42;
 bool bFlagEnd = false;
 std::vector<bool> vbFlagTask(nTaskNrMax, 0);
 std::vector<bool> vbFlagWnd(nTaskNrMax, 0);
@@ -124,7 +133,7 @@ struct TaskID {
     int nSegmentation, nDSegm, nGSegm, nTrack, nProto;
     int nRecognition, nRecogOrg, nRecogDs, nSIFT;
     int nRecTime, nRstTime, nPrmInfo, nPrmSett, nPrmSegm, nPrmRecog, nRstPrm;
-    int nRecPcl;
+    int nRecPcl; int nPrmRecMod;
 }; struct TaskID stTID;
 
 
@@ -438,6 +447,20 @@ void InitParameter (int argc, char** argv) {
     terminal_tools::parse_argument (argc, argv, "-targetpath", sTargetImgPath);
     terminal_tools::parse_argument (argc, argv, "-datadir", sDataDir);
 
+    //model recoring settings
+    terminal_tools::parse_argument (argc, argv, "-rmno", nNoSnap);
+    if(nNoSnap == 0) nNoSnap = nNoSnap_default;
+    terminal_tools::parse_argument (argc, argv, "-rmdt", nDelay);
+    if(nDelay == 0) nDelay = nDelay_default;
+    terminal_tools::parse_argument (argc, argv, "-rmbbw", nBbWidth);
+    if(nBbWidth == 0) nBbWidth = nBbWidth_default;
+    terminal_tools::parse_argument (argc, argv, "-rmbbh", nBbHeight);
+    if(nBbHeight == 0) nBbHeight = nBbHeight_default;
+    terminal_tools::parse_argument (argc, argv, "-rmbbd", nBbDepth);
+    if(nBbDepth == 0) nBbDepth = nBbDepth_default;
+    terminal_tools::parse_argument (argc, argv, "-rmcthr", nRGBThresh);
+    if(nRGBThresh == 0) nRGBThresh = nRGBThresh_default;
+
 
 
     // Sahils parameters
@@ -565,6 +588,13 @@ void ResetParameter () {
     nSnapFormat = nSnapFormat_default;
     flag_pcd = 0;
 
+    nNoSnap = nNoSnap_default;
+    nDelay = nDelay_default;
+    nBbWidth = nBbWidth_default;
+    nBbHeight = nBbHeight_default;
+    nBbDepth = nBbDepth_default;
+    nRGBThresh = nRGBThresh_default;
+
     if (vbFlagWnd[stTID.nPrmSegm]) {
         cvSetTrackbarPos(vsTrackbarName[20].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.Mode);
         //cvSetTrackbarPos(vsTrackbarName[21].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.ClrMode);
@@ -605,6 +635,14 @@ void ResetParameter () {
         cvSetTrackbarPos(vsTrackbarName[18].data(), vsWndName[stTID.nGSegm].data(), nGSegmGrThrs);
         cvSetTrackbarPos(vsTrackbarName[19].data(), vsWndName[stTID.nGSegm].data(), nGSegmMinSize);
     }
+    if (vbFlagWnd[stTID.nPrmRecMod]) {
+       cvSetTrackbarPos(vsTrackbarName[60].data(), vsWndName[stTID.nPrmRecMod].data(), nNoSnap);
+       cvSetTrackbarPos(vsTrackbarName[61].data(), vsWndName[stTID.nPrmRecMod].data(), nDelay);
+       cvSetTrackbarPos(vsTrackbarName[62].data(), vsWndName[stTID.nPrmRecMod].data(), nBbWidth);
+       cvSetTrackbarPos(vsTrackbarName[63].data(), vsWndName[stTID.nPrmRecMod].data(), nBbHeight);
+       cvSetTrackbarPos(vsTrackbarName[64].data(), vsWndName[stTID.nPrmRecMod].data(), nBbDepth);
+       cvSetTrackbarPos(vsTrackbarName[65].data(), vsWndName[stTID.nPrmRecMod].data(), nRGBThresh);
+    }
 }
 
 
@@ -618,7 +656,7 @@ void InitVariables () {
     stTID.nSegmentation = 10, stTID.nDSegm = 12, stTID.nGSegm = 13, stTID.nTrack = 15, stTID.nProto = 16;
     stTID.nRecognition = 20, stTID.nRecogOrg = 21, stTID.nRecogDs = 22, stTID.nSIFT = 23;
     stTID.nRecTime = 31, stTID.nRstTime = 33, stTID.nPrmInfo = 34, stTID.nPrmSett = 35, stTID.nPrmSegm = 36, stTID.nPrmRecog = 37, stTID.nRstPrm = 38;
-    stTID.nRecPcl = 39;
+    stTID.nRecPcl = 39; stTID.nPrmRecMod = 40;
 
     vsWndName[stTID.nRgbOrg] = "Original RGB";
     vsWndName[stTID.nRgbDs] = "Downsampled RGB";
@@ -633,6 +671,7 @@ void InitVariables () {
     vsWndName[stTID.nPrmSett] = "System Setting";
     vsWndName[stTID.nPrmSegm] = "Segmentation Setting";
     vsWndName[stTID.nPrmRecog] = "Recognition Setting";
+    vsWndName[stTID.nPrmRecMod] = "Record Model Settings";
 
     vsBtnName[stTID.nRgbOrg] = "Org";
     vsBtnName[stTID.nRgbDs] = "DS";
@@ -655,7 +694,8 @@ void InitVariables () {
     vsBtnName[stTID.nPrmSegm] = "Segm Prm";
     vsBtnName[stTID.nPrmRecog] = "Recog Prm";
     vsBtnName[stTID.nRstPrm] = "Reset Prm";
-    vsBtnName[stTID.nRecPcl] = "Rec Pcl";
+    vsBtnName[stTID.nRecPcl] = "Rec Mod";
+    vsBtnName[stTID.nPrmRecMod] = "Rec Prm";
     vsBtnName[nTaskNrMax-1] = "Abandon Ship!";
 
     vbFlagTask[stTID.nInfo] = true;
@@ -707,6 +747,15 @@ void InitVariables () {
     vsTrackbarName[82] = "DG Bandwidth1, tau1           ";
     vsTrackbarName[83] = "DG Bandwidth2, tau2           ";
     vsTrackbarName[84] = "DG adjusting Const. C         ";
+
+    vsTrackbarName[60] = "no. of snapshots                            ";
+    vsTrackbarName[61] = "delay time [s]                                   ";
+    vsTrackbarName[62] = "bounding box width [cm]          ";
+    vsTrackbarName[63] = "bounding box height [cm]         ";
+    vsTrackbarName[64] = "bounding box depth [cm]          ";
+    vsTrackbarName[65] = "rgb relative threshold [%]         ";
+
+
 }
 
 
@@ -790,7 +839,10 @@ void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, i
     nTaskNr = stTID.nSIFT; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecY += 2*nBtnH + 2*nBtnOffset;
     nTaskNr = stTID.nRecPcl; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
+    nPadSecX += nBtnW + nBtnOffset;
+    nTaskNr = stTID.nPrmRecMod; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecY += nBtnH + 4*nBtnOffset;
+    nPadSecX = nBtnOffset;
 
     row1 = nPadSecY + 15;
 
@@ -1165,3 +1217,11 @@ void TrackbarHandler_FlannKnn (int) {if (nFlannKnn < 1) nFlannKnn = 1; cvSetTrac
 void TrackbarHandler_FlannMFac (int pos) {nFlannMatchFac = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[52].data(), vsWndName[stTID.nPrmRecog].data(), pos);}
 void TrackbarHandler_GSegmSigma (int pos) {nGSegmSigma = (float)pos/10; cvSetTrackbarPos(vsTrackbarName[17].data(), vsWndName[stTID.nGSegm].data(), pos);}
 void TrackbarHandler_DGradC (int pos) {nDGradConst = (float)pos/100; cvSetTrackbarPos(vsTrackbarName[84].data(), vsWndName[stTID.nDepth].data(), pos);}
+
+//trackbars for model recording settings
+void TrackbarHandler_NoSnap (int pos) {if (pos < 1) pos = 1; cvSetTrackbarPos(vsTrackbarName[60].data(), vsWndName[stTID.nPrmRecMod].data(), pos);}
+void TrackbarHandler_Delay (int pos) {cvSetTrackbarPos(vsTrackbarName[61].data(), vsWndName[stTID.nPrmRecMod].data(), pos);}
+void TrackbarHandler_BBW (int pos) {cvSetTrackbarPos(vsTrackbarName[62].data(), vsWndName[stTID.nPrmRecMod].data(), pos);}
+void TrackbarHandler_BBH (int pos) {cvSetTrackbarPos(vsTrackbarName[63].data(), vsWndName[stTID.nPrmRecMod].data(), pos);}
+void TrackbarHandler_BBD (int pos) {cvSetTrackbarPos(vsTrackbarName[64].data(), vsWndName[stTID.nPrmRecMod].data(), pos);}
+void TrackbarHandler_CThresh (int pos) {cvSetTrackbarPos(vsTrackbarName[65].data(), vsWndName[stTID.nPrmRecMod].data(), pos);}

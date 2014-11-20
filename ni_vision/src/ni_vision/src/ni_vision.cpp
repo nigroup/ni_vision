@@ -592,9 +592,28 @@ void updateImage() {
         if (vbFlagTask[stTID.nRecPcl])
         {
             // RecPcl2( cloud_, m );
-            if((bPointRgb && RecPcl(cloud_xyz_rgb)))
+            if (bPointRgb && RecPcl(cloud_xyz_rgb, nNoSnap, nDelay, float(nBbWidth) / 100, float(nBbHeight) / 100,
+                                    float(nBbDepth) / 100, float(nRGBThresh) / 100))
                 vbFlagTask[stTID.nRecPcl] = false; //unclick button when recording is completed
         }
+
+        // settings for recording of model /////////////////////////
+        if (vbFlagTask[stTID.nPrmRecMod]) {
+            if(!vbFlagWnd[stTID.nPrmRecMod]) {
+                vbFlagWnd[stTID.nPrmRecMod] = true;
+                cv::namedWindow(vsWndName[stTID.nPrmRecMod], cv::WINDOW_NORMAL);
+                cvResizeWindow(vsWndName[stTID.nPrmRecMod].data(), 400, 400);
+                cvMoveWindow(vsWndName[stTID.nPrmRecMod].data(), 800, 100);
+
+                cvCreateTrackbar(vsTrackbarName[60].data(), vsWndName[stTID.nPrmRecMod].data(), &nNoSnap, 100, TrackbarHandler_NoSnap);
+                cvCreateTrackbar(vsTrackbarName[61].data(), vsWndName[stTID.nPrmRecMod].data(), &nDelay, 60, TrackbarHandler_Delay);
+                cvCreateTrackbar(vsTrackbarName[62].data(), vsWndName[stTID.nPrmRecMod].data(), &nBbWidth, 100, TrackbarHandler_BBW);
+                cvCreateTrackbar(vsTrackbarName[63].data(), vsWndName[stTID.nPrmRecMod].data(), &nBbHeight, 100, TrackbarHandler_BBH);
+                cvCreateTrackbar(vsTrackbarName[64].data(), vsWndName[stTID.nPrmRecMod].data(), &nBbDepth, 500, TrackbarHandler_BBD);
+                cvCreateTrackbar(vsTrackbarName[65].data(), vsWndName[stTID.nPrmRecMod].data(), &nRGBThresh, 100, TrackbarHandler_CThresh);
+            }
+        }
+
 
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

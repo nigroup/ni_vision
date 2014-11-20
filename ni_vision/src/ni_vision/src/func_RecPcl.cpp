@@ -44,11 +44,16 @@ void RecPcl2(const sensor_msgs::PointCloud2ConstPtr cloud_, boost::mutex & m)
 /* store point cloud data to pcd file
  *returns false while the process is not yet finished
  *returns true if all point clouds have been stored
+ *maxnum: number of snapshots to be recorded
+ *delayS: delay time in seconds
+ *width, height, depth: size of the bounding box (in meters)
+ *cThreshRel: in the range [0,1]; relative (to max) threshold for rgb values
  */
 //template <typename PointT>
-bool RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud)
+bool RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
+            int maxnum, int delayS, float width, float height, float depth, float cThreshRel)
 {
-    // directory and file name
+    // directory where the data is stored and file name
     static const std::string sPclDir = "Pcl_data";
     mkdir (sPclDir.data(), 0777);
     std::string sPcl_fn;
@@ -58,9 +63,8 @@ bool RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud)
     static clock_t curTime;
     static clock_t lastTime;
     static int count = 0;
-    int maxnum = 2; //number of point clouds to be recorded
 
-    clock_t delay = 5 * CLOCKS_PER_SEC; //delay time in clock units
+    clock_t delay = delayS * CLOCKS_PER_SEC; //delay time in clock units
     curTime = clock();
 
     if (curTime - lastTime > delay)
@@ -73,6 +77,7 @@ bool RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud)
         //apply threshold
         pcl::PointCloud<pcl::PointXYZRGB> cloud_thresh = cloud;
         pcl::PointCloud<pcl::PointXYZRGB>::iterator it;
+
         //find range of the rgb values
         double min, max;
         it = cloud_thresh.points.begin();
@@ -85,14 +90,20 @@ bool RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud)
                 min = it->rgb;
         }
 
-        //remove values which are too small
-        double threshold = 0.5 * max;
+        //define bounding box
+        vector<pcl::PointXYZ> box(2);
+        box[0] = pcl::PointXYZ(- width / 2, - height / 2, 0);
+        box[1] = pcl::PointXYZ(width / 2, height / 2, depth);
+
+        //remove unwanted values (set them to nan)
+        double threshold = cThreshRel * max;
         const float nan = std::numeric_limits<float>::quiet_NaN();
         for (it = cloud_thresh.points.begin(); it < cloud_thresh.points.end(); it++)
         {
-            if(it->rgb < threshold)
+            if(it->rgb < threshold || it->x < box[0].x || it->x > box[1].x || it->y < box[0].y || it->y > box[1].y || it->z < box[0].z || it->z > box[1].z)
                 it->x = nan;
         }
+
 
         //remove nan
         pcl::PointCloud<pcl::PointXYZRGB> cloud_mod;
@@ -113,7 +124,6 @@ bool RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud)
         {
         }
         */
-
 
         /*
         //try pcl_visualizer class; does this work in a thread?
