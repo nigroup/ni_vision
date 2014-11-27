@@ -1049,12 +1049,13 @@ void updateImage() {
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
             ////** object registration **////////////////////////////////////////
             if (vbFlagTask[stTID.nRecPcl])
             {
-                if (bPointRgb && RecPcl(cloud_xyz_rgb, nNoSnap, nDelay, float(nBbWidth) / 100, float(nBbHeight) / 100,
-                                        float(nBbDepth) / 100, float(nRGBThresh) / 100, vnSegmMap, mnSegmPtsIdx, nSegCnt, vnSegmPtsCnt,
-                                        nImgScale, nDsWidth, cvm_rgb_org, size_org));
+                if (bPointRgb && Registration(cloud_xyz_rgb, nNoSnap, nDelay, float(nBbWidth) / 100, float(nBbHeight) / 100,
+                                        float(nBbDepth) / 100, float(nRGBThresh) / 100,nImgScale, nDsWidth, cvm_rgb_org, size_org,
+                                        mnProtoPtsIdx, nProtoCnt, vnProtoPtsCnt))
                     vbFlagTask[stTID.nRecPcl] = false; //unclick button when recording is completed
             }
 
