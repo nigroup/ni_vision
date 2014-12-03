@@ -43,7 +43,7 @@
 #include "func_recognition.hpp"
 #include "func_etc.hpp"
 
-#include "func_RecPcl.cpp"
+#include "func_RecPcl.hpp"
 
 
 //////// Dimension of downsampled image /////////////
