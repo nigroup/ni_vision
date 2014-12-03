@@ -12,7 +12,6 @@
 
 
 
-
 /* select relevant parts of point cloud and write data to pcd file
  * in:
  * cloud: the original point cloud
@@ -48,8 +47,8 @@ void RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud, float width, float 
     box[1] = pcl::PointXYZ(width / 2, height / 2, depth);
 
     //set unwanted values to nan
-    double threshold = cThreshRel * max;
     const float nan = std::numeric_limits<float>::quiet_NaN();
+    double threshold = cThreshRel * max;
     for (it = cloud_thresh.points.begin(); it < cloud_thresh.points.end(); it++)
     {
         if(it->rgb < threshold || it->x < box[0].x || it->x > box[1].x || it->y < box[0].y || it->y > box[1].y || it->z < box[0].z || it->z > box[1].z)
@@ -68,11 +67,50 @@ void RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud, float width, float 
 }
 
 
+// RecPcl2 does the same as RecPcl without writing the result to a .pcd file
+void RecPcl2(const pcl::PointCloud<pcl::PointXYZRGB> & cloud, float width, float height, float depth, float cThreshRel,
+            pcl::PointCloud<pcl::PointXYZRGB> & cloud_mod, std::vector<int> & index)
+{
+    //apply RGB threshold
+    pcl::PointCloud<pcl::PointXYZRGB> cloud_thresh = cloud;
+    pcl::PointCloud<pcl::PointXYZRGB>::iterator it;
+
+    //find range of the rgb values
+    double min, max;
+    it = cloud_thresh.points.begin();
+    min = max = it->rgb;
+    for (it = cloud_thresh.points.begin(); it < cloud_thresh.points.end(); it++)
+    {
+        if(it->rgb > max)
+            max = it->rgb;
+        else if(it->rgb < min)
+            min = it->rgb;
+    }
+
+    //define bounding box
+    vector<pcl::PointXYZ> box(2);
+    box[0] = pcl::PointXYZ(- width / 2, - height / 2, 0);
+    box[1] = pcl::PointXYZ(width / 2, height / 2, depth);
+
+    //set unwanted values to nan
+    const float nan = std::numeric_limits<float>::quiet_NaN();
+    double threshold = cThreshRel * max;
+    for (it = cloud_thresh.points.begin(); it < cloud_thresh.points.end(); it++)
+    {
+        if(it->rgb < threshold || it->x < box[0].x || it->x > box[1].x || it->y < box[0].y || it->y > box[1].y || it->z < box[0].z || it->z > box[1].z)
+            it->x = nan;
+    }
+
+    //remove nan
+    pcl::removeNaNFromPointCloud(cloud_thresh, cloud_mod, index);
+}
+
+
 
 /* reconstruct high resolution image from modified point cloud
  * in:
- * cloud_mod: the modified point cloud
- * index: the indices of the points in cloud_mod wrt the original cloud
+ * size: size of the modified point cloud
+ * index: the indices of the points in the modified cloud wrt the original cloud
  * nImgScale: ratio of original and downsampled image
  * nDsWidth: size of the original point cloud
  * cvm_rgb_org: the original rgb image
@@ -80,14 +118,14 @@ void RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud, float width, float 
  * out:
  * HrImg: the reconstructed high resolution RGB image
  */
-void HR_from_Pcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud_mod, const std::vector<int> & index,
+void HR_from_Pcl(int size, const std::vector<int> & index,
                  int nImgScale, int nDsWidth, const cv::Mat & cvm_rgb_org, cv::Mat HrImg, std::string fn)
 {
-    std::vector<int> vnIdxTmp(cloud_mod.size()*nImgScale*nImgScale, 0);
+    std::vector<int> vnIdxTmp(size*nImgScale*nImgScale, 0);
     vector< vector<int> > Idx;
     Idx.push_back(index);
     vector<int> Cnt;
-    Cnt.push_back(cloud_mod.size());
+    Cnt.push_back(size);
     SelRecognition_1(0, nImgScale, nDsWidth, Cnt, cvm_rgb_org, HrImg, Idx, vnIdxTmp);
     cv::imwrite(fn, HrImg);
 }
@@ -122,7 +160,7 @@ void RecSeg(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
         for (int i = 0; i < vnPtsCnt[surfIdx]; i++)
         {
             point = cloud.points[mnPtsIdx[surfIdx][i]];
-            if (point.x < box[0].x || point.x > box[1].x || point.y < box[0].y || point.y > box[1].y || point.z < box[0].z || point.z > box[1].z)
+            if (point.x != point.x || point.x < box[0].x || point.x > box[1].x || point.y < box[0].y || point.y > box[1].y || point.z < box[0].z || point.z > box[1].z)
             {
                 fits[surfIdx] = false;
                 break;
@@ -248,7 +286,7 @@ bool Registration(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
 
         //reconstruct high resolution image from point cloud
         cv::Mat HrPcl = cv::Mat::zeros(size_org, CV_8UC3);
-        HR_from_Pcl(cloud_mod, index, nImgScale, nDsWidth, cvm_rgb_org, HrPcl, sHrPcl_fn);
+        HR_from_Pcl(cloud_mod.size(), index, nImgScale, nDsWidth, cvm_rgb_org, HrPcl, sHrPcl_fn);
 
         //smooth high resolution image
         int fSize = 5;
@@ -326,37 +364,85 @@ viewer.showRGBImage(cloud);   */
 //gp << "splot \"" << sPcl_fn << "\" using 1:2:3:4 with dots palette\n";
 
 
-/*
-void RecPcl2(const sensor_msgs::PointCloud2ConstPtr cloud_, boost::mutex & m)
-{
-    pcl::PointCloud<pcl::PointXYZ> cloud_xyz;
-    pcl::PointCloud<pcl::PointXYZRGB> cloud_xyz_rgb;
 
+bool Registration2(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
+                   int maxnum, int delayS, float width, float height, float depth, float cThreshRel,
+                   int nImgScale, int nDsWidth, const cv::Mat & cvm_rgb_org, cv::Size size_org)
+{
+
+
+    //directory where the data is stored
     static const std::string sPclDir = "Pcl_data";
     mkdir (sPclDir.data(), 0777);
-    std::string sPcl_fn;
 
-    char cExt[] = "0";
+    //time control
+    static clock_t curTime;
+    static clock_t lastTime;
+    static int count = 0;
 
-    for (int nPclIdx = 1; nPclIdx <= 5; nPclIdx++)
+    clock_t delay = delayS * CLOCKS_PER_SEC; //delay time in clock units
+    curTime = clock();
+
+    static bool go = false;
+    static int sample = 0;
+    static cv::Mat HrImgMult = cv::Mat::zeros(size_org, CV_8UC3);
+
+    if (go || curTime - lastTime > delay)
     {
-        cExt[0]++;
-        sPcl_fn = sPclDir + "/" + "PointCloud_" + std::string(cExt) + ".pcd";
-        m.lock ();
-        if (pcl::getFieldIndex (*cloud_, "rgb") != -1)
+        if (!go)
         {
-            pcl::fromROSMsg (*cloud_, cloud_xyz_rgb);
-            pcl::io::savePCDFileASCII(sPcl_fn, cloud_xyz_rgb);
+            lastTime = curTime;
+            go = true;
+        }
+
+        //filenames
+        string ext = static_cast<ostringstream*>( &(ostringstream() << (count + 1)))->str();
+        string sHrPcl_fn = sPclDir + "/" + "HrPcl_" + ext + ".jpg";
+        string sHrPclMult_fn = sPclDir + "/" + "HrPclMult_" + ext + ".jpg";
+
+
+            //edit point cloud
+            pcl::PointCloud<pcl::PointXYZRGB> cloud_mod;
+            std::vector<int> index;
+            RecPcl2(cloud, width, height, depth, cThreshRel, cloud_mod, index);
+
+            //get HR image
+            cv::Mat HrImgSample= cv::Mat::zeros(size_org, CV_8UC3);
+            HR_from_Pcl(cloud_mod.size(), index, nImgScale, nDsWidth, cvm_rgb_org, HrImgSample, sHrPcl_fn);
+
+            //blend
+            double alpha = 0.5;
+            double beta = ( 1.0 - alpha );
+            addWeighted(HrImgSample, alpha, HrImgMult, beta, 0.0, HrImgMult);
+
+        sample++;
+        cout << sample << endl;
+        if(sample == 10)
+        {
+            sample = 0;
+            go = false;
+            cv::imwrite(sHrPclMult_fn, HrImgMult);
+        }
+
+
+        //count how many point clouds have been stored in this round
+        //return true when finished
+        if (!go) count++;
+        if (count == maxnum)
+        {
+            count = 0;
+            return true;
         }
         else
         {
-            pcl::fromROSMsg (*cloud_, cloud_xyz);
-            pcl::io::savePCDFileASCII(sPcl_fn, cloud_xyz);
+              return false;
         }
-        m.unlock ();
+
     }
+return false;
+
 }
-*/
+
 
 
 
