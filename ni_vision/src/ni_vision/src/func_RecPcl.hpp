@@ -23,7 +23,7 @@
  * fn: name of the file the data is written to
  */
 void RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud, float width, float height, float depth, float cThreshRel,
-            pcl::PointCloud<pcl::PointXYZRGB> & cloud_mod, std::vector<int> & index, std::string fn)
+            pcl::PointCloud<pcl::PointXYZRGB> & cloud_mod, std::vector<int> & index, std::string fn = "")
 {
     //apply RGB threshold
     pcl::PointCloud<pcl::PointXYZRGB> cloud_thresh = cloud;
@@ -58,12 +58,14 @@ void RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud, float width, float 
     //remove nan
     pcl::removeNaNFromPointCloud(cloud_thresh, cloud_mod, index);
 
-
-    //write point cloud data to .pcd file
-    if (!cloud_mod.empty())
-        pcl::io::savePCDFileASCII(fn, cloud_mod);
-    else
-        cout << "empty point cloud" << endl;
+    if (fn != "")
+    {
+        //write point cloud data to .pcd file
+        if (!cloud_mod.empty())
+           pcl::io::savePCDFileASCII(fn, cloud_mod);
+        else
+            cout << "empty point cloud" << endl;
+    }
 }
 
 
@@ -218,13 +220,87 @@ void HR_from_Seg(const vector< vector<int> > & mnPtsIdx, int nCnt, const vector<
 
 void smoothHighRes(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, int fSize)
 {
+
+    //graph-based segmentation
+    nGSegmSigma = 1;
+    nGSegmGrThrs = 0;
+    nGSegmMinSize = 500;
+    std::vector<std::vector<CvPoint> > mnGSegmPts;
+    GbSegmentation(cvm_rgb_org, nGSegmSigma, nGSegmGrThrs, nGSegmMinSize, mnGSegmPts);
+
+
+    /*
+    cv::Mat cvm_gbsegm(cvm_rgb_org.size(), CV_8UC3);
+    int idx = 0;
+    std::vector<std::vector<int> > mnGSegmPtsIdx(mnGSegmPts.size(), std::vector<int>(10,0));
+    for (size_t i = 0; i < mnGSegmPts.size(); i++) {
+        mnGSegmPtsIdx[i].resize(mnGSegmPts[i].size());
+        for(size_t j = 0; j < mnGSegmPts[i].size(); j++) {
+            idx = GetPixelIdx(mnGSegmPts[i][j].x, mnGSegmPts[i][j].y, nDsWidth);
+            mnGSegmPtsIdx[i][j] = idx;
+            cvm_gbsegm.at<cv::Vec3b>(mnGSegmPts[i][j].y, mnGSegmPts[i][j].x) = cv::Vec3b(mnColorTab[i][0], mnColorTab[i][1], mnColorTab[i][2]);
+        }
+    } */
+
+    /*
     cv::Mat boundary(HrImg.rows, HrImg.cols, HrImg.type());
     cv::Mat filter = cv::Mat::ones(fSize, fSize, CV_8UC1);
     filter.at<uchar>(fSize / 2, fSize / 2)  = - fSize * fSize;
     cv::filter2D(HrImg, boundary, -1, filter);
+    */
+
+
+    //find the right surfaces
+    cv::Mat HrSmooth = cv::Mat::zeros(HrImg.rows, HrImg.cols, HrImg.type());
+
+    cv::Mat binary = cv::Mat::zeros(HrImg.rows, HrImg.cols, CV_8UC1);
+    cv::cvtColor(HrImg, binary, CV_RGB2GRAY);
+    cv::threshold(binary, binary, 0, 255, cv::THRESH_BINARY);
+    cv::erode(binary, binary, cv::Mat(), cv::Point(-1,-1), 5);
+
+    cv::namedWindow("binary", cv::WINDOW_NORMAL);
+    cv::imshow("binary", binary);
+
+
+    vector<bool> fits(mnGSegmPts.size());
+    for (int seg = 0; seg<fits.size(); seg++)
+        fits[seg] = false;
+
+    for(int i=0; i<HrImg.rows; i++)
+    {
+        for(int j=0; j<HrImg.cols; j++)
+        {
+            if(binary.at<uchar>(i,j) != 0)
+            {
+                for (int seg = 0; seg < mnGSegmPts.size(); seg++)
+                {
+                    for (int p = 0; p < mnGSegmPts[seg].size(); p++)
+                    {
+                        if(mnGSegmPts[seg][p].y == i && mnGSegmPts[seg][p].x == j)
+                        {
+                          fits[seg] = true;
+                            break;
+                        }
+                    }
+                }
+             }
+         }
+      }
+
+
+    for(int seg = 0; seg < fits.size(); seg++)
+    {
+        if (fits[seg])
+        {
+            for (int i = 0; i < mnGSegmPts[seg].size(); i++)
+                HrSmooth.at<cv::Vec3b>(mnGSegmPts[seg][i].y, mnGSegmPts[seg][i].x) = cvm_rgb_org.at<cv::Vec3b>(mnGSegmPts[seg][i].y, mnGSegmPts[seg][i].x);
+        }
+    }
 
     cv::namedWindow("temp", cv::WINDOW_NORMAL);
-    cv::imshow("temp", boundary);
+    cv::imshow("temp", HrSmooth);
+    cv::imwrite("Pcl_data/temp.jpg", HrSmooth);
+
 }
 
 
@@ -320,51 +396,7 @@ bool Registration(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
 
 
 
-
-
-
-
-
-
-
-
-
-
-/*
-//show PointCloud;  seems to be a problem with threading
-pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr ptrCloud(&cloud);
-pcl::visualization::CloudViewer viewer("Simple Cloud Viewer");
-viewer.showCloud(ptrCloud);
-while (!viewer.wasStopped())
-{
-}
-*/
-
-/*
-//try pcl_visualizer class; does this work in a thread?
-static boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr ptrCloud(&cloud);
-viewer->addPointCloud<pcl::PointXYZRGB> (ptrCloud, "sample cloud");
-viewer->initCameraParameters ();
-if (!viewer->wasStopped ())
-{
-  viewer->spinOnce (100);
-  boost::this_thread::sleep (boost::posix_time::microseconds (100000));
-}
-viewer->removePointCloud();   */
-
-/*
-//try to convert point cloud to 2D image; works in thread; viewer can also be declared static
-static pcl::visualization::ImageViewer viewer("View Clouds");
-viewer.showRGBImage(cloud);   */
-
-
-//try sending data to gnuplot
-//Gnuplot gp;
-//gp << "splot \"" << sPcl_fn << "\" using 1:2:3:4 with dots palette\n";
-
-
-
+//reconstruct the high resolution RGB image from several samples
 bool Registration2(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
                    int maxnum, int delayS, float width, float height, float depth, float cThreshRel,
                    int nImgScale, int nDsWidth, const cv::Mat & cvm_rgb_org, cv::Size size_org)
@@ -404,16 +436,14 @@ bool Registration2(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
             //edit point cloud
             pcl::PointCloud<pcl::PointXYZRGB> cloud_mod;
             std::vector<int> index;
-            RecPcl2(cloud, width, height, depth, cThreshRel, cloud_mod, index);
+            RecPcl(cloud, width, height, depth, cThreshRel, cloud_mod, index);
 
             //get HR image
             cv::Mat HrImgSample= cv::Mat::zeros(size_org, CV_8UC3);
             HR_from_Pcl(cloud_mod.size(), index, nImgScale, nDsWidth, cvm_rgb_org, HrImgSample, sHrPcl_fn);
 
-            //blend
-            double alpha = 0.5;
-            double beta = ( 1.0 - alpha );
-            addWeighted(HrImgSample, alpha, HrImgMult, beta, 0.0, HrImgMult);
+            //merge sample images
+            max(HrImgSample, HrImgMult, HrImgMult);
 
         sample++;
         cout << sample << endl;
@@ -424,6 +454,7 @@ bool Registration2(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
             cv::imwrite(sHrPclMult_fn, HrImgMult);
         }
 
+        sleep(2);
 
         //count how many point clouds have been stored in this round
         //return true when finished
@@ -438,10 +469,47 @@ bool Registration2(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
               return false;
         }
 
+
     }
 return false;
 
 }
+
+
+
+
+/*
+//show PointCloud;  seems to be a problem with threading
+pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr ptrCloud(&cloud);
+pcl::visualization::CloudViewer viewer("Simple Cloud Viewer");
+viewer.showCloud(ptrCloud);
+while (!viewer.wasStopped())
+{
+}
+*/
+
+/*
+//try pcl_visualizer class; does this work in a thread?
+static boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr ptrCloud(&cloud);
+viewer->addPointCloud<pcl::PointXYZRGB> (ptrCloud, "sample cloud");
+viewer->initCameraParameters ();
+if (!viewer->wasStopped ())
+{
+  viewer->spinOnce (100);
+  boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+}
+viewer->removePointCloud();   */
+
+/*
+//try to convert point cloud to 2D image; works in thread; viewer can also be declared static
+static pcl::visualization::ImageViewer viewer("View Clouds");
+viewer.showRGBImage(cloud);   */
+
+
+//try sending data to gnuplot
+//Gnuplot gp;
+//gp << "splot \"" << sPcl_fn << "\" using 1:2:3:4 with dots palette\n";
 
 
 
