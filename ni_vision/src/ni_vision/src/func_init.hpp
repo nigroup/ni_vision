@@ -33,7 +33,7 @@ double nDSegmGradDist = 0, nDSegmGradDist_default = 0.005;
 int nDSegmCutSize = 0, nDSegmCutSize_default = 10;
 
 double nGSegmSigma = 0, nGSegmSigma_default = 0.8;
-int nGSegmGrThrs = 0, nGSegmGrThrs_default = 500;
+int nGSegmGrThrs = -1, nGSegmGrThrs_default = 500;
 int nGSegmMinSize = 0, nGSegmMinSize_default = 450;
 
 struct TrackProp {
@@ -75,6 +75,9 @@ int nBbWidth = 0, nBbWidth_default = 20;
 int nBbHeight = 0, nBbHeight_default = 20;
 int nBbDepth = 0, nBbDepth_default = 100;
 int nRGBThresh = 0, nRGBThresh_default = 0;
+int nNoErode = 0, nNoErode_default = 0;
+int nNoDilate = 0, nNoDilate_default = 0;
+int nShareThresh = 0, nShareThresh_default = 30;
 
 
 
@@ -361,7 +364,7 @@ void InitParameter (int argc, char** argv) {
     terminal_tools::parse_argument (argc, argv, "-gssigma", nGSegmSigma);
     if(nGSegmSigma == 0) nGSegmSigma = nGSegmSigma_default; nGSegmSigma_default = nGSegmSigma;
     terminal_tools::parse_argument (argc, argv, "-gsgth", nGSegmGrThrs);
-    if(nGSegmGrThrs == 0) nGSegmGrThrs = nGSegmGrThrs_default; nGSegmGrThrs_default = nGSegmGrThrs;
+    if(nGSegmGrThrs == -1) nGSegmGrThrs = nGSegmGrThrs_default; nGSegmGrThrs_default = nGSegmGrThrs;
     terminal_tools::parse_argument (argc, argv, "-gsmins", nGSegmMinSize);
     if(nGSegmMinSize == 0) nGSegmMinSize = nGSegmMinSize_default; nGSegmMinSize_default = nGSegmMinSize;
 
@@ -460,6 +463,12 @@ void InitParameter (int argc, char** argv) {
     if(nBbDepth == 0) nBbDepth = nBbDepth_default;
     terminal_tools::parse_argument (argc, argv, "-rmcthr", nRGBThresh);
     if(nRGBThresh == 0) nRGBThresh = nRGBThresh_default;
+    terminal_tools::parse_argument (argc, argv, "-rmero", nNoErode);
+    if(nNoErode == 0) nNoErode = nNoErode_default;
+    terminal_tools::parse_argument (argc, argv, "-rmdil", nNoDilate);
+    if(nNoDilate == 0) nNoDilate = nNoDilate_default;
+    terminal_tools::parse_argument (argc, argv, "-rmsthr", nShareThresh);
+    if(nShareThresh == 0) nShareThresh = nShareThresh_default;
 
 
 
@@ -594,6 +603,9 @@ void ResetParameter () {
     nBbHeight = nBbHeight_default;
     nBbDepth = nBbDepth_default;
     nRGBThresh = nRGBThresh_default;
+    nNoErode = nNoErode_default;
+    nNoDilate = nNoDilate_default;
+    nShareThresh = nShareThresh_default;
 
     if (vbFlagWnd[stTID.nPrmSegm]) {
         cvSetTrackbarPos(vsTrackbarName[20].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.Mode);
@@ -642,6 +654,9 @@ void ResetParameter () {
        cvSetTrackbarPos(vsTrackbarName[63].data(), vsWndName[stTID.nPrmRecMod].data(), nBbHeight);
        cvSetTrackbarPos(vsTrackbarName[64].data(), vsWndName[stTID.nPrmRecMod].data(), nBbDepth);
        cvSetTrackbarPos(vsTrackbarName[65].data(), vsWndName[stTID.nPrmRecMod].data(), nRGBThresh);
+       cvSetTrackbarPos(vsTrackbarName[66].data(), vsWndName[stTID.nPrmRecMod].data(), nNoErode);
+       cvSetTrackbarPos(vsTrackbarName[67].data(), vsWndName[stTID.nPrmRecMod].data(), nNoDilate);
+       cvSetTrackbarPos(vsTrackbarName[68].data(), vsWndName[stTID.nPrmRecMod].data(), nShareThresh);
     }
 }
 
@@ -754,6 +769,9 @@ void InitVariables () {
     vsTrackbarName[63] = "bounding box height [cm]         ";
     vsTrackbarName[64] = "bounding box depth [cm]          ";
     vsTrackbarName[65] = "rgb relative threshold [%]         ";
+    vsTrackbarName[66] = "no. of erode operations             ";
+    vsTrackbarName[67] = "no. of dilate operations             ";
+    vsTrackbarName[68] = "GB segm. include thresh             ";
 
 
 }
@@ -1225,3 +1243,7 @@ void TrackbarHandler_BBW (int pos) {cvSetTrackbarPos(vsTrackbarName[62].data(), 
 void TrackbarHandler_BBH (int pos) {cvSetTrackbarPos(vsTrackbarName[63].data(), vsWndName[stTID.nPrmRecMod].data(), pos);}
 void TrackbarHandler_BBD (int pos) {cvSetTrackbarPos(vsTrackbarName[64].data(), vsWndName[stTID.nPrmRecMod].data(), pos);}
 void TrackbarHandler_CThresh (int pos) {cvSetTrackbarPos(vsTrackbarName[65].data(), vsWndName[stTID.nPrmRecMod].data(), pos);}
+void TrackbarHandler_NoErode (int pos) {cvSetTrackbarPos(vsTrackbarName[66].data(), vsWndName[stTID.nPrmRecMod].data(), pos);}
+void TrackbarHandler_NoDilate (int pos) {cvSetTrackbarPos(vsTrackbarName[67].data(), vsWndName[stTID.nPrmRecMod].data(), pos);}
+void TrackbarHandler_SThresh (int pos) {cvSetTrackbarPos(vsTrackbarName[68].data(), vsWndName[stTID.nPrmRecMod].data(), pos);}
+

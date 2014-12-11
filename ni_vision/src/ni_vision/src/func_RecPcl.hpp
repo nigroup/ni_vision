@@ -12,6 +12,43 @@
 
 
 
+void matchLrHr(const pcl::PointCloud<pcl::PointXYZRGB> & cloud_mod, const std::vector<int> & index,  const cv::Mat & cvm_rgb_org,
+               int nImgScale, int nDsWidth)
+{
+    cv::Mat ImgTemp = cv::Mat::zeros(cvm_rgb_org.size(), cvm_rgb_org.type());
+    vector< vector<int> > coords;
+    int xx, yy;
+    vector <int> pair(2);
+    for (int i = 0; i < index.size(); i++)
+    {
+        GetPixelPos(index[i], nDsWidth, yy, xx);
+        xx = xx*nImgScale; yy = yy*nImgScale;
+        pair[0] = xx;
+        pair[1] = yy;
+        coords.push_back(pair);
+        ImgTemp.at<cv::Vec3b>(xx,yy) = cvm_rgb_org.at<cv::Vec3b>(xx,yy);
+    }
+
+    cv::namedWindow("template", cv::WINDOW_NORMAL);
+    cv::imshow("template", ImgTemp);
+
+    int maxShift_x, maxShift_y;
+    /* for shift_x = -maxShift_x : maxShift_x
+           for shift_y = -maxShift_y : maxShift_y
+               berechne die Abweichung zwischen template und original RGB
+               Norm auf RGB-Werten: euklidische Norm von 3x1-Vektoren ???
+           end
+       end
+       wähle den shift mit dem geringsten Fehler
+    */
+}
+
+
+
+
+
+
+
 /* select relevant parts of point cloud and write data to pcd file
  * in:
  * cloud: the original point cloud
@@ -76,7 +113,7 @@ void RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud, float width, float 
  * size: size of the modified point cloud
  * index: the indices of the points in the modified cloud wrt the original cloud
  * nImgScale: ratio of original and downsampled image
- * nDsWidth: size of the original point cloud
+ * nDsWidth: width of downsampled image
  * cvm_rgb_org: the original rgb image
  * fn: name of the file the data is written to
  * out:
@@ -157,7 +194,7 @@ void RecSeg(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
  * vnPtsCnt: number of points for each surface
  * fits: flags indicating which surfaces to use
  * nImgScale: ratio of original and downsampled image
- * nDsWidth: size of the original point cloud
+ * nDsWidth: width of downsampled image
  * cvm_rgb_org: the original rgb image
  * fn: name of the file the data is written to
  * out:
@@ -217,7 +254,7 @@ void chooseGbSegs2(cv::Mat & HrImg, std::vector< std::vector<CvPoint> > & mnGSeg
 }
 
 
-void chooseGbSegs(cv::Mat & HrImg, std::vector< std::vector<CvPoint> > & mnGSegmPts, vector<bool> & fits)
+void chooseGbSegs(cv::Mat & HrImg, std::vector< std::vector<CvPoint> > & mnGSegmPts, int NoErode, int NoDilate,  float ShareThresh, vector<bool> & fits)
 {
     //number of segments
     int Segnum = mnGSegmPts.size();
@@ -232,9 +269,10 @@ void chooseGbSegs(cv::Mat & HrImg, std::vector< std::vector<CvPoint> > & mnGSegm
     cv::Mat binary = cv::Mat::zeros(HrImg.rows, HrImg.cols, CV_8UC1);
     cv::cvtColor(HrImg, binary, CV_RGB2GRAY);
     cv::threshold(binary, binary, 0, 255, cv::THRESH_BINARY);
-    cv::dilate(binary, binary, cv::Mat(), cv::Point(-1,-1), 5);
-    cv::erode(binary, binary, cv::Mat(), cv::Point(-1,-1), 5);
-
+    if (NoDilate > 0)
+        cv::dilate(binary, binary, cv::Mat(), cv::Point(-1,-1), NoDilate);
+    if (NoErode > 0)
+        cv::erode(binary, binary, cv::Mat(), cv::Point(-1,-1), NoErode);
     cv::namedWindow("binary", cv::WINDOW_NORMAL);
     cv::imshow("binary", binary);
 
@@ -251,9 +289,8 @@ void chooseGbSegs(cv::Mat & HrImg, std::vector< std::vector<CvPoint> > & mnGSegm
                 share[seg] ++;
             }
 
-    float shareThresh = 0.3;
     for (int seg = 0; seg < Segnum; seg++)
-        if (float(share[seg]) / mnGSegmPts[seg].size() > shareThresh)
+        if (float(share[seg]) / mnGSegmPts[seg].size() > ShareThresh)
             fits[seg] = true;
         else
             fits[seg] = false;
@@ -262,20 +299,17 @@ void chooseGbSegs(cv::Mat & HrImg, std::vector< std::vector<CvPoint> > & mnGSegm
 
 
 
-void smoothHighRes(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, std::string fn = "")
+void smoothHighRes(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, int NoErode, int NoDilate, float ShareThresh, double GSegmSigma, int GSegmGrThrs, int GSegmMinSize, std::string fn = "")
 {
 
     //graph-based segmentation
-    nGSegmSigma = 1;
-    nGSegmGrThrs = 0;
-    nGSegmMinSize = 500;
     std::vector< std::vector<CvPoint> > mnGSegmPts;
-    GbSegmentation(cvm_rgb_org, nGSegmSigma, nGSegmGrThrs, nGSegmMinSize, mnGSegmPts);
+    GbSegmentation(cvm_rgb_org, GSegmSigma, GSegmGrThrs, GSegmMinSize, mnGSegmPts);
 
     //find the right surfaces
     cv::Mat HrSmooth = cv::Mat::zeros(HrImg.rows, HrImg.cols, HrImg.type());
     vector<bool> fits(mnGSegmPts.size());
-    chooseGbSegs(HrImg, mnGSegmPts, fits);
+    chooseGbSegs(HrImg, mnGSegmPts, NoErode, NoDilate, ShareThresh, fits);
 
     //combine surfaces to high resolution image
     for(int seg = 0; seg < fits.size(); seg++)
@@ -307,17 +341,16 @@ void smoothHighRes(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, std::string fn 
  * width, height, depth: size of the bounding box (in meters)
  * cThreshRel: in the range [0,1]; relative (to max) threshold for rgb values
  * nImgScale: ratio of original and downsampled image
- * nDsWidth: size of the original point cloud
+ * nDsWidth: width of downsampled image
  * cvm_rgb_org: the original rgb image
  * size_org: size of the original RGB image
  * mnPtsIdx: mapping surface -> points
  * nCnt: number of segments
  * vnPtsCnt: number of points for each surface
  */
-bool Registration(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
-                  int maxnum, int delayS, float width, float height, float depth, float cThreshRel,
-                  int nImgScale, int nDsWidth, const cv::Mat & cvm_rgb_org, cv::Size size_org,
-                  const vector< vector<int> > & mnPtsIdx, int nCnt, const vector<int> & vnPtsCnt)
+bool Registration(const pcl::PointCloud<pcl::PointXYZRGB> & cloud, const cv::Mat & cvm_rgb_org, cv::Size size_org, int nImgScale, int nDsWidth,
+                  int maxnum, int delayS, float width, float height, float depth, float cThreshRel, int NoErode, int NoDilate, float ShareThresh,
+                  double GSegmSigma, int GSegmGrThrs, int GSegmMinSize, const vector< vector<int> > & mnPtsIdx, int nCnt, const vector<int> & vnPtsCnt)
 {
 
     //directory where the data is stored
@@ -332,7 +365,7 @@ bool Registration(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
     clock_t delay = delayS * CLOCKS_PER_SEC; //delay time in clock units
     curTime = clock();
 
-    if (curTime - lastTime > delay)
+    if (curTime - lastTime > delay || count == 0)
     {
         lastTime = curTime;
 
@@ -383,12 +416,15 @@ bool Registration(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
         std::vector<int> index;
         RecPcl(cloud, width, height, depth, cThreshRel, cloud_mod, index, sPcl_fn);
 
+        //match point cloud to high resolution image
+        matchLrHr(cloud_mod, index, cvm_rgb_org, nImgScale, nDsWidth);
+
         //reconstruct high resolution image from point cloud
         cv::Mat HrPcl = cv::Mat::zeros(size_org, CV_8UC3);
         HR_from_Pcl(cloud_mod.size(), index, nImgScale, nDsWidth, cvm_rgb_org, HrPcl, sHrPcl_fn);
 
         //smooth high resolution image from point cloud
-        smoothHighRes(cvm_rgb_org, HrPcl, sSmoothPcl_fn);
+        smoothHighRes(cvm_rgb_org, HrPcl, NoErode, NoDilate, ShareThresh, GSegmSigma, GSegmGrThrs, GSegmMinSize, sSmoothPcl_fn);
 
         //store surfaces that fit into the bounding box
         vector<bool> fits (nCnt);
@@ -399,7 +435,7 @@ bool Registration(const pcl::PointCloud<pcl::PointXYZRGB> & cloud,
         HR_from_Seg(mnPtsIdx, nCnt, vnPtsCnt, fits, nImgScale, nDsWidth, cvm_rgb_org, HrSeg, sHrSeg_fn);
 
         //smooth high resolution image from surfaces
-        smoothHighRes(cvm_rgb_org, HrSeg, sSmoothSeg_fn);
+        smoothHighRes(cvm_rgb_org, HrSeg, NoErode, NoDilate, ShareThresh, GSegmSigma, GSegmGrThrs, GSegmMinSize, sSmoothSeg_fn);
 
         //count how many point clouds have been stored in this round
         //return true when finished
