@@ -1050,38 +1050,6 @@ void updateImage() {
 
 
 
-//            ////** object registration **////////////////////////////////////////
-//            if (vbFlagTask[stTID.nRecPcl])
-//            {
-//                 if (bPointRgb && Registration(cloud_xyz_rgb, cvm_rgb_org, size_org, nImgScale, nDsWidth,
-//                                               nNoSnap, nDelay, float(nBbWidth) / 100, float(nBbHeight) / 100, float(nBbDepth) / 100,
-//                                               float(nRGBThresh) / 100, nNoErode, nNoDilate, float(nShareThresh) / 100,
-//                                               nGSegmSigma, nGSegmGrThrs, nGSegmMinSize, mnProtoPtsIdx, nProtoCnt, vnProtoPtsCnt))
-//                /* if (bPointRgb && Registration2(cloud_xyz_rgb, nNoSnap, nDelay, float(nBbWidth) / 100, float(nBbHeight) / 100,
-//                                        float(nBbDepth) / 100, float(nRGBThresh) / 100,nImgScale, nDsWidth, cvm_rgb_org, size_org)) */
-//                    vbFlagTask[stTID.nRecPcl] = false; //unclick button when recording is completed
-//            }
-
-//            // settings for recording of model //
-//            if (vbFlagTask[stTID.nPrmRecMod]) {
-//                if(!vbFlagWnd[stTID.nPrmRecMod]) {
-//                    vbFlagWnd[stTID.nPrmRecMod] = true;
-//                    cv::namedWindow(vsWndName[stTID.nPrmRecMod], cv::WINDOW_NORMAL);
-//                    cvResizeWindow(vsWndName[stTID.nPrmRecMod].data(), 400, 400);
-//                    cvMoveWindow(vsWndName[stTID.nPrmRecMod].data(), 800, 100);
-
-//                    cvCreateTrackbar(vsTrackbarName[60].data(), vsWndName[stTID.nPrmRecMod].data(), &nNoSnap, 100, TrackbarHandler_NoSnap);
-//                    cvCreateTrackbar(vsTrackbarName[61].data(), vsWndName[stTID.nPrmRecMod].data(), &nDelay, 60, TrackbarHandler_Delay);
-//                    cvCreateTrackbar(vsTrackbarName[62].data(), vsWndName[stTID.nPrmRecMod].data(), &nBbWidth, 100, TrackbarHandler_BBW);
-//                    cvCreateTrackbar(vsTrackbarName[63].data(), vsWndName[stTID.nPrmRecMod].data(), &nBbHeight, 100, TrackbarHandler_BBH);
-//                    cvCreateTrackbar(vsTrackbarName[64].data(), vsWndName[stTID.nPrmRecMod].data(), &nBbDepth, 500, TrackbarHandler_BBD);
-//                    cvCreateTrackbar(vsTrackbarName[65].data(), vsWndName[stTID.nPrmRecMod].data(), &nRGBThresh, 100, TrackbarHandler_CThresh);
-//                    cvCreateTrackbar(vsTrackbarName[67].data(), vsWndName[stTID.nPrmRecMod].data(), &nNoDilate, 50, TrackbarHandler_NoDilate);
-//                    cvCreateTrackbar(vsTrackbarName[66].data(), vsWndName[stTID.nPrmRecMod].data(), &nNoErode, 50, TrackbarHandler_NoErode);
-//                    cvCreateTrackbar(vsTrackbarName[68].data(), vsWndName[stTID.nPrmRecMod].data(), &nShareThresh, 100, TrackbarHandler_SThresh);
-//                }
-//            }
-
         }//bFragTask[stTID.nSegmentation]
         else {
             if (bSwitchDSegm) {
@@ -1494,7 +1462,7 @@ void updateImage() {
         ////** object registration **/////////////////////////////////////////////////////////////////////////////
         if (vbFlagTask[stTID.nRecPcl])
         {
-            if (bPointRgb && Registration3(cloud_xyz_rgb, cvm_rgb_org, size_org, nImgScale, nDsWidth,
+            if (bPointRgb && Registration(cloud_xyz_rgb, cvm_rgb_org, size_org, nImgScale, nDsWidth,
                              nNoSnap, nDelay, float(nBbWidth) / 100, float(nBbHeight) / 100, float(nBbDepth) / 100,
                              float(nRGBThresh) / 100, nNoErode, nNoDilate, float(nShareThresh) / 100,
                              nGSegmSigma, nGSegmGrThrs, nGSegmMinSize))
