@@ -343,6 +343,7 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
 void updateImage() {
 
     ros::Duration d (0.001);
+    //Debug
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////                                                                                        /////////////////////////////////
@@ -685,6 +686,8 @@ void updateImage() {
 
             //////*  Visualizing Segmentation  *///////////////////////////
             if (vbFlagTask[stTID.nDSegm]){
+                // Debug
+                cv::waitKey(0);
                 if (vbFlagTask[stTID.nDSegm]) OpenWindow(stTID.nDSegm);
                 for (int i = 0; i < nDsSize; i++) {
                     if (!vnSegmMap[i]) {
@@ -723,7 +726,7 @@ void updateImage() {
             stProtoTmp.vnMemoryCnt.resize(nSegCnt, 0); stProtoTmp.vnStableCnt.resize(nSegCnt, 0); stProtoTmp.vnDisapCnt.resize(nSegCnt, 0);
 
             TrackingPre (nSegCnt, nDSegmCutSize, nDsWidth, nDsHeight, vnX, vnY, vnZ, cvm_rgb_ds, stTrack, vnSegmPtsCnt, mnSegmPtsIdx, stProtoTmp, nTrkSegCnt);
-            Tracking (nTrkSegCnt, nObjsNrLimit, nDiagonal, stTrack, nTrackHistoBin_tmp, vnSegmPtsCnt, mnSegmPtsIdx, stProtoTmp, vnProtoIdx, vnProtoPtsCnt, mnProtoPtsIdx, stProto, vnProtoFound, nProtoCnt, false);
+            Tracking (cvm_rgb_ds,nTrkSegCnt, nObjsNrLimit, nDiagonal, stTrack, nTrackHistoBin_tmp, vnSegmPtsCnt, mnSegmPtsIdx, stProtoTmp, vnProtoIdx, vnProtoPtsCnt, mnProtoPtsIdx, stProto, vnProtoFound, nProtoCnt, false);
 
             //////*  Making tracking map to a neighborhood matrix for surface saliencies  */////////////////////////////
             std::vector<int> vnTrkMap(nDsSize, -1);         // Tracking Map

@@ -551,7 +551,7 @@ void TrackingAAA (int seg, int j_min, int cnt_old, int nObjsNrLimit, float nTrac
  * vnProtoFound - found flag for objects surfaces
  * nProtoCnt - count of object surfaces
  */
-void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack, int bin,
+void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack, int bin,
               std::vector<int> vnSegmPtsCnt, std::vector<std::vector<int> > mnSegmPtsIdx, ProtoProp stProtoTmp,
               std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx, ProtoProp &stProto, std::vector<int> &vnProtoFound, int &nProtoCnt, bool flag_mat) {
 
@@ -565,9 +565,12 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack
     std::vector<std::vector<float> > mnDistTotal(nDim, std::vector<float>(nDim, huge));
     std::vector<std::vector<float> > mnDistTmp(nDim, std::vector<float>(nDim, huge));
 
-
+    // Debug
+    printf("Differences of Position\n");
     if (nTrkSegCnt && cnt_old) {
         for (int i = 0; i < nTrkSegCnt; i++) {
+            //Debug
+            printf("\n");
             //int size_ref = vnSegmPtsCnt[i];
             for (int j = 0; j < cnt_old; j++) {
                 //int xc = stProtoTmp.mnRCenter[i][0], yc = stProtoTmp.mnRCenter[i][1];
@@ -583,8 +586,35 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack
 
                 if (dp < stTrack.DPos && ds < stTrack.DSize && dc < stTrack.DClr)
                     mnDistTotal[i][j] = stTrack.FPos * dp + stTrack.FSize * ds + stTrack.FClr * dc;
+                // Debug
+                printf("%f ", dp);
             }
             //printf("\n");
+            // Color all objects and the one they are matched to in the same color
+
+        }
+        std::cout << std::endl;
+        printf("\n");
+        if (vnProtoPtsCnt.size()) {
+            for(int k = 0; k < vnProtoPtsCnt[1]; k++) {
+                cvm_rgb_ds.data[3*mnProtoPtsIdx[1][k]] = 0;
+                cvm_rgb_ds.data[3*mnProtoPtsIdx[1][k]+1] = 0;
+                cvm_rgb_ds.data[3*mnProtoPtsIdx[1][k]+2] = 255;
+            }
+            int min = 100000;
+            int minIndex = -1;
+            // find minimum for that row
+            for(int j = 0; j < mnDistClr[1].size(); j++) {
+                if (mnDistClr[1][j] < min) {
+                    min = mnDistClr[1][j];
+                    minIndex = j;
+                }
+            }
+            for(int k = 0; k < vnSegmPtsCnt[minIndex]; k++) {
+                cvm_rgb_ds.data[3*mnSegmPtsIdx[minIndex][k]] = 0;
+                cvm_rgb_ds.data[3*mnSegmPtsIdx[minIndex][k]+1] = 255;
+                cvm_rgb_ds.data[3*mnSegmPtsIdx[minIndex][k]+2] = 0;
+            }
         }
 
         if (flag_mat) {
@@ -623,6 +653,7 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack
 
     mnDistTmp = mnDistTotal;
 
+    // new -> old, vnSegCandMin -
     for (int i = 0; i < nTrkSegCnt; i++) {
         float j_min = huge;
         for (int j = 0; j < cnt_old; j++) {
@@ -637,6 +668,7 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack
         }
     }
 
+    // old -> new
     for (int j = 0; j < cnt_old; j++) {
         float i_min = huge;
         for (int i = 0; i < nTrkSegCnt; i++) {
@@ -710,22 +742,32 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack
 
             if (idx_mem.size() > idx_seg.size()) {
                 for (int i = (int)idx_seg.size(); i < nDimMunkres; i++) {
-                    for (int j = 0; j < nDimMunkres; j++) m_MunkresIn(i,j) = rand()%10 +1;
+                    for (int j = 0; j < nDimMunkres; j++) m_MunkresIn(i,j) = 10 + rand()%10 +1;
                 }
             }
             if (idx_mem.size() < idx_seg.size()) {
                 for (int j = (int)idx_mem.size(); j < nDimMunkres; j++) {
-                    for (int i = 0; i < nDimMunkres; i++) m_MunkresIn(i,j) = rand()%10 +1;
+                    for (int i = 0; i < nDimMunkres; i++) m_MunkresIn(i,j) = 10 + rand()%10 +1;
                 }
 
             }
 
             m_MunkresOut = m_MunkresIn;
-
+            for(int i = 0; i < nDimMunkres; i++) {
+                printf("\n");
+                for(int j = 0; j < nDimMunkres; j++) {
+                    printf("%f ", m_MunkresOut(i,j));
+                }
+            }
             Munkres m;
             m.solve(m_MunkresOut);
-
-
+            for(int i = 0; i < nDimMunkres; i++) {
+                printf("\n");
+                for(int j = 0; j < nDimMunkres; j++) {
+                    printf("%f ", m_MunkresOut(i,j));
+                }
+            }
+            std::cout << std::endl;
             for (int i = 0; i < nDimMunkres; i++) {
                 int rowcount = 0;
                 for (int j = 0; j < nDimMunkres; j++) if (m_MunkresOut(i,j) == 0) rowcount++;
@@ -899,6 +941,7 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack
     nProtoCnt = cnt_old + cnt_new;
 
     if (nProtoCnt >= nObjsNrLimit) printf("Object queue exceeds object no. limit %d\n", nObjsNrLimit);
+
 }
 
 
