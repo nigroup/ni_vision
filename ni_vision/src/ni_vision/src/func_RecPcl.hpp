@@ -7,6 +7,13 @@
 #include <sstream>
 
 
+//global variables declared in ni_vision.cpp
+extern sensor_msgs::PointCloud2ConstPtr cloud_;
+extern boost::mutex m;
+extern cv::Mat cvm_image_camera;
+
+
+
 //modification of function SelRecognition_1 in func_recognition.hpp
 //takes the shift between the point cloud and the rgb image as an additional argument (bestShift_x, bestShift_y)
 void SelRecognition_Shift (int nCandID, int nImgScale, int nDsWidth, std::vector<int> vnProtoPtsCnt, cv::Mat cvm_rgb_org, cv::Mat &cvm_cand_tmp,
@@ -54,7 +61,7 @@ void SelRecognition_Shift (int nCandID, int nImgScale, int nDsWidth, std::vector
  * beforeMatch:
  * bestShift_x, bestShift_y: the calculated shift in both directions
  * cloud_mod: point cloud with shifted rgb values
- * beforeMatch, afterMatch: colored image before and after shift was applied for comparison
+ * beforeMatch, afterMatch: colored image before and after shift was applied, for comparison
  */
 void matchLrHr(pcl::PointCloud<pcl::PointXYZRGB> & cloud_mod, const std::vector<int> & index,  const cv::Mat & cvm_rgb_org, int nImgScale,
                int nDsWidth, int & bestShift_x, int & bestShift_y, cv::Mat & beforeMatch, cv::Mat & afterMatch, std::string fn = "")
@@ -105,6 +112,7 @@ void matchLrHr(pcl::PointCloud<pcl::PointXYZRGB> & cloud_mod, const std::vector<
          }
     }
 
+    // compute shifted low resolution image and shift RGB values in point cloud
     cv::Mat before_lowRes = cv::Mat::zeros(cvm_rgb_org.rows / nImgScale, cvm_rgb_org.cols / nImgScale, cvm_rgb_org.type());
     cv::Mat after_lowRes = cv::Mat::zeros(cvm_rgb_org.rows / nImgScale, cvm_rgb_org.cols / nImgScale, cvm_rgb_org.type());
 
@@ -325,13 +333,35 @@ void smoothHighRes(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, int NoErode, in
 }
 
 
-/* object registration
- * returns false while the process is not yet finished
- * returns true if all point clouds have been stored
+
+
+
+// return the sum of two struct timespec variables
+struct timespec addTimeSpec(struct timespec a, struct timespec b)
+{
+  struct timespec sum;
+  sum.tv_sec = a.tv_sec + b.tv_sec + (a.tv_nsec + b.tv_nsec) / 1000000000;
+  sum.tv_nsec = (a.tv_nsec + b.tv_nsec) % 1000000000;
+  return sum;
+}
+
+// return a < b for two struct timespec variables a and b
+bool compareTimeSpec( struct timespec a, struct timespec b )
+{
+    if (a.tv_sec < b.tv_sec )
+        return true;
+    else if (a.tv_sec == b.tv_sec && a.tv_nsec < b.tv_nsec)
+            return true;
+    else
+        return false;
+}
+
+
+
+/* object registration main function
+ * returns true when finished
  *
  * in:
- * cloud: the point cloud
- * cvm_rgb_org: the high resolution rgb image
  * size_org: size of the high resolution RGB image
  * nImgScale: ratio of original and downsampled image
  * nDsWidth: width of downsampled image
@@ -344,10 +374,17 @@ void smoothHighRes(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, int NoErode, in
  * ShareThresh: threshold for selection of surfaces from graph based segmentation
  * GSegmSigma, GSegmGrThrs, GSegmMinSize: parameters for graph based segmentation
  */
-bool Registration(const pcl::PointCloud<pcl::PointXYZRGB> & cloud, const cv::Mat & cvm_rgb_org, cv::Size size_org, int nImgScale, int nDsWidth,
+bool Registration( cv::Size size_org, int nImgScale, int nDsWidth,
                    int maxnum, int delayS, float width, float height, float depth, float cThreshRel, int NoErode, int NoDilate, float ShareThresh,
                    double GSegmSigma, int GSegmGrThrs, int GSegmMinSize)
 {
+    //window to display results
+    cv::namedWindow("Object Registration", cv::WINDOW_NORMAL);
+
+    //variables to store point cloud and RGB image
+    pcl::PointCloud<pcl::PointXYZRGB> cloud;
+    cv::Mat cvm_rgb_org = cv::Mat::zeros(size_org, CV_8UC3);
+
     //image buffer for results
     cv::Mat results = cv::Mat::zeros(2 * cvm_rgb_org.rows, 2 * cvm_rgb_org.cols, cvm_rgb_org.type());
 
@@ -356,19 +393,29 @@ bool Registration(const pcl::PointCloud<pcl::PointXYZRGB> & cloud, const cv::Mat
     mkdir (sPclDir.data(), 0777);
 
     //time control
-    static clock_t curTime;
-    static clock_t lastTime;
-    static int count = 0;
+    struct timespec t_curTime;
+    struct timespec t_next;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t_curTime);
 
-    clock_t delay = delayS * CLOCKS_PER_SEC; //delay time in clock units
-    curTime = clock();
+    struct timespec delay;
+    delay.tv_sec = delayS;
+    delay.tv_nsec = 0;
 
-    if (curTime - lastTime > delay || count == 0)
+
+    for (int count = 0; count < maxnum; count++)
     {
-        lastTime = curTime;
+        t_next = addTimeSpec(t_curTime, delay);
 
         //signal to the user so he knows when the snapshot is taken
-        cout << "click! " << double(curTime) / CLOCKS_PER_SEC << endl;
+        cout << "click! " << t_curTime.tv_sec << " s,  " << t_curTime.tv_nsec << " ns" << endl;
+
+        //grab point cloud
+        m.lock ();
+        pcl::fromROSMsg (*cloud_, cloud);
+        m.unlock ();
+
+        //grab RGB image
+        cvm_image_camera.copyTo(cvm_rgb_org);
 
         //filenames
         string ext = static_cast<ostringstream*>( &(ostringstream() << (count + 1)))->str();
@@ -397,25 +444,15 @@ bool Registration(const pcl::PointCloud<pcl::PointXYZRGB> & cloud, const cv::Mat
         smoothHighRes(cvm_rgb_org, HrPcl, NoErode, NoDilate, ShareThresh, GSegmSigma, GSegmGrThrs, GSegmMinSize, binTemp, final, sSmoothPcl_fn);
 
         //draw the results
-        cv::namedWindow("Object Registration", cv::WINDOW_NORMAL);
         cv::imshow("Object Registration", results);
+        cv::waitKey(30);
 
-
-        //count how many point clouds have been stored in this round
-        //return true when finished
-        count++;
-        if (count == maxnum)
-        {
-            count = 0;
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-
+        //time delay
+        while ( compareTimeSpec( t_curTime, t_next ))
+            clock_gettime(CLOCK_MONOTONIC_RAW, &t_curTime);
     }
-    return false;
+
+    return true;
 }
 
 

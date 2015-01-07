@@ -1462,7 +1462,7 @@ void updateImage() {
         ////** object registration **/////////////////////////////////////////////////////////////////////////////
         if (vbFlagTask[stTID.nRecPcl])
         {
-            if (bPointRgb && Registration(cloud_xyz_rgb, cvm_rgb_org, size_org, nImgScale, nDsWidth,
+            if (bPointRgb && Registration(size_org, nImgScale, nDsWidth,
                              nNoSnap, nDelay, float(nBbWidth) / 100, float(nBbHeight) / 100, float(nBbDepth) / 100,
                              float(nRGBThresh) / 100, nNoErode, nNoDilate, float(nShareThresh) / 100,
                              nGSegmSigma, nGSegmGrThrs, nGSegmMinSize))
