@@ -308,6 +308,10 @@ void chooseGbSegs(cv::Mat & HrImg, std::vector< std::vector<CvPoint> > & mnGSegm
 void smoothHighRes(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, int NoErode, int NoDilate, float ShareThresh, double GSegmSigma, int GSegmGrThrs,
                    int GSegmMinSize, cv::Mat & binTemp, cv::Mat & HrSmooth, std::string fn = "")
 {
+    //use all values in HrImg that are "not black" (a threshold is applied)
+    //double min, max;
+    //cv::minMaxLoc(HrImg, &min, &max);
+    //cv::threshold(HrImg, HrSmooth, 0.1 * max, 0, cv::THRESH_TOZERO);
 
     //graph-based segmentation
     std::vector< std::vector<CvPoint> > mnGSegmPts;
@@ -385,21 +389,17 @@ bool Registration( cv::Size size_org, int nImgScale, int nDsWidth,
     pcl::PointCloud<pcl::PointXYZRGB> cloud;
     cv::Mat cvm_rgb_org = cv::Mat::zeros(size_org, CV_8UC3);
 
-    //image buffer for results
-    cv::Mat results = cv::Mat::zeros(2 * cvm_rgb_org.rows, 2 * cvm_rgb_org.cols, cvm_rgb_org.type());
-
     //directory where the data is stored
     static const std::string sPclDir = "Registration_data";
     mkdir (sPclDir.data(), 0777);
 
     //time control
-    struct timespec t_curTime;
-    struct timespec t_next;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &t_curTime);
-
     struct timespec delay;
     delay.tv_sec = delayS;
     delay.tv_nsec = 0;
+    struct timespec t_curTime;
+    struct timespec t_next;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t_curTime);
 
 
     for (int count = 0; count < maxnum; count++)
@@ -422,6 +422,9 @@ bool Registration( cv::Size size_org, int nImgScale, int nDsWidth,
         string sPcl_fn = sPclDir + "/" + "PointCloud_" + ext + ".pcd";
         string sHrPcl_fn = sPclDir + "/" + "HrPcl_" + ext + ".jpg";
         string sSmoothPcl_fn = sPclDir + "/" + "SmoothPcl_" + ext + ".jpg";
+
+        //image buffer for results
+        cv::Mat results = cv::Mat::zeros(2 * cvm_rgb_org.rows, 2 * cvm_rgb_org.cols, cvm_rgb_org.type());
 
         //select relevant parts of point cloud
         pcl::PointCloud<pcl::PointXYZRGB> cloud_mod;
