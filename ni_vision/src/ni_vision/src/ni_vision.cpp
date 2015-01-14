@@ -29,7 +29,6 @@
 #include "terminal_tools/parse.h"
 
 
-
 // -----------------------------------------
 // -----Sub functions-----------------------
 // -----------------------------------------
@@ -392,6 +391,7 @@ void updateImage() {
     cv::Mat cvm_record_ds(nDsHeight, nDsWidth*2 , CV_8UC3); // Image buffer for recording, compact
 
     cv::Mat cvm_gbsegm(size_ds, CV_8UC3);                   // Image buffer for graph-based segmentation
+    cv::Mat cvm_gbsegm_hr(size_org, CV_8UC3);               // Image buffer for graph-based segmentation on high resolution image
     cv::Mat cvm_sift(size_org, CV_8UC3);                    // Image buffer for SIFT on the whole image
 
     cv::Mat cvm_set_seg(50, 400, CV_8UC3);                  // Image buffer for settings, for Segmentation
@@ -532,7 +532,7 @@ void updateImage() {
         cvm_dgrady_blur = cv::Scalar(0, 0, 0); cvm_dgrady_smth = cv::Scalar(0, 0, 0); cvm_depth_process = cv::Scalar(0, 0, 0);
 
         cvm_gbsegm = cv::Scalar(0, 0, 0); cvm_sift = cv::Scalar(0, 0, 0);
-
+        cvm_gbsegm_hr = cv::Scalar(0,0,0);
 
         for (int i = 0; i < nTaskNrMax; i++) if (!vbFlagTask[i]) CloseWindow(i);
 
@@ -1102,21 +1102,42 @@ void updateImage() {
                 cvCreateTrackbar(vsTrackbarName[17].data(), vsWndName[stTID.nGSegm].data(), &gsegm_sigma, 10, TrackbarHandler_GSegmSigma);
                 cvCreateTrackbar(vsTrackbarName[18].data(), vsWndName[stTID.nGSegm].data(), &nGSegmGrThrs, 50000, TrackbarHandler_none);
                 cvCreateTrackbar(vsTrackbarName[19].data(), vsWndName[stTID.nGSegm].data(), &nGSegmMinSize, 1000, TrackbarHandler_none);
+                cvCreateTrackbar(vsTrackbarName[16].data(), vsWndName[stTID.nGSegm].data(), &nGSegmUseHr, 1, TrackbarHandler_none);
             }
 
             std::vector<std::vector<CvPoint> > mnGSegmPts;
-            GbSegmentation(cvm_rgb_ds, nGSegmSigma, nGSegmGrThrs, nGSegmMinSize, mnGSegmPts);
+            if (nGSegmUseHr)
+            {
+                 GbSegmentation(cvm_rgb_org, nGSegmSigma, nGSegmGrThrs, nGSegmMinSize, mnGSegmPts);
+                int idx = 0;
+                std::vector<std::vector<int> > mnGSegmPtsIdx(mnGSegmPts.size(), std::vector<int>(10,0));
+                for (size_t i = 0; i < mnGSegmPts.size(); i++) {
+                    mnGSegmPtsIdx[i].resize(mnGSegmPts[i].size());
+                    for(size_t j = 0; j < mnGSegmPts[i].size(); j++) {
+                        idx = GetPixelIdx(mnGSegmPts[i][j].x, mnGSegmPts[i][j].y, cvm_rgb_org.cols);
+                        mnGSegmPtsIdx[i][j] = idx;
+                        cvm_gbsegm_hr.at<cv::Vec3b>(mnGSegmPts[i][j].y, mnGSegmPts[i][j].x) = cv::Vec3b(mnColorTab[i][0], mnColorTab[i][1], mnColorTab[i][2]);
+                    }
+                }
+                cv::resize(cvm_gbsegm_hr, cvm_gbsegm, size_ds, 0, 0, cv::INTER_AREA);
+            }
+            else
+            {
+                GbSegmentation(cvm_rgb_ds, nGSegmSigma, nGSegmGrThrs, nGSegmMinSize, mnGSegmPts);
+                int idx = 0;
+                std::vector<std::vector<int> > mnGSegmPtsIdx(mnGSegmPts.size(), std::vector<int>(10,0));
+                for (size_t i = 0; i < mnGSegmPts.size(); i++) {
+                    mnGSegmPtsIdx[i].resize(mnGSegmPts[i].size());
+                    for(size_t j = 0; j < mnGSegmPts[i].size(); j++) {
+                        idx = GetPixelIdx(mnGSegmPts[i][j].x, mnGSegmPts[i][j].y, nDsWidth);
 
-            int idx = 0;
-            std::vector<std::vector<int> > mnGSegmPtsIdx(mnGSegmPts.size(), std::vector<int>(10,0));
-            for (size_t i = 0; i < mnGSegmPts.size(); i++) {
-                mnGSegmPtsIdx[i].resize(mnGSegmPts[i].size());
-                for(size_t j = 0; j < mnGSegmPts[i].size(); j++) {
-                    idx = GetPixelIdx(mnGSegmPts[i][j].x, mnGSegmPts[i][j].y, nDsWidth);
-                    mnGSegmPtsIdx[i][j] = idx;
-                    cvm_gbsegm.at<cv::Vec3b>(mnGSegmPts[i][j].y, mnGSegmPts[i][j].x) = cv::Vec3b(mnColorTab[i][0], mnColorTab[i][1], mnColorTab[i][2]);
+                        mnGSegmPtsIdx[i][j] = idx;
+                        cvm_gbsegm.at<cv::Vec3b>(mnGSegmPts[i][j].y, mnGSegmPts[i][j].x) = cv::Vec3b(mnColorTab[i][0], mnColorTab[i][1], mnColorTab[i][2]);
+                    }
                 }
             }
+
+
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_gbseg_end); nTimeGbSegm = double(timespecDiff(&t_gbseg_end, &t_gbseg_start)/nTimeRatio);
 
@@ -1595,6 +1616,7 @@ void updateImage() {
     cvm_rec_org.release(); cvm_rec_ds.release();
 
     cvm_gbsegm.release(); cvm_sift.release();
+    cvm_gbsegm_hr.release();
 
     cvm_record_rec.release(); cvm_record_ds.release();
 

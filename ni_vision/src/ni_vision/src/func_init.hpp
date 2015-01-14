@@ -35,6 +35,7 @@ int nDSegmCutSize = 0, nDSegmCutSize_default = 10;
 double nGSegmSigma = 0, nGSegmSigma_default = 0.8;
 int nGSegmGrThrs = -1, nGSegmGrThrs_default = 500;
 int nGSegmMinSize = 0, nGSegmMinSize_default = 450;
+int nGSegmUseHr = 0, nGSegmUseHr_default = 0;
 
 struct TrackProp {
     int Mode, ClrMode, HistoBin;
@@ -367,7 +368,8 @@ void InitParameter (int argc, char** argv) {
     if(nGSegmGrThrs == -1) nGSegmGrThrs = nGSegmGrThrs_default; nGSegmGrThrs_default = nGSegmGrThrs;
     terminal_tools::parse_argument (argc, argv, "-gsmins", nGSegmMinSize);
     if(nGSegmMinSize == 0) nGSegmMinSize = nGSegmMinSize_default; nGSegmMinSize_default = nGSegmMinSize;
-
+    terminal_tools::parse_argument (argc, argv, "-gshr", nGSegmUseHr);
+    if(nGSegmUseHr == 0) nGSegmUseHr = nGSegmUseHr_default; nGSegmUseHr_default = nGSegmUseHr;
 
     terminal_tools::parse_argument (argc, argv, "-trkmod", stTrack.Mode);
     if(stTrack.Mode == 0) stTrack.Mode = stTrack_default.Mode; stTrack_default.Mode = stTrack.Mode;
@@ -557,6 +559,7 @@ void ResetParameter () {
     nGSegmSigma = nGSegmSigma_default;
     nGSegmGrThrs = nGSegmGrThrs_default;
     nGSegmMinSize = nGSegmMinSize_default;
+    nGSegmUseHr = nGSegmUseHr_default;
 
 
     stTrack.Mode = stTrack_default.Mode;
@@ -646,6 +649,7 @@ void ResetParameter () {
         cvSetTrackbarPos(vsTrackbarName[17].data(), vsWndName[stTID.nGSegm].data(), nGSegmSigma*10);
         cvSetTrackbarPos(vsTrackbarName[18].data(), vsWndName[stTID.nGSegm].data(), nGSegmGrThrs);
         cvSetTrackbarPos(vsTrackbarName[19].data(), vsWndName[stTID.nGSegm].data(), nGSegmMinSize);
+        cvSetTrackbarPos(vsTrackbarName[16].data(), vsWndName[stTID.nGSegm].data(), nGSegmUseHr);
     }
     if (vbFlagWnd[stTID.nPrmRecMod]) {
        cvSetTrackbarPos(vsTrackbarName[60].data(), vsWndName[stTID.nPrmRecMod].data(), nNoSnap);
@@ -755,6 +759,7 @@ void InitVariables () {
     vsTrackbarName[17] = "GB segm. sigma (0-1)     ";
     vsTrackbarName[18] = "GB segm. gr (0-500)        ";
     vsTrackbarName[19] = "GB segm. min (0-1000)  ";
+    vsTrackbarName[16] = "use high resosution?      ";
 
     vsTrackbarName[99] = "Selection Mode                ";
 
