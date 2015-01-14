@@ -76,8 +76,6 @@ int nBbWidth = 0, nBbWidth_default = 20;
 int nBbHeight = 0, nBbHeight_default = 20;
 int nBbDepth = 0, nBbDepth_default = 100;
 int nRGBThresh = 0, nRGBThresh_default = 0;
-int nNoErode = 0, nNoErode_default = 0;
-int nNoDilate = 0, nNoDilate_default = 0;
 int nShareThresh = 0, nShareThresh_default = 30;
 
 
@@ -465,10 +463,6 @@ void InitParameter (int argc, char** argv) {
     if(nBbDepth == 0) nBbDepth = nBbDepth_default;
     terminal_tools::parse_argument (argc, argv, "-rmcthr", nRGBThresh);
     if(nRGBThresh == 0) nRGBThresh = nRGBThresh_default;
-    terminal_tools::parse_argument (argc, argv, "-rmero", nNoErode);
-    if(nNoErode == 0) nNoErode = nNoErode_default;
-    terminal_tools::parse_argument (argc, argv, "-rmdil", nNoDilate);
-    if(nNoDilate == 0) nNoDilate = nNoDilate_default;
     terminal_tools::parse_argument (argc, argv, "-rmsthr", nShareThresh);
     if(nShareThresh == 0) nShareThresh = nShareThresh_default;
 
@@ -606,8 +600,6 @@ void ResetParameter () {
     nBbHeight = nBbHeight_default;
     nBbDepth = nBbDepth_default;
     nRGBThresh = nRGBThresh_default;
-    nNoErode = nNoErode_default;
-    nNoDilate = nNoDilate_default;
     nShareThresh = nShareThresh_default;
 
     if (vbFlagWnd[stTID.nPrmSegm]) {
@@ -658,8 +650,6 @@ void ResetParameter () {
        cvSetTrackbarPos(vsTrackbarName[63].data(), vsWndName[stTID.nPrmRecMod].data(), nBbHeight);
        cvSetTrackbarPos(vsTrackbarName[64].data(), vsWndName[stTID.nPrmRecMod].data(), nBbDepth);
        cvSetTrackbarPos(vsTrackbarName[65].data(), vsWndName[stTID.nPrmRecMod].data(), nRGBThresh);
-       cvSetTrackbarPos(vsTrackbarName[66].data(), vsWndName[stTID.nPrmRecMod].data(), nNoErode);
-       cvSetTrackbarPos(vsTrackbarName[67].data(), vsWndName[stTID.nPrmRecMod].data(), nNoDilate);
        cvSetTrackbarPos(vsTrackbarName[68].data(), vsWndName[stTID.nPrmRecMod].data(), nShareThresh);
     }
 }
@@ -757,8 +747,8 @@ void InitVariables () {
     vsTrackbarName[53] = "Flann match cnt (0-100)            ";
     vsTrackbarName[54] = "Print color distance                   ";
     vsTrackbarName[17] = "GB segm. sigma (0-1)     ";
-    vsTrackbarName[18] = "GB segm. gr (0-500)        ";
-    vsTrackbarName[19] = "GB segm. min (0-1000)  ";
+    vsTrackbarName[18] = "GB segm. gr                         ";
+    vsTrackbarName[19] = "GB segm. min                     ";
     vsTrackbarName[16] = "use high resosution?      ";
 
     vsTrackbarName[99] = "Selection Mode                ";
@@ -774,8 +764,6 @@ void InitVariables () {
     vsTrackbarName[63] = "bounding box height [cm]         ";
     vsTrackbarName[64] = "bounding box depth [cm]          ";
     vsTrackbarName[65] = "rgb relative threshold [%]         ";
-    vsTrackbarName[66] = "no. of erode operations             ";
-    vsTrackbarName[67] = "no. of dilate operations             ";
     vsTrackbarName[68] = "GB segm. include thresh             ";
 
 

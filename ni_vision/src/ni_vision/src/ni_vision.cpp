@@ -1100,8 +1100,8 @@ void updateImage() {
 
                 int gsegm_sigma = int(nGSegmSigma*10);
                 cvCreateTrackbar(vsTrackbarName[17].data(), vsWndName[stTID.nGSegm].data(), &gsegm_sigma, 10, TrackbarHandler_GSegmSigma);
-                cvCreateTrackbar(vsTrackbarName[18].data(), vsWndName[stTID.nGSegm].data(), &nGSegmGrThrs, 50000, TrackbarHandler_none);
-                cvCreateTrackbar(vsTrackbarName[19].data(), vsWndName[stTID.nGSegm].data(), &nGSegmMinSize, 1000, TrackbarHandler_none);
+                cvCreateTrackbar(vsTrackbarName[18].data(), vsWndName[stTID.nGSegm].data(), &nGSegmGrThrs, 20000, TrackbarHandler_none);
+                cvCreateTrackbar(vsTrackbarName[19].data(), vsWndName[stTID.nGSegm].data(), &nGSegmMinSize, 10000, TrackbarHandler_none);
                 cvCreateTrackbar(vsTrackbarName[16].data(), vsWndName[stTID.nGSegm].data(), &nGSegmUseHr, 1, TrackbarHandler_none);
             }
 
@@ -1485,7 +1485,7 @@ void updateImage() {
         {
             if (bPointRgb && Registration(size_org, nImgScale, nDsWidth,
                              nNoSnap, nDelay, float(nBbWidth) / 100, float(nBbHeight) / 100, float(nBbDepth) / 100,
-                             float(nRGBThresh) / 100, nNoErode, nNoDilate, float(nShareThresh) / 100,
+                             float(nRGBThresh) / 100, float(nShareThresh) / 100,
                              nGSegmSigma, nGSegmGrThrs, nGSegmMinSize))
             vbFlagTask[stTID.nRecPcl] = false; //unclick button when recording is completed
         }
@@ -1504,8 +1504,6 @@ void updateImage() {
                 cvCreateTrackbar(vsTrackbarName[63].data(), vsWndName[stTID.nPrmRecMod].data(), &nBbHeight, 100, TrackbarHandler_BBH);
                 cvCreateTrackbar(vsTrackbarName[64].data(), vsWndName[stTID.nPrmRecMod].data(), &nBbDepth, 500, TrackbarHandler_BBD);
                 cvCreateTrackbar(vsTrackbarName[65].data(), vsWndName[stTID.nPrmRecMod].data(), &nRGBThresh, 100, TrackbarHandler_CThresh);
-                cvCreateTrackbar(vsTrackbarName[67].data(), vsWndName[stTID.nPrmRecMod].data(), &nNoDilate, 50, TrackbarHandler_NoDilate);
-                cvCreateTrackbar(vsTrackbarName[66].data(), vsWndName[stTID.nPrmRecMod].data(), &nNoErode, 50, TrackbarHandler_NoErode);
                 cvCreateTrackbar(vsTrackbarName[68].data(), vsWndName[stTID.nPrmRecMod].data(), &nShareThresh, 100, TrackbarHandler_SThresh);
             }
         }
