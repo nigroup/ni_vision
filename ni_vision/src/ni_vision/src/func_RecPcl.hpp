@@ -422,6 +422,7 @@ bool Registration( cv::Size size_org, int nImgScale, int nDsWidth,
         string sHrPcl_fn = sPclDir + "/" + "HrPcl_" + ext + ".jpg";
         string sSmoothPcl_fn = sPclDir + "/" + "SmoothPcl_" + ext + ".jpg";
         string sbinTemp_fn = sPclDir + "/" + "Template_" + ext + ".jpg";
+        string sRGBOrig_fn = sPclDir + "/" + "RGBOrig_" + ext + ".jpg";
 
         //image buffer for results
         cv::Mat results = cv::Mat::zeros(2 * cvm_rgb_org.rows, 2 * cvm_rgb_org.cols, cvm_rgb_org.type());
@@ -449,6 +450,9 @@ bool Registration( cv::Size size_org, int nImgScale, int nDsWidth,
         //draw the results
         cv::imshow("Object Registration", results);
         cv::waitKey(30);
+
+        //save original RGB image
+        cv::imwrite(sRGBOrig_fn, cvm_rgb_org);
 
         //time delay
         while ( compareTimeSpec( t_curTime, t_next ))
