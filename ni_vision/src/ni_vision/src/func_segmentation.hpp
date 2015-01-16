@@ -595,6 +595,8 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
         }
         std::cout << std::endl;
         printf("\n");
+
+        // Debugging
         if (vnProtoPtsCnt.size()) {
             for(int k = 0; k < vnProtoPtsCnt[1]; k++) {
                 cvm_rgb_ds.data[3*mnProtoPtsIdx[1][k]] = 0;
@@ -616,6 +618,7 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
                 cvm_rgb_ds.data[3*mnSegmPtsIdx[minIndex][k]+2] = 0;
             }
         }
+        // end debugging
 
         if (flag_mat) {
             char sText[128];
@@ -735,7 +738,7 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
 
             for (size_t i = 0; i < idx_seg.size(); i++) {
                 for (size_t j = 0; j < idx_mem.size(); j++) {
-                    if(mnDistTmp[idx_seg[i]][idx_mem[j]]) m_MunkresIn(i,j) = 100/mnDistTmp[idx_seg[i]][idx_mem[j]];
+                    if(mnDistTmp[idx_seg[i]][idx_mem[j]]) m_MunkresIn(i,j) = 100 / mnDistTmp[idx_seg[i]][idx_mem[j]]; // changed from 100 / ...
                     else m_MunkresIn(i,j) = (double)munkres_huge;
                 }
             }
