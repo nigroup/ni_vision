@@ -170,8 +170,10 @@ add_definitions(${PCL_DEFINITIONS})
 
 add_executable (triangulation src/triangulation.cpp)
 add_executable (pairwise_incremental_registration src/pairwise_incremental_registration.cpp)
+add_executable (3D_model src/3D_model.cpp)
 target_link_libraries (triangulation ${PCL_LIBRARIES})
 target_link_libraries (pairwise_incremental_registration ${PCL_LIBRARIES})
+target_link_libraries (3D_model ${PCL_LIBRARIES})
 
 
 
