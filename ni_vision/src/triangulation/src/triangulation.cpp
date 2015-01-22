@@ -4,17 +4,67 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/surface/gp3.h>
+#include <pcl/filters/voxel_grid.h>                //for downsampling
+#include <pcl/filters/approximate_voxel_grid.h>    //for approximate voxel grid
+#include <pcl/surface/mls.h>                       //for smoothing
 
 
 // parameters
-int KSearch= 20;                      // 20
-double searchRadius = 0.025;          // 0.025
-double mu = 2.5;                      // 2.5
-int maximumNearestNeighbors = 100;   // 100
-double maximumSurfaceAngle = M_PI/4;  // M_PI/4
-double minimumAngle = M_PI/18;        // M_PI/18
-double maximumAngle = 2*M_PI/3;       // 2*M_PI/3
-bool normalConsistency = false;       // false
+int KSearch= 20;                      // 20            neighborhood size for normal estimation
+double searchRadius = 0.025;          // 0.025         maximum edge length for every triangle
+double mu = 2.5;                      // 2.5           maximum distance for a point to be considered a neighbor (relative to closest neighbor)
+int maximumNearestNeighbors = 100;    // 100           how many neighbors are searched for
+double minimumAngle = M_PI/18;        // M_PI/18       minimum angle in each triangle
+double maximumAngle = 2*M_PI/3;       // 2*M_PI/3      maximum angle in each triangle
+double maximumSurfaceAngle = M_PI/4;  // M_PI/4        points are nor connected if the angle between their normals is too large ...
+bool normalConsistency = false;       // false         ... and normalConsistency is not set
+
+double leafSize = 0.01f;    // voxel grid size (for downsampling) (e.g. 0.01f)
+double smoothRadius =0; // search radius for smoothing   (e.g. 0.03)
+
+
+
+// approximate voxel grid (downsampling + filtering)
+void approxVG(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, double leafSize)
+{
+    // pointclouds.org/documentation/tutorials/voxel_grid.php
+     pcl::ApproximateVoxelGrid<pcl::PointXYZRGB> sor;
+     sor.setInputCloud (cloud_in);
+     sor.setLeafSize (leafSize, leafSize, leafSize);
+     sor.filter (*cloud_out);
+}
+
+
+
+// downsample point cloud
+void downsamplePcl(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, double leafSize)
+{
+    // pointclouds.org/documentation/tutorials/voxel_grid.php
+     pcl::VoxelGrid<pcl::PointXYZRGB> sor;
+     sor.setInputCloud (cloud_in);
+     sor.setLeafSize (leafSize, leafSize, leafSize);
+     sor.filter (*cloud_out);
+}
+
+void smoothPcl(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, double smoothRadius)
+{
+    // pointclouds.org/documentation/tutorials/resampling.php
+    // Create a KD-Tree
+    pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
+    // Output has the PointNormal type in order to store the normals calculated by MLS
+    pcl::PointCloud<pcl::PointXYZRGB> mls_points;
+    // Init object (second point type is for the normals, even if unused)
+    pcl::MovingLeastSquares<pcl::PointXYZRGB, pcl::PointXYZRGB> mls;
+    mls.setComputeNormals (false);
+    // Set parameters
+    mls.setInputCloud (cloud_in);
+    mls.setPolynomialFit (true);
+    mls.setSearchMethod (tree);
+    mls.setSearchRadius (smoothRadius);
+    // Reconstruct
+    mls.process (mls_points);
+    *cloud_out = mls_points;
+}
 
 
 
@@ -87,6 +137,16 @@ int main (int argc, char** argv)
         pcl::fromPCLPointCloud2 (cloud_blob, *cloud);
         //* the data should be available in cloud
 
+        // smoothing
+        if (smoothRadius > 0)
+            smoothPcl(cloud, cloud, smoothRadius);
+
+        // downsampling
+        if (leafSize > 0)
+            //downsamplePcl(cloud, cloud, leafSize);
+            approxVG(cloud, cloud, leafSize);
+
+
         // Normal estimation*
         pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> n;
         pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal>);
@@ -135,3 +195,5 @@ int main (int argc, char** argv)
   // Finish
   return (0);
 }
+
+
