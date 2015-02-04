@@ -553,7 +553,8 @@ void TrackingAAA (int seg, int j_min, int cnt_old, int nObjsNrLimit, float nTrac
  */
 void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack, int bin,
               std::vector<int> vnSegmPtsCnt, std::vector<std::vector<int> > mnSegmPtsIdx, ProtoProp stProtoTmp,
-              std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx, ProtoProp &stProto, std::vector<int> &vnProtoFound, int &nProtoCnt, bool flag_mat) {
+              std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx,
+              ProtoProp &stProto, std::vector<int> &vnProtoFound, int &nProtoCnt, bool flag_mat) {
 
 
     int cnt_new = 0, cnt_old = nProtoCnt;
@@ -570,7 +571,7 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
     if (nTrkSegCnt && cnt_old) {
         for (int i = 0; i < nTrkSegCnt; i++) {
             //Debug
-            printf("\n");
+//            printf("\n");
             //int size_ref = vnSegmPtsCnt[i];
             for (int j = 0; j < cnt_old; j++) {
                 //int xc = stProtoTmp.mnRCenter[i][0], yc = stProtoTmp.mnRCenter[i][1];
@@ -587,14 +588,14 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
                 if (dp < stTrack.DPos && ds < stTrack.DSize && dc < stTrack.DClr)
                     mnDistTotal[i][j] = stTrack.FPos * dp + stTrack.FSize * ds + stTrack.FClr * dc;
                 // Debug
-                printf("%f ", dp);
+//                printf("%f ", dp);
             }
             //printf("\n");
             // Color all objects and the one they are matched to in the same color
 
         }
         std::cout << std::endl;
-        printf("\n");
+//        printf("\n");
 
         // Debugging
         if (vnProtoPtsCnt.size()) {
@@ -738,19 +739,21 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
 
             for (size_t i = 0; i < idx_seg.size(); i++) {
                 for (size_t j = 0; j < idx_mem.size(); j++) {
-                    if(mnDistTmp[idx_seg[i]][idx_mem[j]]) m_MunkresIn(i,j) = 100 / mnDistTmp[idx_seg[i]][idx_mem[j]]; // changed from 100 / ...
-                    else m_MunkresIn(i,j) = (double)munkres_huge;
+                    m_MunkresIn(i,j) = mnDistTmp[idx_seg[i]][idx_mem[j]];
+                    // old version
+//                    if(mnDistTmp[idx_seg[i]][idx_mem[j]]) m_MunkresIn(i,j) = 100 /  mnDistTmp[idx_seg[i]][idx_mem[j]];
+//                    else m_MunkresIn(i,j) = (double)munkres_huge;
                 }
             }
 
             if (idx_mem.size() > idx_seg.size()) {
                 for (int i = (int)idx_seg.size(); i < nDimMunkres; i++) {
-                    for (int j = 0; j < nDimMunkres; j++) m_MunkresIn(i,j) = 10 + rand()%10 +1;
+                    for (int j = 0; j < nDimMunkres; j++) m_MunkresIn(i,j) = 10 + rand()%10;
                 }
             }
             if (idx_mem.size() < idx_seg.size()) {
                 for (int j = (int)idx_mem.size(); j < nDimMunkres; j++) {
-                    for (int i = 0; i < nDimMunkres; i++) m_MunkresIn(i,j) = 10 + rand()%10 +1;
+                    for (int i = 0; i < nDimMunkres; i++) m_MunkresIn(i,j) = 10 + rand()%10;
                 }
 
             }
