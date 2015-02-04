@@ -740,8 +740,7 @@ void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, i
     nPadSecY = nBtnOffset*4;
     nTaskNr = stTID.nRgbOrg; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecX += nBtnW + 2*nBtnOffset;
-    nTaskNr = stTID.nRgbDs;
-    SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
+    nTaskNr = stTID.nRgbDs; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecY += nBtnH + 2*nBtnOffset;
 
     nPadSecX = nBtnOffset;
@@ -844,7 +843,6 @@ void DrawPad(cv::Mat &cvm_input, std::vector<int> vnBtnProp, int nPadRow1, int n
 
     cv::Scalar c_color = c_gray;
     cv::line(cvm_input, cv::Point(0, nPadRow1), cv::Point(cvm_input.cols, nPadRow1), c_color, 1);
-    cv::line(cvm_input, cv::Point(0, nPadRow1), cv::Point(cvm_input.cols, nPadRow1), c_color, 1);
     cv::line(cvm_input, cv::Point(nPadCol1, 0), cv::Point(nPadCol1, cvm_input.rows), c_color, 1);
     cv::line(cvm_input, cv::Point(nPadCol2, 0), cv::Point(nPadCol2, cvm_input.rows), c_color, 1);
 
@@ -864,7 +862,6 @@ void DrawPad(cv::Mat &cvm_input, std::vector<int> vnBtnProp, int nPadRow1, int n
         if (i == nTaskNrMax - 1) c_color = c_cyan;
 
         x1 = mnBtnPos[i][0]; y1 = mnBtnPos[i][1]; x2 = x1 + mnBtnPos[i][2]; y2 = y1 + mnBtnPos[i][3];
-        cv::rectangle(cvm_input, cv::Point(x1, y1), cv::Point(x2 ,y2), c_color, thickness);
         cv::rectangle(cvm_input, cv::Point(x1, y1), cv::Point(x2 ,y2), c_color, thickness);
 
         if (vnBtnProp[i] == 20) {

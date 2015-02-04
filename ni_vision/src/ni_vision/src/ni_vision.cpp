@@ -343,7 +343,6 @@ void SelRecognition (int nCandID, int nImgScale, int nTimeRatio, int nProtoCnt, 
 void updateImage() {
 
     ros::Duration d (0.001);
-    //Debug
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////                                                                                        /////////////////////////////////
@@ -413,11 +412,13 @@ void updateImage() {
     }
 
 
+    float nDGradNan = 1000;
 
 
     ////////////** for Tracking **////////////////////////////////////////////////////////////
     int nObjsNrLimit = 1000;
     int nTrackHistoBin_max = stTrack.HistoBin * stTrack.HistoBin * stTrack.HistoBin;
+    double nDiagonal = sqrt(nDsWidth*nDsWidth + nDsHeight*nDsHeight);
 
     std::vector<int> vnProtoIdx(nObjsNrLimit, 0);
     std::vector<int> vnProtoPtsCnt(nObjsNrLimit, 0);
@@ -439,15 +440,12 @@ void updateImage() {
     int nFoundCnt = 0, nFoundNr = 0, nFoundFrame = 0;
     int nRecogRtNr = 10; std::vector<int> vnRecogRating(nRecogRtNr, 0), vnRecogRating_tmp(nRecogRtNr, 0);
 
-    float nDGradNan = 1000;
-
 
     std::string sSnapDir; std::string sSnapDirPref = sDataDir + "/" + "NI_Snapshots_";
     std::string sVideoDir; std::string sVideoDirPref = sDataDir + "/" + "NI_Videos_";
     std::string sTimeDir; std::string sTimeDirPref = sDataDir + "/" + "NI_Time Measuring_";
     std::string sTimeFile, sTimeFile_detail;
     std::string sImgExt;
-    double nDiagonal = sqrt(nDsWidth*nDsWidth + nDsHeight*nDsHeight);
 
     bool bSwitchDSegm = false;
     bool bSwitchRecog = false;
@@ -686,8 +684,6 @@ void updateImage() {
 
             //////*  Visualizing Segmentation  *///////////////////////////
             if (vbFlagTask[stTID.nDSegm]){
-                // Debug
-                cv::waitKey(0);
                 if (vbFlagTask[stTID.nDSegm]) OpenWindow(stTID.nDSegm);
                 for (int i = 0; i < nDsSize; i++) {
                     if (!vnSegmMap[i]) {
@@ -726,7 +722,7 @@ void updateImage() {
             stProtoTmp.vnMemoryCnt.resize(nSegCnt, 0); stProtoTmp.vnStableCnt.resize(nSegCnt, 0); stProtoTmp.vnDisapCnt.resize(nSegCnt, 0);
 
             TrackingPre (nSegCnt, nDSegmCutSize, nDsWidth, nDsHeight, vnX, vnY, vnZ, cvm_rgb_ds, stTrack, vnSegmPtsCnt, mnSegmPtsIdx, stProtoTmp, nTrkSegCnt);
-            Tracking (cvm_rgb_ds,nTrkSegCnt, nObjsNrLimit, nDiagonal, stTrack, nTrackHistoBin_tmp, vnSegmPtsCnt, mnSegmPtsIdx, stProtoTmp, vnProtoIdx, vnProtoPtsCnt, mnProtoPtsIdx, stProto, vnProtoFound, nProtoCnt, false);
+            Tracking (nTrkSegCnt, nObjsNrLimit, nDiagonal, stTrack, nTrackHistoBin_tmp, vnSegmPtsCnt, mnSegmPtsIdx, stProtoTmp, vnProtoIdx, vnProtoPtsCnt, mnProtoPtsIdx, stProto, vnProtoFound, nProtoCnt, false);
 
             //////*  Making tracking map to a neighborhood matrix for surface saliencies  */////////////////////////////
             std::vector<int> vnTrkMap(nDsSize, -1);         // Tracking Map
@@ -738,6 +734,7 @@ void updateImage() {
                     //vnTrkMapComp[mnProtoPtsIdx[i][j]] = i;
                 }
             }
+
 
             // Making Neighboring matrix between attention candidates
             //std::vector<std::vector<bool> > mbCandNeighbor(nProtoCnt, std::vector<bool>(nProtoCnt, false));

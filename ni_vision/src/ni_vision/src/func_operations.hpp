@@ -291,7 +291,7 @@ void DrawDepthGrad(std::vector<float> vnInput, std::vector<int> index, bool mode
 // 512 possible values for each pixel. The result is saved in a vector of that length, which saves the count
 // of pixel which have a certain value. Later on this vector is then normalized
 // such that the sum over all entries is 1.
-void Calc3DColorHistogram(const cv::Mat& cvm_input, const std::vector<int>& index, int bin_base, std::vector<float> &vnOut) {
+void Calc3DColorHistogram(const cv::Mat cvm_input, const std::vector<int> index, int bin_base, std::vector<float> &vnOut) {
     if (index.size()){
         int bin_r, bin_g, bin_b;
         float r, g, b;

@@ -29,16 +29,15 @@ void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nDsSize, int nDs
             if (vnZ[i] < nDMin) nDMin = vnZ[i];
             vnCloudIdx_d[nDIdxCntTmp++] = i;
         }
-        vnCloudIdx_d.resize(nDIdxCntTmp);
     }
     else {
         for (int i = 1; i < nDsSize; i++) {// the first pixel has wrong depth info
-            int x, y, idx;
+            int x, y;
             GetPixelPos(i, nDsWidth, x, y);
             if (!pcl_isfinite (cloud.points[i].z)) continue;
             vnCloudIdx_d[nDIdxCntTmp++] = i;
-            if (x%2) continue;
-            if (y%2) continue;
+
+            if (x%2 || y%2) continue;
             vnX[i] = cloud.points[i].x; vnX[i+1] = vnX[i]; vnX[i+nDsWidth] = vnX[i]; vnX[i+nDsWidth+1] = vnX[i];
             vnY[i] = cloud.points[i].y; vnY[i+1] = vnY[i]; vnY[i+nDsWidth] = vnY[i]; vnY[i+nDsWidth+1] = vnY[i];
             vnZ[i] = fabs(cloud.points[i].z); vnZ[i+1] = vnZ[i]; vnZ[i+nDsWidth] = vnZ[i]; vnZ[i+nDsWidth+1] = vnZ[i];
@@ -46,8 +45,9 @@ void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nDsSize, int nDs
             if (vnZ[i] > nDMax) nDMax = vnZ[i];
             if (vnZ[i] < nDMin) nDMin = vnZ[i];
         }
-        vnCloudIdx_d.resize(nDIdxCntTmp);
     }
+
+    vnCloudIdx_d.resize(nDIdxCntTmp);
 }
 
 

@@ -66,7 +66,7 @@ void DSegm_FlatDepthGrad (cv::Mat cvm_input, std::vector<int> index, float max, 
  *
  * Input:
  * vInput -
- * index - indices of pixels of depth-gradient map which should be processed
+ * index - indices  of pixels of depth-gradient map which should be processed
  * size - size of input image
  * max, min - range of depth-gradient
  * none - constant for invalid depth and depth-gradient
@@ -509,7 +509,7 @@ void TrackingPre (int nSegCnt, int nDSegmCutSize, int nDsWidth, int nDsHeight, s
 
 /* TODO
  */
-void TrackingAAA (int seg, int j_min, int cnt_old, int nObjsNrLimit, float nTrackDist, float huge, std::vector<int> &vnSegCandQtt, std::vector<int> &vnMemCandQtt, std::vector<int> &vnMemCandMin, std::vector<int> &vnMatchedSeg, std::vector<std::vector<float> > &mnDistTmp) {
+void TrackingOptPre (int seg, int j_min, int cnt_old, int nObjsNrLimit, float nTrackDist, float huge, std::vector<int> &vnSegCandQtt, std::vector<int> &vnMemCandQtt, std::vector<int> &vnMemCandMin, std::vector<int> &vnMatchedSeg, std::vector<std::vector<float> > &mnDistTmp) {
     for (int j = 0; j < cnt_old; j++) {
         if (j == j_min) continue;
         if (mnDistTmp[seg][j] > nTrackDist) continue;
@@ -524,7 +524,7 @@ void TrackingAAA (int seg, int j_min, int cnt_old, int nObjsNrLimit, float nTrac
         for (int ii = 0; ii < seg; ii++) {
             if (mnDistTmp[ii][j] > nTrackDist) continue;
             vnMatchedSeg[ii] = j;
-            if (vnSegCandQtt[ii] > 1) TrackingAAA (ii, j, cnt_old, nObjsNrLimit, nTrackDist, huge, vnSegCandQtt, vnMemCandQtt, vnMemCandMin, vnMatchedSeg, mnDistTmp);
+            if (vnSegCandQtt[ii] > 1) TrackingOptPre (ii, j, cnt_old, nObjsNrLimit, nTrackDist, huge, vnSegCandQtt, vnMemCandQtt, vnMemCandMin, vnMatchedSeg, mnDistTmp);
         }
     }
 }
@@ -551,10 +551,9 @@ void TrackingAAA (int seg, int j_min, int cnt_old, int nObjsNrLimit, float nTrac
  * vnProtoFound - found flag for objects surfaces
  * nProtoCnt - count of object surfaces
  */
-void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack, int bin,
+void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack, int bin,
               std::vector<int> vnSegmPtsCnt, std::vector<std::vector<int> > mnSegmPtsIdx, ProtoProp stProtoTmp,
-              std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx,
-              ProtoProp &stProto, std::vector<int> &vnProtoFound, int &nProtoCnt, bool flag_mat) {
+              std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx, ProtoProp &stProto, std::vector<int> &vnProtoFound, int &nProtoCnt, bool flag_mat) {
 
 
     int cnt_new = 0, cnt_old = nProtoCnt;
@@ -566,12 +565,9 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
     std::vector<std::vector<float> > mnDistTotal(nDim, std::vector<float>(nDim, huge));
     std::vector<std::vector<float> > mnDistTmp(nDim, std::vector<float>(nDim, huge));
 
-    // Debug
-    printf("Differences of Position\n");
+
     if (nTrkSegCnt && cnt_old) {
         for (int i = 0; i < nTrkSegCnt; i++) {
-            //Debug
-//            printf("\n");
             //int size_ref = vnSegmPtsCnt[i];
             for (int j = 0; j < cnt_old; j++) {
                 //int xc = stProtoTmp.mnRCenter[i][0], yc = stProtoTmp.mnRCenter[i][1];
@@ -587,39 +583,9 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
 
                 if (dp < stTrack.DPos && ds < stTrack.DSize && dc < stTrack.DClr)
                     mnDistTotal[i][j] = stTrack.FPos * dp + stTrack.FSize * ds + stTrack.FClr * dc;
-                // Debug
-//                printf("%f ", dp);
             }
             //printf("\n");
-            // Color all objects and the one they are matched to in the same color
-
         }
-        std::cout << std::endl;
-//        printf("\n");
-
-        // Debugging
-        if (vnProtoPtsCnt.size()) {
-            for(int k = 0; k < vnProtoPtsCnt[1]; k++) {
-                cvm_rgb_ds.data[3*mnProtoPtsIdx[1][k]] = 0;
-                cvm_rgb_ds.data[3*mnProtoPtsIdx[1][k]+1] = 0;
-                cvm_rgb_ds.data[3*mnProtoPtsIdx[1][k]+2] = 255;
-            }
-            int min = 100000;
-            int minIndex = -1;
-            // find minimum for that row
-            for(int j = 0; j < mnDistClr[1].size(); j++) {
-                if (mnDistClr[1][j] < min) {
-                    min = mnDistClr[1][j];
-                    minIndex = j;
-                }
-            }
-            for(int k = 0; k < vnSegmPtsCnt[minIndex]; k++) {
-                cvm_rgb_ds.data[3*mnSegmPtsIdx[minIndex][k]] = 0;
-                cvm_rgb_ds.data[3*mnSegmPtsIdx[minIndex][k]+1] = 255;
-                cvm_rgb_ds.data[3*mnSegmPtsIdx[minIndex][k]+2] = 0;
-            }
-        }
-        // end debugging
 
         if (flag_mat) {
             char sText[128];
@@ -647,6 +613,8 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
 
 
     ////////////// Tracking with optimization ////////////////////////////////////
+
+    //////// Pre-Processing /////////////////////////////////
     float offset = 0.01;
     std::vector<int> vnSegCandQtt(nTrkSegCnt, 0);
     std::vector<int> vnSegCandMin(nTrkSegCnt, nObjsNrLimit);
@@ -657,7 +625,6 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
 
     mnDistTmp = mnDistTotal;
 
-    // new -> old, vnSegCandMin -
     for (int i = 0; i < nTrkSegCnt; i++) {
         float j_min = huge;
         for (int j = 0; j < cnt_old; j++) {
@@ -672,7 +639,6 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
         }
     }
 
-    // old -> new
     for (int j = 0; j < cnt_old; j++) {
         float i_min = huge;
         for (int i = 0; i < nTrkSegCnt; i++) {
@@ -694,7 +660,7 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
                 if (vnMatchedSeg[i] < nObjsNrLimit) printf("Error, the segment %d is already matched %d\n", i, vnSegCandMin[i]);
                 vnMatchedSeg[i] = vnSegCandMin[i];
 
-                if (vnSegCandQtt[i] > 1) TrackingAAA (i, vnSegCandMin[i], cnt_old, nObjsNrLimit, stTrack.Dist, huge, vnSegCandQtt, vnMemCandQtt, vnMemCandMin, vnMatchedSeg, mnDistTmp);
+                if (vnSegCandQtt[i] > 1) TrackingOptPre (i, vnSegCandMin[i], cnt_old, nObjsNrLimit, stTrack.Dist, huge, vnSegCandQtt, vnMemCandQtt, vnMemCandMin, vnMatchedSeg, mnDistTmp);
             }
         }
         else {
@@ -705,7 +671,7 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
 
 
 
-    ////////////// Optimization //////////////////////////////////////////////
+    ////////////// Main Optimization //////////////////////////////////////////////
     if (!stTrack.Mode) {
         std::vector<int> idx_seg;
         int cnt_nn = 0;
@@ -739,41 +705,29 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
 
             for (size_t i = 0; i < idx_seg.size(); i++) {
                 for (size_t j = 0; j < idx_mem.size(); j++) {
-                    m_MunkresIn(i,j) = mnDistTmp[idx_seg[i]][idx_mem[j]];
-                    // old version
-//                    if(mnDistTmp[idx_seg[i]][idx_mem[j]]) m_MunkresIn(i,j) = 100 /  mnDistTmp[idx_seg[i]][idx_mem[j]];
-//                    else m_MunkresIn(i,j) = (double)munkres_huge;
+                    if(mnDistTmp[idx_seg[i]][idx_mem[j]]) m_MunkresIn(i,j) = 100/mnDistTmp[idx_seg[i]][idx_mem[j]];
+                    else m_MunkresIn(i,j) = (double)munkres_huge;
                 }
             }
 
             if (idx_mem.size() > idx_seg.size()) {
                 for (int i = (int)idx_seg.size(); i < nDimMunkres; i++) {
-                    for (int j = 0; j < nDimMunkres; j++) m_MunkresIn(i,j) = 10 + rand()%10;
+                    for (int j = 0; j < nDimMunkres; j++) m_MunkresIn(i,j) = rand()%10 +1;
                 }
             }
             if (idx_mem.size() < idx_seg.size()) {
                 for (int j = (int)idx_mem.size(); j < nDimMunkres; j++) {
-                    for (int i = 0; i < nDimMunkres; i++) m_MunkresIn(i,j) = 10 + rand()%10;
+                    for (int i = 0; i < nDimMunkres; i++) m_MunkresIn(i,j) = rand()%10 +1;
                 }
 
             }
 
             m_MunkresOut = m_MunkresIn;
-            for(int i = 0; i < nDimMunkres; i++) {
-                printf("\n");
-                for(int j = 0; j < nDimMunkres; j++) {
-                    printf("%f ", m_MunkresOut(i,j));
-                }
-            }
+
             Munkres m;
             m.solve(m_MunkresOut);
-            for(int i = 0; i < nDimMunkres; i++) {
-                printf("\n");
-                for(int j = 0; j < nDimMunkres; j++) {
-                    printf("%f ", m_MunkresOut(i,j));
-                }
-            }
-            std::cout << std::endl;
+
+
             for (int i = 0; i < nDimMunkres; i++) {
                 int rowcount = 0;
                 for (int j = 0; j < nDimMunkres; j++) if (m_MunkresOut(i,j) == 0) rowcount++;
@@ -816,9 +770,19 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
     ////////////// End of the optimization for tracking ////////////////////////////////////
 
 
+
+
+    ////////////// Postprocessing /////////////////////////////////////////////////////////////
+
+
+    ///////////// Short-Term-Memory ///////////////////////////////////////////////////////////
+
+    //** Update matched segments to the Short-Term-Memory **//
     std::vector<bool> objs_old_flag(cnt_old, false);
     for (int i = 0; i < nTrkSegCnt; i++) {
-        int cand = 0, j_tmp = 500000;
+
+        //** Assign matched segments to the Short-Term-Memory **//
+        int cand = 0, j_tmp = -1;
         /////////////// past tracking ///////////////////////////
         if (stTrack.Mode) {
             float d_tmp = 50000000;
@@ -841,6 +805,8 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
         }
 
         if (cand) {
+            if (j_tmp < 0) {printf("Tracking Error\n"); continue;}
+
             objs_old_flag[j_tmp] = true;
             vnProtoPtsCnt[j_tmp] = vnSegmPtsCnt[i];
             mnProtoPtsIdx[j_tmp] = mnSegmPtsIdx[i];
@@ -854,9 +820,7 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
             stProto.vnDisapCnt[j_tmp] = stProtoTmp.vnDisapCnt[i];
             stProto.vnMemoryCnt[j_tmp] = stProtoTmp.vnMemoryCnt[i];
         }
-        else {
-            objs_new_idx[cnt_new++] = i;
-        }
+        else objs_new_idx[cnt_new++] = i;
     }
 
 
@@ -865,6 +829,7 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
 
 
 
+    //** Filter stable objects from the Short-Term-Memory **//
     for (int i = 0; i < cnt_old; i++) {
         if (objs_old_flag[i]) {
             stProto.vnMemoryCnt[i]++;
@@ -882,6 +847,8 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
             stProto.vnStableCnt[i] = 0;
         }
     }
+
+    //** Restack stable objects in the Short-Term-Memory **//
     int cnt_tmp = 0;
     for (int i = 0; i < cnt_old; i++) {
         if (stProto.vnMemoryCnt[i] < 0) continue;
@@ -903,6 +870,7 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
     cnt_old = cnt_tmp;
 
 
+    //** Assign unusing indeces for Proto Objects to the new objects (unmatched segments) **//
     std::vector<int> proto_idx(cnt_old, 0);
     std::vector<int> proto_idx_new(cnt_new, 0);
     for (int i = 0; i < cnt_old; i++) proto_idx[i] = vnProtoIdx[i];
@@ -930,6 +898,8 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
     //for (int i = 0; i < cnt_new; i++) printf("%2d ", proto_idx_new[i]); printf("%4d\n\n", cnt_new);
 
 
+
+    //** Stack new objects (unmatched segments) on the Short-Term-Memory **//
     for (int i = 0; i < cnt_new; i++) {
         vnProtoIdx[cnt_old + i] = proto_idx_new[i];
         vnProtoPtsCnt[cnt_old + i] = vnSegmPtsCnt[objs_new_idx[i]];
@@ -946,8 +916,19 @@ void Tracking(cv::Mat&cvm_rgb_ds, int nTrkSegCnt, int nObjsNrLimit, double dp_di
     }
     nProtoCnt = cnt_old + cnt_new;
 
+
+
+
     if (nProtoCnt >= nObjsNrLimit) printf("Object queue exceeds object no. limit %d\n", nObjsNrLimit);
 
+    std::vector<std::vector<float> > mnProtoAngRel(nProtoCnt, std::vector<float>(nProtoCnt, 0));
+    for (int i = 0; i < nProtoCnt; i++) {
+        for (int j = 0; j < i; j++) {
+            if (stProto.mnRCenter[i][0]-stProto.mnRCenter[j][0]) mnProtoAngRel[i][j] = (stProto.mnRCenter[i][1]-stProto.mnRCenter[j][1]) / (stProto.mnRCenter[i][0]-stProto.mnRCenter[j][0]);
+            else mnProtoAngRel[i][j] = 10000;
+            mnProtoAngRel[j][i] = -mnProtoAngRel[i][j];
+        }
+    }
 }
 
 
