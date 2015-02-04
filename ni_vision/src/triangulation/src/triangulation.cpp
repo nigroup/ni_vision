@@ -19,7 +19,7 @@ double maximumAngle = 2*M_PI/3;       // 2*M_PI/3      maximum angle in each tri
 double maximumSurfaceAngle = M_PI/4;  // M_PI/4        points are nor connected if the angle between their normals is too large ...
 bool normalConsistency = false;       // false         ... and normalConsistency is not set
 
-double leafSize = 0.01f;    // voxel grid size (for downsampling) (e.g. 0.01f)
+double leafSize = 0.01;    // voxel grid size (for downsampling) (e.g. 0.01f)
 double smoothRadius =0; // search radius for smoothing   (e.g. 0.03)
 
 
