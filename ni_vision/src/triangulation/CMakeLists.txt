@@ -164,6 +164,9 @@ include_directories(
 
 find_package(PCL 1.2 REQUIRED)
 
+find_package(OpenCV)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
@@ -178,6 +181,7 @@ target_link_libraries (triangulation_2 ${PCL_LIBRARIES})
 target_link_libraries (pairwise_incremental_registration ${PCL_LIBRARIES})
 target_link_libraries (3D_model ${PCL_LIBRARIES})
 target_link_libraries (3D_model_optimize ${PCL_LIBRARIES})
+target_link_libraries(3D_model_optimize ${OpenCV_LIBRARIES})
 
 
 
