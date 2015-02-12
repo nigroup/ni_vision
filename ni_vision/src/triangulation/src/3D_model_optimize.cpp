@@ -16,15 +16,29 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <bitset> // check binary representation of pcl rgb values
+
+#include <boost/random.hpp>
+#include <boost/random/normal_distribution.hpp>
 
 
-bool optimize = 0;
+typedef boost::variate_generator<boost::mt19937, boost::normal_distribution<float> > generator;
+
+bool optimize = 1;
+
+std::vector<std::pair<int,int> > pairs;  // pairs of point clouds which are considered in the cost function
+
+static const int n = 5;  // degrees of freedom
+static const int numClouds = 41;  //number of point clouds
+static const double rotAng = 9.0 * 2.0 * M_PI / 360.0;  //angle of rotation (turn table) in radians
+
+float cost(const Eigen::VectorXf params, pcl::PointCloud<pcl::PointXYZRGB> * clouds, const Eigen::Vector4f centroid);
+float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZRGB> * clouds, Eigen::Vector4f centroid);
+void sample_ds(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor);
+void sample_cs(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor);
+void sample_gaussian(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor, int it, generator * sampler);
 
 
-static const int n = 2;
-static const int numClouds = 41;
-float cost(float params[n], pcl::PointCloud<pcl::PointXYZRGB> * clouds, Eigen::Vector4f centroid);
-float * simuatedAnnealing(float params[n], pcl::PointCloud<pcl::PointXYZRGB> * clouds, Eigen::Vector4f centroid);
 
 int main()
 {
@@ -37,14 +51,16 @@ int main()
         pcl::io::loadPCDFile (fn_in, clouds[i]);
     }
 
+    // define which pairs of clouds are considered to compute the cost function
+    pairs.push_back(std::pair<int,int>(40,0));
+
 
      // compute the mean of the reference point cloud
      Eigen::Vector4f centroid; //ignore 4th entry
-     pcl::compute3DCentroid(clouds[1], centroid);
+     pcl::compute3DCentroid(clouds[0], centroid);
 
      // variable to store final parameters
-     float * params;
-     float params_a[n];
+     Eigen::VectorXf params(n);
 
      //----------------------------------------------------------------------------------------
      if (!optimize)
@@ -52,11 +68,11 @@ int main()
          // show results for various combinations af parameters
          float best = INFINITY;
          float bestx, bestz;
-         float test[2];
+         Eigen::Vector2f test;
 
          int lenx = 21;
          int lenz = 21;
-         float midx = 0;
+         float midx = 0.0;
          float midz = 0.04;
          float step = 0.001;
 
@@ -90,9 +106,7 @@ int main()
          cv::imshow("results", mapped);
          cv::waitKey();
 
-         params_a[0]=bestx;
-         params_a[1]=bestz;
-         params = &params_a[0];
+         params << bestx, bestz;
      }
      //------------------------------------------------------------------------------------------------
 
@@ -100,23 +114,26 @@ int main()
      if (optimize)
      {
          // initialize parameters
-         float params_init[n] = {0, 0};
+         params.setZero();
+         params[4] = rotAng;
 
          // optimize parameters
-         params = simuatedAnnealing(params_init, clouds, centroid);
+         float cost = simuatedAnnealing(params, clouds, centroid);
          std::cout << "final result:" << std::endl;
-         for (int i = 0; i < n; i++)
-             std::cout << params[i] << std::endl;
+         std::cout << params << std::endl;
+         std::cout << "value of cost function: " << cost << std::endl;
+         std::cout << "angle of rotation: " << sqrt(params[2]*params[2] + params[4]*params[4] + params[4]*params[4]) * 360 / (2*M_PI) << std::endl;
      }
 
      //---------------------------------------------------------------------------------------------------
 
      // rotate point clouds using the optimized parameters and store the result
-     std::cout << "rotate point clouds using bestx = " << params[0] << ", bestz = " << params[1] << "..." << std::endl;
+     std::cout << "rotate point clouds using the following parameters:" << std::endl;
+     std::cout << params << std::endl;
      Eigen::Vector4f offset(params[0], 0, params[1], 0);
      Eigen::Vector4f fix = centroid + offset;
      Eigen::Vector4f fix_neg = -fix;
-     float axis_angle[3] = {0, double(9 * 2 * M_PI / 360) , 0};   // 9° steps
+     float axis_angle[3] = {params[2], params[4], params[3]};
      float rotation_matrix[9];
      pcl::recognition::aux::axisAngleToRotationMatrix(axis_angle, rotation_matrix);
      Eigen::Matrix< float, 4, 4 > transform;
@@ -141,8 +158,7 @@ int main()
          result += cloud_rot;
      }
 
-     pcl::io::savePCDFileASCII("SA_result.pcd", result);
-
+     pcl::io::savePCDFileASCII("optimization_result.pcd", result);
 
 
      return 0;
@@ -150,56 +166,10 @@ int main()
 
 
 
-// simulated annealing routine
-float * simuatedAnnealing(float params[n], pcl::PointCloud<pcl::PointXYZRGB> *clouds, Eigen::Vector4f centroid)
-{
-
-    // initialize step sizes
-    float ss[n];
-    ss[0] = 0.001;   //0.1cm
-    ss[1] = 0.001;   //0.1cm
-
-    // annealing schedule
-    float T0 = 0.01;
-    float T;
-
-    // some variables
-    int idx;
-    int dir;
-    float neighbor[n];
-    for (int i = 0; i < n; i++)
-        neighbor[i] = params[i];
-    float f_old, f_new;
-    f_new = cost(params, clouds, centroid);
-    int it = 1;
-
-    do
-    {
-        std::cout << "aktuelle Kosten: " << f_old << std::endl;
-        T = T0/log(it); // annealing schedule
-        idx = rand() % n;        // pick vector component to alter
-        dir = (rand() % 2) - 1;  // increase or decrease
-        neighbor[idx] += dir * ss[idx];
-        f_new = cost(neighbor, clouds, centroid);
-        if (exp( (f_old - f_new) / T ) > (double(rand()) / RAND_MAX) )
-        {
-            params[idx] = neighbor[idx];
-            f_old = f_new;
-        }
-        else
-        {
-            neighbor[idx] = params[idx];
-        }
-        it ++;
-    } while( it < 1000);
-
-    return params;
-}
-
 
 
 // compute costs of a given set of parameters
-float cost(float params[n], pcl::PointCloud<pcl::PointXYZRGB> *clouds, Eigen::Vector4f centroid)
+float cost(const Eigen::VectorXf params, pcl::PointCloud<pcl::PointXYZRGB> *clouds, const Eigen::Vector4f centroid)
 {
     // position of the axis of rotation, relative to computed centroid
     Eigen::Vector4f offset(params[0], 0, params[1], 0);
@@ -207,7 +177,7 @@ float cost(float params[n], pcl::PointCloud<pcl::PointXYZRGB> *clouds, Eigen::Ve
     Eigen::Vector4f fix_neg = -fix;
 
     // specify axis of rotation (magnitude = angle in radians) and construct transformation matrix
-    float axis_angle[3] = {0, double(9 * 2 * M_PI / 360) , 0};   // 9° steps
+    float axis_angle[3] = {params[2], params[4], params[3]};
     float rotation_matrix[9];
     pcl::recognition::aux::axisAngleToRotationMatrix(axis_angle, rotation_matrix);
 
@@ -222,61 +192,162 @@ float cost(float params[n], pcl::PointCloud<pcl::PointXYZRGB> *clouds, Eigen::Ve
     pcl::PointCloud<pcl::PointXYZRGB> cloud_temp1;
     pcl::PointCloud<pcl::PointXYZRGB> cloud_temp2;
     pcl::PointCloud<pcl::PointXYZRGB> clouds_rot[numClouds];
-    for (int i = 1; i <= 1; i++)  //erstmal nur die ersten beiden...
+    pcl::copyPointCloud<pcl::PointXYZRGB>(clouds[0], clouds_rot[0]);
+
+    for (int p = 0; p < pairs.size(); p++)
     {
-        pcl::demeanPointCloud(clouds[i], fix, cloud_temp1);
-        for (int j = 1; j <= i; j++){
+        pcl::demeanPointCloud(clouds[pairs[p].first], fix, cloud_temp1);
+        for (int j = 1; j <= pairs[p].first; j++){
             pcl::copyPointCloud<pcl::PointXYZRGB>(cloud_temp1, cloud_temp2);
             pcl::transformPointCloud(cloud_temp2, cloud_temp1, transform);
         }
-        pcl::demeanPointCloud(cloud_temp1, fix_neg, clouds_rot[i]);
+        pcl::demeanPointCloud(cloud_temp1, fix_neg, clouds_rot[pairs[p].first]);
+
+        pcl::demeanPointCloud(clouds[pairs[p].second], fix, cloud_temp1);
+        for (int j = 1; j <= pairs[p].second; j++){
+            pcl::copyPointCloud<pcl::PointXYZRGB>(cloud_temp1, cloud_temp2);
+            pcl::transformPointCloud(cloud_temp2, cloud_temp1, transform);
+        }
+        pcl::demeanPointCloud(cloud_temp1, fix_neg, clouds_rot[pairs[p].second]);
     }
 
 
     // compute cost function
     float cost = 0;
-    int K = 1;
+    int K = 1;         // for k-nearest neighbors
     double p1 = 0.01;  // some parameter that has to be adjusted
 
 
-    // use XYZ to find the nearest neighbor
-    pcl::KdTreeFLANN<pcl::PointXYZRGB> kdtree;
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr ref(new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::copyPointCloud<pcl::PointXYZRGB>(clouds[0], *ref);
-    kdtree.setInputCloud (ref);
-
-    // iterate over second point cloud
-    pcl::PointXYZRGB neighbor;
-    pcl::PointCloud<pcl::PointXYZRGB>::iterator it;
-    for (it = clouds_rot[1].begin(); it < clouds_rot[1].end(); it++)
+    for (int p = 0; p < pairs.size(); p++)
     {
-        pcl::PointXYZRGB searchPoint = *it;
-        std::vector<int> pointIdxNKNSearch(K);
-        std::vector<float> pointNKNSquaredDistance(K);
-        kdtree.nearestKSearch (searchPoint, K, pointIdxNKNSearch, pointNKNSquaredDistance);
-        neighbor = ref->points[pointIdxNKNSearch[0]];
-        double dist = sqrt(pointNKNSquaredDistance[0]);
+        // use XYZ to find the nearest neighbor
+        pcl::KdTreeFLANN<pcl::PointXYZRGB> kdtree;
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr ref(new pcl::PointCloud<pcl::PointXYZRGB>);
+        pcl::copyPointCloud<pcl::PointXYZRGB>(clouds_rot[pairs[p].first], *ref);
+        kdtree.setInputCloud (ref);
 
-        // compute difference between RGB values
-        uint32_t RGB1 = searchPoint.rgb;
-        uint32_t RGB2 = neighbor.rgb;
-        uint8_t r1 = (int(RGB1) >> 16) & 0x0000ff;
-        uint8_t g1 = (RGB1 >> 8) & 0x0000ff;
-        uint8_t b1 = (RGB1) & 0x0000ff;
-        uint8_t r2 = (RGB2 >> 16) & 0x0000ff;
-        uint8_t g2 = (RGB2 >> 8) & 0x0000ff;
-        uint8_t b2 = (RGB2) & 0x0000ff;
-        //std::cout << r1 << ", " << g1 << ", " << b1 << std::endl;
-        //std::cout << r2 << ", " << g2 << ", " << b2 << std::endl;
-        std::cout << int(r1) << std::endl;
+        // iterate over second point cloud
+        pcl::PointXYZRGB neighbor;
+        pcl::PointCloud<pcl::PointXYZRGB>::iterator it;
 
+        for (it = clouds_rot[pairs[p].second].begin(); it < clouds_rot[pairs[p].second].end(); it++)
+        {
+            pcl::PointXYZRGB searchPoint = *it;
+            std::vector<int> pointIdxNKNSearch(K);
+            std::vector<float> pointNKNSquaredDistance(K);
+            kdtree.nearestKSearch (searchPoint, K, pointIdxNKNSearch, pointNKNSquaredDistance);
+            neighbor = ref->points[pointIdxNKNSearch[0]];
+            double dist = sqrt(pointNKNSquaredDistance[0]);
 
-        if (dist < p1)
-            cost = cost + dist - p1;
+            // compute difference between RGB values
+            float RGB1_f = searchPoint.rgb;
+            float RGB2_f = neighbor.rgb;
+            uint32_t RGB1_i, RGB2_i;
+            memcpy(&RGB1_i, &RGB1_f, sizeof(RGB1_f));
+            memcpy(&RGB2_i, &RGB2_f, sizeof(RGB2_f));
+            //std::bitset<32> bb(RGB1_i);
+            //std::cout << bb << std::endl;
+            cv::Vec3b rgb1((RGB1_i >> 16) & 0x0000ff, (RGB1_i >> 8) & 0x0000ff, (RGB1_i) & 0x0000ff);
+            cv::Vec3b rgb2((RGB2_i >> 16) & 0x0000ff, (RGB2_i >> 8) & 0x0000ff, (RGB2_i) & 0x0000ff);
+            float normConst = sqrt(3) * 255.0 / p1;  //normalization constant, RGB distances should be comparable to XYZ distances
+            double cdist = norm(rgb1-rgb2) / normConst;    //is the euclidean metric a sensible choice?
+
+            // update cost
+            if (dist < p1)
+                cost = cost + dist - p1 + cdist;
+        }
     }
 
     return cost;
 }
+
+
+
+// simulated annealing routine
+float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZRGB> *clouds, Eigen::Vector4f centroid)
+{
+    // random seed
+    srand((unsigned int) time(0));
+    generator sampler(boost::mt19937(time(0)),boost::normal_distribution<float>(0,1));
+
+    // annealing schedule
+    float T0 = 1;
+    float T;
+
+    // some variables
+    Eigen::VectorXf neighbor(n);
+    float f_old, f_new;
+    f_new = cost(params, clouds, centroid);
+    int it = 1;
+    float dE;
+
+    do
+    {
+        std::cout << "aktuelle Kosten: " << f_old << std::endl;
+        if(it > 100)
+            T = T0/it; // annealing schedule
+        sample_gaussian(params, neighbor, it, &sampler);
+        f_new = cost(neighbor, clouds, centroid);
+        dE = f_new - f_old;
+        if ( dE < 0 || exp(-dE/T) > (double(rand()) / RAND_MAX) )
+        {
+            params = neighbor;
+            f_old = f_new;
+        }
+        it ++;
+    } while( it < 1000);
+
+    return f_old;
+}
+
+
+// generate new sample for simulated annealing
+// discrete version
+void sample_ds(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor)
+{
+    // initialize step sizes
+    float ss[n];
+    ss[0] = 0.001;   //0.1cm
+    ss[1] = 0.001;   //0.1cm
+
+    neighbor = params;
+    int idx = rand() % n;    // pick vector component to alter
+    int dir = (rand() % 2);  // increase or decrease
+    neighbor[idx] += (dir*1 + (1-dir)*(-1)) * ss[idx];
+}
+
+
+// generate new sample for simulated annealing
+// add a random vector
+void sample_cs(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor)
+{
+    float rangeMax = 0.05;  //maximum step size
+    neighbor = rangeMax * Eigen::VectorXf::Random(n);
+    std::cout << neighbor << std::endl;
+}
+
+
+// generate new sample for simulated annealing
+// sample from Gaussian distribution centered around the current state
+void sample_gaussian(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor, int it, generator * sampler)
+{
+    Eigen::VectorXf stds(n);
+    stds << 0.01, 0.01, 0.0001, 0.001, 0.001;
+    if (it > 100)
+        stds /= log(it);
+    neighbor = params;
+    for (int i = 0; i < n; i++)
+        neighbor[i] += stds[i] * (*sampler)();
+    //std::cout << neighbor << std::endl;
+}
+
+
+
+
+
+
+
+
 
 
 
