@@ -705,19 +705,20 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack
 
             for (size_t i = 0; i < idx_seg.size(); i++) {
                 for (size_t j = 0; j < idx_mem.size(); j++) {
-                    if(mnDistTmp[idx_seg[i]][idx_mem[j]]) m_MunkresIn(i,j) = 100/mnDistTmp[idx_seg[i]][idx_mem[j]];
-                    else m_MunkresIn(i,j) = (double)munkres_huge;
+                    m_MunkresIn(i,j) = mnDistTmp[idx_seg[i]][idx_mem[j]];
+//                    if(mnDistTmp[idx_seg[i]][idx_mem[j]]) m_MunkresIn(i,j) = 100/mnDistTmp[idx_seg[i]][idx_mem[j]];
+//                    else m_MunkresIn(i,j) = (double)munkres_huge;
                 }
             }
 
             if (idx_mem.size() > idx_seg.size()) {
                 for (int i = (int)idx_seg.size(); i < nDimMunkres; i++) {
-                    for (int j = 0; j < nDimMunkres; j++) m_MunkresIn(i,j) = rand()%10 +1;
+                    for (int j = 0; j < nDimMunkres; j++) m_MunkresIn(i,j) = rand()%10 + 10;
                 }
             }
             if (idx_mem.size() < idx_seg.size()) {
                 for (int j = (int)idx_mem.size(); j < nDimMunkres; j++) {
-                    for (int i = 0; i < nDimMunkres; i++) m_MunkresIn(i,j) = rand()%10 +1;
+                    for (int i = 0; i < nDimMunkres; i++) m_MunkresIn(i,j) = rand()%10 + 10;
                 }
 
             }
@@ -870,7 +871,7 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack
     cnt_old = cnt_tmp;
 
 
-    //** Assign unusing indeces for Proto Objects to the new objects (unmatched segments) **//
+    //** Assign unused indices for Proto Objects to the new objects (unmatched segments) **//
     std::vector<int> proto_idx(cnt_old, 0);
     std::vector<int> proto_idx_new(cnt_new, 0);
     for (int i = 0; i < cnt_old; i++) proto_idx[i] = vnProtoIdx[i];
@@ -930,5 +931,6 @@ void Tracking(int nTrkSegCnt, int nObjsNrLimit, double dp_dia, TrackProp stTrack
         }
     }
 }
+
 
 
