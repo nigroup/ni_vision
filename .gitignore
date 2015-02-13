@@ -52,4 +52,10 @@ docs/*
 # CMake
 cmake_install.cmake
 
-
+# ROS
+build/
+bin/
+lib/
+devel/
+msg_gen/
+srv_gen/
