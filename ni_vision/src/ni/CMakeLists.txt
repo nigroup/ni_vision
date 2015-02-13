@@ -33,6 +33,16 @@ find_package(catkin REQUIRED)
 # ----------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------
+# GTest package
+# ----------------------------------------------------------------------------
+# Testing framework
+# ----------------------------------------------------------------------------
+# NOTE: This needs to happen before OpenCV as OpenCV introduced a bug:
+# Their ts module results in multiple definitions at linking time
+# ----------------------------------------------------------------------------
+include(cmake/DetectGTest.cmake)
+
+# ----------------------------------------------------------------------------
 # Boost
 # ----------------------------------------------------------------------------
 # Whatever STL can't do yet
@@ -205,11 +215,32 @@ add_subdirectory(modules/${ROOT_PROJECT})
 ## Testing ##
 #############
 
+status("Configure test targets:")
+
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_ni_lib.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
+
+# Setting up test target spearately
+# because catkin's setup uses gtest symbols found in OpenCV
+# and therefore runs into a malloc error after running the tests.
+
+status("")
+
+include(cmake/BuildTests.cmake)
+status("    Configure unittest project")
+build_tests("run_${ROOT_PROJECT}_unittests" "*unittest*")
+
+#set(filter "*unittest*")
+
+#status("Scanning for files: ${filter} in folder: modules/${ROOT_PROJECT}")
+
+#file(GLOB_RECURSE TEST_SRCS modules/${ROOT_PROJECT}/${filter})
+#catkin_add_gtest(${ROOT_PROJECT}-test ${TEST_SRCS})
+
+#if(TARGET ${ROOT_PROJECT}-test)
+
+#  target_link_libraries(${ROOT_PROJECT}-test ${${ROOT_PROJECT}_MODULES} ${${ROOT_PROJECT}_LIBS})
+
+#endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

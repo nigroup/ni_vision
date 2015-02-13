@@ -17,7 +17,7 @@ void Surface::pixelIndices(const VecI &v)
     pixel_indices_ = v;
 }
 
-void Surface::pixelIndices() const
+VecI Surface::pixelIndices() const
 {
     return pixel_indices_;
 }

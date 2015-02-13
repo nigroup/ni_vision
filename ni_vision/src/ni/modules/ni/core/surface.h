@@ -33,7 +33,7 @@ public:
      *
      * @return pixel indicies
      */
-    void pixelIndices() const;
+    VecI pixelIndices() const;
 
     /**
      * @brief Default Constructor
