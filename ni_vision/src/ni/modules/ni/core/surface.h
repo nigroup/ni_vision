@@ -44,6 +44,9 @@ protected:
 
     // members
     VecI pixel_indices_;    ///< indicies to pixels belonging to this surface in flattened image
+    int id_;                ///< surface identifier
+    int last_seen_count_;   ///< count for no. of frames since last tracked
+
 };
 
 } // namespace ni
