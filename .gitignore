@@ -33,6 +33,11 @@
 # IDE files
 *.autosave
 
+# IDE files (Eclipse)
+.cproject
+.project
+.pydevproject
+
 # Editor backup files
 *~
 *.swp
@@ -43,3 +48,4 @@ docs/*
 !docs/*.bib
 !docs/doxygenConf
 !docs/doxygenConf.txt
+
