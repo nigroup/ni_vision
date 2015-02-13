@@ -103,8 +103,8 @@ include_directories(${catkin_INCLUDE_DIRS})
 find_package(OpenCV)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-find_package(ni_lib)
-include_directories(${ni_lib_INCLUDE_DIRS})
+find_package(ni_3rdparty)
+include_directories(${ni_3rdparty_INCLUDE_DIRS})
 
 find_package(ni_tools)
 include_directories(${ni_tools_INCLUDE_DIRS})
