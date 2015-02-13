@@ -49,3 +49,7 @@ docs/*
 !docs/doxygenConf
 !docs/doxygenConf.txt
 
+# CMake
+cmake_install.cmake
+
+
