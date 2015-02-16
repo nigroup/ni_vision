@@ -146,70 +146,6 @@ void CalcDeltaScaleOri(std::vector<int> input_idx, std::vector<double> vnDeltaSc
 }
 
 
-
-
-
-/* Swap object surface in the memory and all properties which belong to the objects
- *
- * Output:
- * vbProtoCand - candidate flag for object surfaces (true, then candidate for attention)
- * vnProtoIdx - indices for object surfaces
- * vnProtoPtsCnt - count of pixels for object surfaces
- * mnProtoPtsIdx - indices of pixels for object surfaces
- * stProto - properties of object surfaces (ProtoProp is self-defined struct)
- * vnProtoFound - found flag for objects surfaces
- * nProtoCnt - count of object surfaces
- * vnTmpProtoDiff - color differences of objects surfaces (to target object)
- */
-void SwapMemory (std::vector<bool> &vbProtoCand, std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx, ProtoProp &stProto,
-                 std::vector<int> &vnProtoFound, int nProtoCnt, std::vector<std::vector<float> > &vnTmpProtoDiff)
-{
-    std::vector<std::vector<float> > vnTmpProtoDiff2 = vnTmpProtoDiff;
-    std::sort(vnTmpProtoDiff[0].begin(), vnTmpProtoDiff[0].end());
-    std::vector<int> vTmpIdx(nProtoCnt, 0);
-    for (int i = 0; i < nProtoCnt; i++) {
-        for (int j = 0; j < nProtoCnt; j++) {
-            if (vnTmpProtoDiff[0][i] == vnTmpProtoDiff2[0][j]) vTmpIdx[i] = j;
-        }
-    }
-
-
-    std::vector<bool> vbAaaProtoCand = vbProtoCand;
-    std::vector<int> vnAaaProtoIdx = vnProtoIdx;
-    std::vector<int> vnAaaProtoPtsCnt = vnProtoPtsCnt;
-    std::vector<std::vector<int> > mnAaaProtoPtsIdx = mnProtoPtsIdx;
-    std::vector<std::vector<int> > mnAaaProtoRect = stProto.mnRect;
-    std::vector<std::vector<int> > mnAaaProtoRCenter = stProto.mnRCenter;
-    std::vector<std::vector<float> > mnAaaProtoCubic = stProto.mnCubic;
-    std::vector<std::vector<float> > mnAaaProtoCCenter = stProto.mnCCenter;
-    std::vector<std::vector<float> > mnAaaProtoColorHist = stProto.mnColorHist;
-    std::vector<float> vnAaaProtoLength = stProto.vnLength;
-    std::vector<int> vnAaaProtoMemoryCnt = stProto.vnMemoryCnt;
-    std::vector<int> vnAaaProtoStableCnt = stProto.vnStableCnt;
-    std::vector<int> vnAaaProtoDisapCnt = stProto.vnDisapCnt;
-    std::vector<int> vnAaaProtoFound = vnProtoFound;
-
-    for (int i = 0; i < nProtoCnt; i++) {
-        vbProtoCand[i] = vbAaaProtoCand[vTmpIdx[i]];
-        vnProtoIdx[i] = vnAaaProtoIdx[vTmpIdx[i]];
-        vnProtoPtsCnt[i] = vnAaaProtoPtsCnt[vTmpIdx[i]];
-        mnProtoPtsIdx[i] = mnAaaProtoPtsIdx[vTmpIdx[i]];
-        stProto.mnRect[i] = mnAaaProtoRect[vTmpIdx[i]];
-        stProto.mnRCenter[i] = mnAaaProtoRCenter[vTmpIdx[i]];
-        stProto.mnCubic[i] = mnAaaProtoCubic[vTmpIdx[i]];
-        stProto.mnCCenter[i] = mnAaaProtoCCenter[vTmpIdx[i]];
-        stProto.mnColorHist[i] = mnAaaProtoColorHist[vTmpIdx[i]];
-        stProto.vnLength[i] = vnAaaProtoLength[vTmpIdx[i]];
-        stProto.vnMemoryCnt[i] = vnAaaProtoMemoryCnt[vTmpIdx[i]];
-        stProto.vnStableCnt[i] = vnAaaProtoStableCnt[vTmpIdx[i]];
-        stProto.vnDisapCnt[i] = vnAaaProtoDisapCnt[vTmpIdx[i]];
-        vnProtoFound[i] = vnAaaProtoFound[vTmpIdx[i]];
-    }
-}
-
-
-
-
 /* Resetting properties of object surfaces
  *
  * Input:
@@ -218,36 +154,31 @@ void SwapMemory (std::vector<bool> &vbProtoCand, std::vector<int> &vnProtoIdx, s
  * nRecogRtNr -
  *
  * Output:
- * vnProtoIdx - indices for object surfaces
- * vnProtoPtsCnt - count of pixels for object surfaces
- * mnProtoPtsIdx - indices of pixels for object surfaces
- * stProto - properties of object surfaces (ProtoProp is self-defined struct)
- * vnProtoFound - found flag for objects surfaces
- * nProtoCnt - count of object surfaces
+ * stMems - properties of object surfaces in the Short-Term Memory (SurfProp is self-defined struct)
+ * nMemsCnt - count of object surfaces
  * nProtoNr - number of current object surface
  * nFoundCnt - count of found object surfaces
  * nFoundNr - number of found object surface
  * vnRecogRating - recognition rating (like a priority) of object surfaces
  */
 void ResetMemory (int nObjsNrLimit, int nTrackHistoBin_max, int nRecogRtNr,
-                  std::vector<int> &vnProtoIdx, std::vector<int> &vnProtoPtsCnt, std::vector<std::vector<int> > &mnProtoPtsIdx, ProtoProp &stProto,
-                  std::vector<int> &vnProtoFound, int &nProtoCnt, int &nProtoNr, int &nFoundCnt, int &nFoundNr, std::vector<int> &vnRecogRating)
+                  SurfProp &stMems, int &nMemsCnt, int &nProtoNr, int &nFoundCnt, int &nFoundNr, std::vector<int> &vnRecogRating)
 {
-    vnProtoIdx.assign(nObjsNrLimit, 0);
-    vnProtoPtsCnt.assign(nObjsNrLimit, 0);
-    mnProtoPtsIdx.assign(nObjsNrLimit, std::vector<int>(0, 0));
-    stProto.mnRCenter.assign(nObjsNrLimit, std::vector<int>(2, 0));
-    stProto.mnCCenter.assign(nObjsNrLimit, std::vector<float>(3, 0));
-    stProto.mnRect.assign(nObjsNrLimit, std::vector<int>(4, 0));
-    stProto.mnCubic.assign(nObjsNrLimit, std::vector<float>(6, 0));
-    stProto.mnColorHist.assign(nObjsNrLimit, std::vector<float>(nTrackHistoBin_max, 0));
-    stProto.vnLength.assign(nObjsNrLimit, 0);
-    stProto.vnMemoryCnt.assign(nObjsNrLimit, 0);
-    stProto.vnStableCnt.assign(nObjsNrLimit, 0);
-    stProto.vnDisapCnt.assign(nObjsNrLimit, 0);
-    vnProtoFound.assign(nObjsNrLimit, 0);
+    stMems.vnIdx.assign(nObjsNrLimit, 0);
+    stMems.vnPtsCnt.assign(nObjsNrLimit, 0);
+    stMems.mnPtsIdx.assign(nObjsNrLimit, std::vector<int>(0, 0));
+    stMems.mnRCenter.assign(nObjsNrLimit, std::vector<int>(2, 0));
+    stMems.mnCCenter.assign(nObjsNrLimit, std::vector<float>(3, 0));
+    stMems.mnRect.assign(nObjsNrLimit, std::vector<int>(4, 0));
+    stMems.mnCubic.assign(nObjsNrLimit, std::vector<float>(6, 0));
+    stMems.mnColorHist.assign(nObjsNrLimit, std::vector<float>(nTrackHistoBin_max, 0));
+    stMems.vnLength.assign(nObjsNrLimit, 0);
+    stMems.vnMemCtr.assign(nObjsNrLimit, 0);
+    stMems.vnStableCtr.assign(nObjsNrLimit, 0);
+    stMems.vnLostCtr.assign(nObjsNrLimit, 0);
+    stMems.vnFound.assign(nObjsNrLimit, 0);
 
-    nProtoCnt = 0;
+    nMemsCnt = 0;
     nProtoNr = 0;
     nFoundCnt = 0;
     nFoundNr = 0;
@@ -256,24 +187,61 @@ void ResetMemory (int nObjsNrLimit, int nTrackHistoBin_max, int nRecogRtNr,
 
 
 
+/* Attention: Top-Down guidance - Reordering all properties of object surfaces in the memory after priority
+ *
+ * Output:
+ * vbProtoCand - candidate flag for object surfaces (true, then candidate for attention)
+ * stMems - properties of object surfaces in the Short-Term Memory (SurfProp is self-defined struct)
+ * vnMemsFound - found flag for objects surfaces
+ * nMemsCnt - count of object surfaces
+ * vnCandClrDist - color differences of objects surfaces (to target object)
+ */
+void Attention_TopDown (std::vector<bool> &vbProtoCand, SurfProp &stMems, int nMemsCnt, std::vector<std::pair<float, int> > &veCandClrDist)
+{
+    std::sort(veCandClrDist.begin(), veCandClrDist.end(), boost::bind(&std::pair<float,int>::first, _1) < boost::bind(&std::pair<float,int>::first, _2));
+
+    std::vector<bool> vbTmpProtoCand = vbProtoCand;
+    SurfProp stTmp = stMems;
+
+    for (int i = 0; i < nMemsCnt; i++) {
+        vbProtoCand[i] = vbTmpProtoCand[veCandClrDist[i].second];
+        stMems.vnIdx[i] = stTmp.vnIdx[veCandClrDist[i].second];
+        stMems.vnPtsCnt[i] = stTmp.vnPtsCnt[veCandClrDist[i].second];
+        stMems.mnPtsIdx[i] = stTmp.mnPtsIdx[veCandClrDist[i].second];
+        stMems.mnRect[i] = stTmp.mnRect[veCandClrDist[i].second];
+        stMems.mnRCenter[i] = stTmp.mnRCenter[veCandClrDist[i].second];
+        stMems.mnCubic[i] = stTmp.mnCubic[veCandClrDist[i].second];
+        stMems.mnCCenter[i] = stTmp.mnCCenter[veCandClrDist[i].second];
+        stMems.mnColorHist[i] = stTmp.mnColorHist[veCandClrDist[i].second];
+        stMems.vnLength[i] = stTmp.vnLength[veCandClrDist[i].second];
+        stMems.vnMemCtr[i] = stTmp.vnMemCtr[veCandClrDist[i].second];
+        stMems.vnStableCtr[i] = stTmp.vnStableCtr[veCandClrDist[i].second];
+        stMems.vnLostCtr[i] = stTmp.vnLostCtr[veCandClrDist[i].second];
+        stMems.vnFound[i] = stTmp.vnFound[veCandClrDist[i].second];
+    }
+}
+
+
+
+
 
 /* Selection of a candidate object surface
  *
  * Input:
- * nProtoCnt - count of candidate object surfaces
+ * nMemsCnt - count of candidate object surfaces
  * vbProtoCand - flag for candidate object surfaces
  *
  * Output:
- * vProtoFound - flag for found candidate object surfaces
+ * vMemsFound - state of candidate; 0: not inspected & not found, 1:not inspected & found, 2: inspected & not found, 3: inspected & found
  * nCandID - ID of selected candidate object surface
  */
-void SelRecognition_Pre (int nProtoCnt, std::vector<bool> vbProtoCand, std::vector<int> &vProtoFound, int &nCandID) {
+void Attention_Selection (int nMemsCnt, std::vector<bool> vbProtoCand, std::vector<int> &vnMemsFound, int &nCandID) {
 
-    for (int i = 0; i < nProtoCnt; i++) {
+    for (int i = 0; i < nMemsCnt; i++) {
         if (!vbProtoCand[i]) continue;
 
-        // vProtoFound.... 0: not matched, 1:not matched, 2: matched, 3: matched
-        if (vProtoFound[i] < 2) {
+        // Selecting the most relevant candidate from not inspected candidate pool
+        if (vnMemsFound[i] < 2) {
             nCandID = i;
             break;
         }
@@ -290,22 +258,22 @@ void SelRecognition_Pre (int nProtoCnt, std::vector<bool> vbProtoCand, std::vect
  * nCandID - ID of selected candidate object surface
  * nImgScale - ratio between original and downsampled image
  * nDsWidth - width of downsampled image
- * vnProtoPtsCnt - count of pixel which belong to the object surface (of downsampled image)
+ * vnMemsPtsCnt - count of pixel which belong to the object surface (of downsampled image)
  * cvm_rgb_org - original image
- * mnProtoPtsIdx - indices of pixel which belong to the object surfae (of downsampled image)
+ * mnMemsPtsIdx - indices of pixel which belong to the object surfae (of downsampled image)
  *
  * Output:
  * cvm_cand_tmp - image of candidate object surface
  * vnIdxTmp - indices of pixel which belong to the object surfae (of original image)
  */
-void SelRecognition_1 (int nCandID, int nImgScale, int nDsWidth, std::vector<int> vnProtoPtsCnt, cv::Mat cvm_rgb_org,
-                       cv::Mat &cvm_cand_tmp, std::vector<std::vector<int> > mnProtoPtsIdx, std::vector<int> &vnIdxTmp) {
+void Recognition_Attention (int nCandID, int nImgScale, int nDsWidth, std::vector<int> vnMemsPtsCnt, cv::Mat cvm_rgb_org,
+                       cv::Mat &cvm_cand_tmp, std::vector<std::vector<int> > mnMemsPtsIdx, std::vector<int> &vnIdxTmp) {
     int pts_cnt = 0;
     int xx, yy;
     if (nImgScale > 1) {
         int idx;
-        for (int j = 0; j < vnProtoPtsCnt[nCandID]; j++) {
-            GetPixelPos(mnProtoPtsIdx[nCandID][j], nDsWidth, xx, yy);
+        for (int j = 0; j < vnMemsPtsCnt[nCandID]; j++) {
+            GetPixelPos(mnMemsPtsIdx[nCandID][j], nDsWidth, xx, yy);
             xx = xx*nImgScale; yy = yy*nImgScale;
 
             for (int mm = 0; mm < nImgScale; mm++) {
@@ -320,7 +288,7 @@ void SelRecognition_1 (int nCandID, int nImgScale, int nDsWidth, std::vector<int
             }
         }
     }
-    else {vnIdxTmp = mnProtoPtsIdx[nCandID]; pts_cnt = (int)vnProtoPtsCnt[nCandID];}
+    else {vnIdxTmp = mnMemsPtsIdx[nCandID]; pts_cnt = (int)vnMemsPtsCnt[nCandID];}
 
     //int xxx, yyy;
     for (int i = 0; i < pts_cnt; i++) {
@@ -332,7 +300,7 @@ void SelRecognition_1 (int nCandID, int nImgScale, int nDsWidth, std::vector<int
 
 
 
-/* SIFT keypoint matching with FLANN (fast library for approximate nearest neighbor) to find target object
+/* FLANN (fast library for approximate nearest neighbor) matching SIFT keypoints to find target object
  *
  * Input:
  * tcount -
@@ -353,7 +321,7 @@ void SelRecognition_1 (int nCandID, int nImgScale, int nDsWidth, std::vector<int
  * nMaxDeltaOri, nMinDeltaOri - max and min delta orientation
  * nMaxDeltaScale, nMinDeltaScale - max and min Scale orientation
  */
-void SelRecognition_FlannSift (int tcount, int nFlannKnn, int nFlannLibCols_sift, double nFlannMatchFac, std::vector <std::vector <float> > mnSiftExtraFeatures, flann_index_t FlannIdx_Sift, struct FLANNParameters FLANNParam,
+void Recognition_Flann (int tcount, int nFlannKnn, int nFlannLibCols_sift, double nFlannMatchFac, std::vector <std::vector <float> > mnSiftExtraFeatures, flann_index_t FlannIdx_Sift, struct FLANNParameters FLANNParam,
                           Keypoint keypts, int &nKeyptsCnt, int &nFlannIM, std::vector<int> &vnSiftMatched, std::vector<double> &vnDeltaScale, std::vector<double> &vnDeltaOri, double &nMaxDeltaOri, double &nMinDeltaOri, double &nMaxDeltaScale, double &nMinDeltaScale) {
     while (keypts) {
         float *f1;
@@ -407,5 +375,255 @@ void SelRecognition_FlannSift (int tcount, int nFlannKnn, int nFlannLibCols_sift
         //free(dist1);
 
         keypts = keypts->next;
+    }
+}
+
+
+
+/* Recognition process of a selected candidate. Determines if a selected object is the target object
+ *
+ * Input:
+ * nCandID - ID of the candidate in the list candidate object surfaces
+ * nImgScale - ratio of original and downsampled image
+ * nTimeRatio - ratio of milli- and nanoseconds (i.e. 10⁶)
+ * nMemsCnt - number of object surfaces
+ * nTrackHistoBin_max - (number of bin)^(number of channels)
+ * sTimeDir - path to save time measurement to
+ * sImgExt - extension of image file
+ * cvm_rgb_org - original rgb image
+ * cvm_rgb_ds - downsampled rgb image
+ * cvm_rec_org - original image for recognition process
+ * cvm_rec_ds - downsampled original image for recognition process
+ * nTrackCntLost - threshold for vnMemsLostCnt
+ *
+ * Output:
+ * nCandCnt - number of candidate object surfaces
+ * nCandClrDist - buffer of color histogram difference between the current candidate and the target object
+ * nFoundCnt - count of found objects in a recognition cycle
+ * nFoundNr - number of found object
+ * nFoundFrame - number of frame where the object was found
+ * nCandKeyCnt - count of keypoints for the current candidate
+ * nCandRX, nCandRY, nCandRW, nCandRH - coordinates of the 2D-bounding box for the current candidate
+ * t_rec_found_start, t_rec_found_end - variable for time measurement
+ * bSwitchRecordTime - flag for time measurement
+ * nRecogRtNr - count of frames to record
+ * vnRecogRating_tmp - vector of results for time measurement
+ * cvm_cand - image of the current candidate
+ */
+void Recognition (int nCandID, int nImgScale, int nDsWidth, int nTimeRatio, int nMemsCnt, int nTrackHistoBin_max,
+                     cv::Mat cvm_rgb_org, cv::Mat &cvm_rec_org, cv::Mat &cvm_rec_ds, SurfProp &stMems,
+                     int nTrackCntLost, int &nCandCnt, float nCandClrDist, int &nFoundCnt, int &nFoundNr, int &nFoundFrame,
+                     int &nCandKeyCnt, int &nCandRX, int &nCandRY, int &nCandRW, int &nCandRH,
+                     struct timespec t_rec_found_start, struct timespec t_rec_found_end, bool bSwitchRecordTime, int nRecogRtNr, std::vector<int> &vnRecogRating_tmp, cv::Mat cvm_cand) {
+
+    nCandCnt++;
+    // Initialize
+    if (stMems.vnFound[nCandID] < 1) stMems.vnFound[nCandID] = 2;
+    else stMems.vnFound[nCandID] = 3;
+
+
+
+    ////////////** Extracting SIFT key-points **////////////////////////////////////////////////////////
+    struct timespec t_sift_start, t_sift_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_sift_start); bTimeSift = true;
+
+    //////*  Extracting object surface from original image  */////////////////////////
+    cvm_cand = cv::Scalar(0, 0, 0);
+    std::vector<int> vnIdxTmp(stMems.vnPtsCnt[nCandID]*nImgScale*nImgScale, 0);
+
+    Recognition_Attention (nCandID, nImgScale, nDsWidth, stMems.vnPtsCnt, cvm_rgb_org, cvm_cand, stMems.mnPtsIdx, vnIdxTmp);
+
+
+    //////** 1. Estimating histogram-distance **//////////////////////////////
+    float nColorDistMaskOrg = 0;
+    if (bRecogClrMask) {
+        ///// Calc3DColorHistogram computes the same color models but it is more robust ///////
+        std::vector<float> vnHistTmp(nTrackHistoBin_max, 0);
+        Calc3DColorHistogram (cvm_rgb_org, vnIdxTmp, stTrack.HistoBin, vnHistTmp);
+
+
+        for (int i = 0; i< nTrackHistoBin_max; i++) {
+            if (mnColorHistY_lib.size() == 1) {
+                nColorDistMaskOrg += fabs(mnColorHistY_lib[0][i] - vnHistTmp[i]);
+            }
+            else nColorDistMaskOrg += fabs(mnColorHistY_lib[stTrack.ClrMode][i] - vnHistTmp[i]);
+        }
+        nColorDistMaskOrg = nColorDistMaskOrg/2;
+    }
+    //////////////////////* End of the estimating histogram-distance *////////////////////////
+
+
+    //////** 2. SIFT extraction from the object surface **//////////////////////////////////////////
+
+    ///////// Calculating rectangle coordinates of the candidate in high-resolution 2D image from the rectangle on downsampled image
+    int x_min_org = stMems.mnRect[nCandID][0] * nImgScale;
+    int y_min_org = stMems.mnRect[nCandID][1] * nImgScale - nImgScale+1;
+    int x_max_org = stMems.mnRect[nCandID][2] * nImgScale + nImgScale-1;
+    int y_max_org = stMems.mnRect[nCandID][3] * nImgScale;
+    if (x_min_org < 0) x_min_org = 0; if (x_max_org > cvm_rgb_org.cols - 1) x_min_org = cvm_rgb_org.cols;
+    if (y_min_org < 0) y_min_org = 0; if (y_max_org > cvm_rgb_org.cols - 1) y_max_org = cvm_rgb_org.cols;
+
+    nCandRX = x_min_org;
+    nCandRY = y_min_org;
+    nCandRW = x_max_org - x_min_org + 1;
+    nCandRH = y_max_org - y_min_org + 1;
+
+    Keypoint keypts, keypts_tmp;
+    GetSiftKeypoints(cvm_cand, nSiftScales, nSiftInitSigma, nSiftPeakThrs, nCandRX, nCandRY, nCandRW, nCandRH, keypts);
+    keypts_tmp = keypts;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t_sift_end); nTimeSift = double(timespecDiff(&t_sift_end, &t_sift_start)/nTimeRatio);
+    cvm_cand.release();
+
+
+
+    /////** Flann searching **//////////////////////////////
+    struct timespec t_flann_start, t_flann_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_flann_start); bTimeFlann = true;
+
+    std::vector<int> vnSiftMatched; std::vector <double> vnDeltaScale; std::vector <double> vnDeltaOri;
+    double nMaxDeltaOri = -999; double nMaxDeltaScale = -999;
+    double nMinDeltaOri = 999; //double nMinDeltaScale = 999;
+    int nKeyptsCnt = 0; int nFlannIM=0;
+
+    Recognition_Flann (tcount, nFlannKnn, nFlannLibCols_sift, nFlannMatchFac, mnSiftExtraFeatures, FlannIdx_Sift, FLANNParam, keypts, nKeyptsCnt, nFlannIM, vnSiftMatched, vnDeltaScale, vnDeltaOri, nMaxDeltaOri, nMinDeltaOri, nMaxDeltaScale, nMinDeltaOri);
+    nCandKeyCnt = nKeyptsCnt;
+
+    /////** Filtering: extracting true-positives from matched keypoints **//////////////////
+    double nDeltaScale=0;
+    int nFlannTP=0;
+
+    std::vector<bool> vbSiftTP(nKeyptsCnt, 0);
+    if(nFlannIM > T_numb) CalcDeltaScaleOri(vnSiftMatched, vnDeltaScale, vnDeltaOri, nDeltaScale, nDeltaBinNo, nMaxDeltaOri, nMinDeltaOri, T_orient, T_scale, nFlannTP, vbSiftTP);
+    else nFlannTP=0;
+
+
+
+    ////** Setting the object as "found" and Drawing**////////////
+    float nColorDist;
+    if (bRecogClrMask) nColorDist = nColorDistMaskOrg; else nColorDist = nCandClrDist;
+    if(nFlannTP >= nFlannMatchCnt && nColorDist < nRecogDClr) { //If the number of matches for the current object are more than or equal to the threshhold for matches
+        clock_gettime(CLOCK_MONOTONIC_RAW, &t_rec_found_end); nTimeRecFound = double(timespecDiff(&t_rec_found_end, &t_rec_found_start)/nTimeRatio);
+        printf("%d. object with %3d keypoints (%d %d) at frame %d (%d), Color dist: %4.3f (%4.3f), Object size: %4.0f mm\n", nCandCnt, nFlannTP, nFlannIM, nKeyptsCnt, nCtrFrame, nCtrFrame_tmp, nCandClrDist, nColorDist, stMems.vnLength[nCandID]*1000);
+
+        nFoundCnt++;
+        nFoundNr = nCandCnt;
+        nFoundFrame = nCtrFrame;
+        stMems.vnFound[nCandID] = 3;
+
+
+        if (vbFlagTask[stTID.nRecTime] && bSwitchRecordTime) {
+            if (nFoundNr < nRecogRtNr) vnRecogRating_tmp[nFoundNr]++;
+            else vnRecogRating_tmp[0]++;
+
+            int size = mnTimeMeas1.size();
+            mnTimeMeas1.resize(size+1);
+            mnTimeMeas1[size].assign(9, 0);
+            mnTimeMeas1[size][0] = nCtrRecCycle+1;
+            mnTimeMeas1[size][1] = nFoundFrame;
+            mnTimeMeas1[size][2] = nFoundNr;
+            mnTimeMeas1[size][4] = nKeyptsCnt;
+            mnTimeMeas1[size][5] = nFlannIM;
+            mnTimeMeas1[size][6] = nFlannTP;
+            mnTimeMeas1[size][7] = nCandRW;
+            mnTimeMeas1[size][8] = nCandRH;
+
+            mnTimeMeas2.resize(size+1);
+            mnTimeMeas2[size].assign(2, 0);
+            mnTimeMeas2[size][0] = nTimeRecFound;
+            mnTimeMeas2[size][1] = nTimeSift;
+
+            if (nTimeRecFound > nTimeRecFound_max) nTimeRecFound_max = nTimeRecFound;
+            if (nTimeRecFound < nTimeRecFound_min) nTimeRecFound_min = nTimeRecFound;
+        }
+    }
+    else {if (stMems.vnFound[nCandID] == 1 || stMems.vnFound[nCandID] == 3) stMems.vnFound[nCandID] = 2;}
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t_flann_end); nTimeFlann = double(timespecDiff(&t_flann_end, &t_flann_start)/nTimeRatio);
+
+
+
+    if (vbFlagTask[stTID.nRecogOrg] || (vbFlagTask[stTID.nRecVideo] && nRecordMode)) {
+        cv::rectangle(cvm_rec_org, cv::Point(x_min_org, y_min_org), cv::Point(x_max_org, y_max_org), c_red, 3);
+
+        keypts = keypts_tmp;
+        while(keypts) {
+            cv::rectangle(cvm_rec_org, cv::Point(keypts->row + x_min_org - 2, keypts->col + y_min_org - 2), cv::Point(keypts->row + x_min_org + 2, keypts->col + y_min_org + 2), c_white, 1);
+            keypts= keypts->next;
+        }
+        keypts = keypts_tmp;
+        nKeyptsCnt = 0;
+        while(keypts) {
+            if(vbSiftTP[nKeyptsCnt]) {
+                cv::rectangle(cvm_rec_org, cv::Point(keypts->row + x_min_org - 2, keypts->col + y_min_org - 2), cv::Point(keypts->row + x_min_org + 2, keypts->col + y_min_org + 2), c_white, 1);
+                cv::rectangle(cvm_rec_org, cv::Point(keypts->row + x_min_org - 3, keypts->col + y_min_org - 3), cv::Point(keypts->row + x_min_org + 3, keypts->col + y_min_org + 3), c_blue, 1);
+                cv::rectangle(cvm_rec_org, cv::Point(keypts->row + x_min_org - 1, keypts->col + y_min_org - 1), cv::Point(keypts->row + x_min_org + 1, keypts->col + y_min_org + 1), c_blue, 1);
+            }
+            nKeyptsCnt++;
+            keypts= keypts->next;
+        }
+        FreeKeypoints(keypts); FreeKeypoints(keypts_tmp);
+
+
+        int offset = 2*nImgScale;
+        int line_thickness = cvm_rec_org.cols/150;
+        for (int j = 0; j < nMemsCnt; j++) {
+            if (stMems.vnFound[j] != 1 && stMems.vnFound[j] != 3) continue;
+
+            if (stMems.vnLostCtr[j] > nTrackCntLost) continue;
+
+            int x_min_tmp = stMems.mnRect[j][0] * nImgScale;
+            int y_min_tmp = stMems.mnRect[j][1] * nImgScale - nImgScale+1;
+            int x_max_tmp = stMems.mnRect[j][2] * nImgScale + nImgScale-1;
+            int y_max_tmp = stMems.mnRect[j][3] * nImgScale;
+            if (x_min_tmp < 0) x_min_tmp = 0;
+            if (x_max_tmp > cvm_rgb_org.cols - 1) x_min_tmp = cvm_rgb_org.cols;
+            if (y_min_tmp < 0) y_min_tmp = 0;
+            if (y_max_tmp > cvm_rgb_org.cols - 1) y_max_tmp = cvm_rgb_org.cols;
+
+            bool draw = true;
+            for (int k = 0; k < j; k++) {
+                if (stMems.vnFound[k] != 1 && stMems.vnFound[k] != 3) continue;
+                int x_overlapp_min = max(stMems.mnRect[j][0], stMems.mnRect[k][0]);
+                int y_overlapp_min = max(stMems.mnRect[j][1], stMems.mnRect[k][1]);
+                int x_overlapp_max = min(stMems.mnRect[j][2], stMems.mnRect[k][2]);
+                int y_overlapp_max = min(stMems.mnRect[j][3], stMems.mnRect[k][3]);
+                int size_overlapp = (x_overlapp_max - x_overlapp_min)*(y_overlapp_max - y_overlapp_min);
+                int size_curr = (stMems.mnRect[j][2] - stMems.mnRect[j][0])*(stMems.mnRect[j][3] - stMems.mnRect[j][1]);
+                int size_past = (stMems.mnRect[k][2] - stMems.mnRect[k][0])*(stMems.mnRect[k][3] - stMems.mnRect[k][1]);
+
+            }
+
+            if (draw) cv::rectangle(cvm_rec_org, cv::Point(x_min_tmp -offset, y_min_tmp -offset), cv::Point(x_max_tmp +offset, y_max_tmp +offset), c_lemon, line_thickness);
+        }
+    }
+
+    if (vbFlagTask[stTID.nRecogDs] || ((vbFlagTask[stTID.nRecogOrg] || vbFlagTask[stTID.nRecVideo]) && nRecordMode)) {
+        for (int j = 0; j < stMems.vnPtsCnt[nCandID]; j++) {
+            cvm_rec_ds.data[stMems.mnPtsIdx[nCandID][j]*3] = 0;
+            cvm_rec_ds.data[stMems.mnPtsIdx[nCandID][j]*3+1] = 0;
+            cvm_rec_ds.data[stMems.mnPtsIdx[nCandID][j]*3+2] = 255;
+        }
+
+        int offset = 2;
+        int line_thickness = cvm_rec_ds.cols/128;
+        for (int j = 0; j < nMemsCnt; j++) {
+            if (stMems.vnFound[j] != 1 && stMems.vnFound[j] != 3) continue;
+
+            if (stMems.vnLostCtr[j] > nTrackCntLost) continue;
+
+            bool draw = true;
+            for (int k = 0; k < j; k++) {
+                if (stMems.vnFound[k] != 1 && stMems.vnFound[k] != 3) continue;
+                int x_overlapp_min = max(stMems.mnRect[j][0], stMems.mnRect[k][0]);
+                int y_overlapp_min = max(stMems.mnRect[j][1], stMems.mnRect[k][1]);
+                int x_overlapp_max = min(stMems.mnRect[j][2], stMems.mnRect[k][2]);
+                int y_overlapp_max = min(stMems.mnRect[j][3], stMems.mnRect[k][3]);
+                int size_overlapp = (x_overlapp_max - x_overlapp_min)*(y_overlapp_max - y_overlapp_min);
+                int size_curr = (stMems.mnRect[j][2] - stMems.mnRect[j][0])*(stMems.mnRect[j][3] - stMems.mnRect[j][1]);
+                int size_past = (stMems.mnRect[k][2] - stMems.mnRect[k][0])*(stMems.mnRect[k][3] - stMems.mnRect[k][1]);
+
+                if (size_overlapp > size_curr*0.6 || size_overlapp > size_past*0.6) draw = false;
+            }
+
+            if (draw) cv::rectangle(cvm_rec_ds, cv::Point(stMems.mnRect[j][0] -offset, stMems.mnRect[j][1] -offset), cv::Point(stMems.mnRect[j][2] +offset, stMems.mnRect[j][3] +offset), c_lemon, line_thickness);
+        }
     }
 }

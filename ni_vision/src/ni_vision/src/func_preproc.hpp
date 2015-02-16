@@ -89,7 +89,7 @@ void MakeDepthMap (pcl::PointCloud<pcl::PointXYZ> cloud, int nDsSize, float &nDM
  * vnCloudIdx_d - indices of valid points
  * nDIdxCntTmp - count of valid points
  * nDGradConst - constant of the weighted depth
- * nDSegmDThres - threshold for very steep depth-gradient
+ * nSegmDThres - threshold for very steep depth-gradient
  * nDGradNan - constant for the very steep depth-gradient
  * nDsWidth - width of depth map
  * nDGradXMin, nDGradXMax, nDGradYMin, nDGradYMax - max and min values of depth-gradient data
@@ -97,7 +97,7 @@ void MakeDepthMap (pcl::PointCloud<pcl::PointXYZ> cloud, int nDsSize, float &nDM
  * Output:
  * vDGradX,vDGradY - depth-gradient maps
  */
-void MakeDGradMap (std::vector<float> vDepth, std::vector<int> vCloudIdx_d, int nDIdxCntTmp, float nDGradConst, float nDSegmDThres, float nDGradNan, int nDsWidth,
+void MakeDGradMap (std::vector<float> vDepth, std::vector<int> vCloudIdx_d, int nDIdxCntTmp, float nDGradConst, float nSegmDThres, float nDGradNan, int nDsWidth,
                       float &nDGradXMin, float &nDGradXMax, float &nDGradYMin, float &nDGradYMax, std::vector<float> &vDGradX, std::vector<float> &vDGradY)
 {
     /////// Processing depth map: make depth gradient map ////////////////////////////////////////////////
@@ -112,7 +112,7 @@ void MakeDGradMap (std::vector<float> vDepth, std::vector<int> vCloudIdx_d, int 
                 if (vDepth[idx-nDsWidth]) {
                     //vDGradY[idx] = vDepth[idx] - vDepth[idx-nDsWidth];
                     vDGradY[idx] = (vDepth[idx] - vDepth[idx-nDsWidth]) / (vDepth[idx] + nDGradConst);
-                    if (fabs(vDGradY[idx]) > nDSegmDThres) vDGradY[idx] = nDGradNan;
+                    if (fabs(vDGradY[idx]) > nSegmDThres) vDGradY[idx] = nDGradNan;
                     else {
                         if (vDGradY[idx] > nDGradYMax) nDGradYMax = vDGradY[idx];
                         if (vDGradY[idx] < nDGradYMin) nDGradYMin = vDGradY[idx];
@@ -122,7 +122,7 @@ void MakeDGradMap (std::vector<float> vDepth, std::vector<int> vCloudIdx_d, int 
             if (x > 0) {
                 if (vDepth[idx-1]) {
                     (vDGradX[idx] = vDepth[idx] - vDepth[idx-1]) / (vDepth[idx] + nDGradConst);;
-                    if (fabs(vDGradX[idx]) > nDSegmDThres) vDGradX[idx] = nDGradNan;
+                    if (fabs(vDGradX[idx]) > nSegmDThres) vDGradX[idx] = nDGradNan;
                     else {
                         if (vDGradX[idx] > nDGradXMax) nDGradXMax = vDGradX[idx];
                         if (vDGradX[idx] < nDGradXMin) nDGradXMin = vDGradX[idx];
@@ -143,7 +143,7 @@ void MakeDGradMap (std::vector<float> vDepth, std::vector<int> vCloudIdx_d, int 
             if (y > 0) {
                 if (vDepth[idx-2*nDsWidth]) {
                     vDGradY[idx] = (vDepth[idx] - vDepth[idx-2*nDsWidth]) / (vDepth[idx] + nDGradConst);
-                    if (fabs(vDGradY[idx]) > nDSegmDThres) vDGradY[idx] = nDGradNan;
+                    if (fabs(vDGradY[idx]) > nSegmDThres) vDGradY[idx] = nDGradNan;
                     else {
                         if (vDGradY[idx] > nDGradYMax) nDGradYMax = vDGradY[idx];
                         if (vDGradY[idx] < nDGradYMin) nDGradYMin = vDGradY[idx];
@@ -156,7 +156,7 @@ void MakeDGradMap (std::vector<float> vDepth, std::vector<int> vCloudIdx_d, int 
             if (x > 0) {
                 if (vDepth[idx-2]) {
                     (vDGradX[idx] = vDepth[idx] - vDepth[idx-2]) / (vDepth[idx] + nDGradConst);;
-                    if (fabs(vDGradX[idx]) > nDSegmDThres) vDGradX[idx] = nDGradNan;
+                    if (fabs(vDGradX[idx]) > nSegmDThres) vDGradX[idx] = nDGradNan;
                     else {
                         if (vDGradX[idx] > nDGradXMax) nDGradXMax = vDGradX[idx];
                         if (vDGradX[idx] < nDGradXMin) nDGradXMin = vDGradX[idx];
