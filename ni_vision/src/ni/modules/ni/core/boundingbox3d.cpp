@@ -23,8 +23,18 @@ BoundingBox3D::BoundingBox3D(CloudXYZPtr &cld)
     int new_rows = point_coords.total()/PCLPointTraits_<PointXYZ>::NbFloats();
     point_coords = point_coords.reshape(1, new_rows);
 
-    cog_ = Mat1f(1, PCLPointTraits_<PointXYZ>::NbFloats());
-    reduce(point_coords, cog_, 0, CV_REDUCE_AVG);
+    if(point_coords.rows > 1) {
+
+        cog_ = Mat1f(1, PCLPointTraits_<PointXYZ>::NbFloats());
+        reduce(point_coords, cog_, 0, CV_REDUCE_AVG);
+    }
+    else if(point_coords.rows == 1) {
+
+        cog_ = point_coords.row(0);
+    }
+    else {
+        cog_ = Mat1f(0, PCLPointTraits_<PointXYZ>::NbFloats());
+    }
 }
 
 float BoundingBox3D::diagonal() const
