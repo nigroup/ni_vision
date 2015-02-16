@@ -21,3 +21,19 @@ VecI Surface::pixelIndices() const
 {
     return pixel_indices_;
 }
+
+int Surface::lastSeenCount() const
+{
+    return last_seen_count_;
+}
+
+void Surface::lastSeenCount(bool is_last_seen)
+{
+    if(is_last_seen) {
+
+        last_seen_count_ = 0;
+    }
+    else {
+        last_seen_count_++;
+    }
+}

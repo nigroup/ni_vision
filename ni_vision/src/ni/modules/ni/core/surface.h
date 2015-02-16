@@ -36,6 +36,18 @@ public:
     VecI pixelIndices() const;
 
     /**
+     * @brief get count of frames since this surface was last seen
+     * @return frame count since last seen - zero indicates seen in most recent frame
+     */
+    int lastSeenCount() const;
+
+    /**
+     * @brief update last seen count
+     * @return flag indicating it was last seen in most recent frame
+     */
+    void lastSeenCount(bool is_last_seen);
+
+    /**
      * @brief Default Constructor
      */
     Surface();

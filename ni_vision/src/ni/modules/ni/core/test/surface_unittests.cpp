@@ -34,4 +34,22 @@ TEST_F(SurfaceTest, pixelCount)
     }
 }
 
+TEST_F(SurfaceTest, lastSeenCount)
+{
+    EXPECT_EQ(0, to_.lastSeenCount()) << "expecting initial count of zero.";
+
+    const int N=5;
+    for(int i=0; i<N; i++) {
+
+        EXPECT_EQ(i, to_.lastSeenCount()) << "count not increasing";
+        to_.lastSeenCount(false);
+    }
+
+    for(int i=0; i<N; i++) {
+
+        to_.lastSeenCount(true);
+        EXPECT_EQ(0, to_.lastSeenCount()) << "count did not reset.";
+    }
+}
+
 } // annonymous namespace for unit tests
