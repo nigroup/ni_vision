@@ -5,12 +5,23 @@
 
 namespace ni {
 
-/** class to implement depth map extraction
-  *
-  */
+/** @brief class to implement depth map extraction
+ * layer IO names already defined in parent class:
+ *
+ * KEY_INPUT_STIMULUS: input point cloud
+ * KEY_OUTPUT_RESPONSE: depth map matrix of all finite and valid depth (z) values
+ *
+ * @todo Check every z coordinate for isfinite()?
+ */
 class DepthMap : public elm::base_FeatureTransformationLayer
 {
 public:
+    // layer parameters
+    static const std::string PARAM_DEPTH_MAX;   ///< min. depth value
+
+    // default values
+    static const float DEFAULT_DEPTH_MAX;   ///< max. depth (3.)
+
     virtual void Clear();
 
     virtual void Reconfigure(const elm::LayerConfig &config);
@@ -29,9 +40,11 @@ public:
       */
     DepthMap(const elm::LayerConfig& config);
 
-public:
-
 protected:
+
+    // members
+    float depth_max_;   ///< min. allowable depth value
+
 };
 
 } // namespace ni
