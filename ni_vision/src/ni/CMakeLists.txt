@@ -69,8 +69,6 @@ include(cmake/DetectELM.cmake)
 # ----------------------------------------------------------------------------
 # Matrix definitions operations
 # Image processing
-# Image visuzalization
-# Image and Video I/O
 # ----------------------------------------------------------------------------
 include(cmake/DetectOpenCV.cmake)
 
