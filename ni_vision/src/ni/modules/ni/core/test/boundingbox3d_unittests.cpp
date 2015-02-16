@@ -46,7 +46,17 @@ TEST_F(BoundingBox3DTest, construct_from_point_cloud)
     }
 
     EXPECT_FLOAT_EQ(1.f, cog(cog.cols-1)) << "Unexpected value for padding column.";
+}
 
+TEST_F(BoundingBox3DTest, construct_from_point_cloud_empty)
+{
+    CloudXYZPtr cld(new CloudXYZ());
+
+    to_ = BoundingBox3D(cld);
+
+    cv::Mat1f cog = to_.centralPoint();
+
+    EXPECT_TRUE(cog.empty()) << "Empty point cloud yields empty COG Mat.";
 }
 
 TEST_F(BoundingBox3DTest, diagonal)
