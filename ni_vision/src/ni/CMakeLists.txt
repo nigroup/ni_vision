@@ -250,4 +250,53 @@ build_tests("run_${ROOT_PROJECT}_unittests" "*unittest*")
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
+# ----------------------------------------------------------------------------
+# Done configuring the build.
+# Let's print some summary info
+# ----------------------------------------------------------------------------
+
+status("")
+
+status("Build:")
+set(MODULE_NAMES ${${ROOT_PROJECT}_MODULES})
+strip_lib_prefix(MODULE_NAMES ${MODULE_NAMES})
+status("    modules:  "      ${MODULE_NAMES})
+status("    unit-tests:  "   run_${ROOT_PROJECT}_unittests)
+
+status("")
+
+status("Dependencies:")
+
+status("")
+status("    GTest:    "   GTEST_FOUND THEN ${GTEST_ROOT} ELSE NO)
+
+status("")
+status("    ELM:    "   ELM_FOUND THEN "Yes"  ELSE NO)
+status("        lib Dir.:  "   ELM_FOUND THEN "${ELM_LIB_DIR}" ELSE "-")
+set(ELM_LIB_NAMES ${ELM_LIBS})
+convert_to_lib_name(ELM_LIB_NAMES ${ELM_LIB_NAMES})
+status("        components :  "      ELM_FOUND THEN ${ELM_LIB_NAMES} ELSE "-")
+
+status("")
+status("    OpenCV:    "   OpenCV_FOUND THEN "${OpenCV_VERSION_MAJOR}.${OpenCV_VERSION_MINOR}.${OpenCV_VERSION_PATCH} (${OpenCV_VERSION})" ELSE NO)
+status("        lib Dir.:      "   OpenCV_FOUND THEN "${OpenCV_DIR}/lib" ELSE "-")
+status("        include Dir.:  "   OpenCV_FOUND THEN "${OpenCV_INCLUDE_DIRS}" ELSE "-")
+set(OpenCV_MODULES ${OpenCV_LIBS})
+convert_to_lib_name(OpenCV_MODULES ${OpenCV_MODULES})
+status("        modules :  "      OpenCV_FOUND THEN ${OpenCV_MODULES} ELSE "-")
+
+status("")
+status("    Boost:    "   Boost_FOUND THEN "${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION} (${Boost_VERSION})"  ELSE NO)
+status("        lib Dir.:  "   Boost_FOUND THEN "${BOOST_ROOT}/lib" ELSE "-")
+set(Boost_LIB_NAMES ${Boost_LIBRARIES})
+convert_to_lib_name(Boost_LIB_NAMES ${Boost_LIB_NAMES})
+status("        components :  "      Boost_FOUND THEN ${Boost_LIB_NAMES} ELSE "-")
+
+status("")
+status("    PCL:  "   PCL_FOUND THEN YES (${PCL_VERSION}) ELSE NO)
+status("        lib Dir.:  "      PCL_FOUND THEN "${PCL_LIBRARY_DIRS}" ELSE "-")
+status("        components :  "   PCL_FOUND THEN "${PCL_COMPONENTS_REQ}" ELSE "-")
+
+status("")
+
 endif(BUILD_NO_ROS) # end file with this line.
