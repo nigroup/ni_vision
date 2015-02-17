@@ -1,8 +1,24 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ni_seg_track)
 
-# ELM Definitions
+# ----------------------------------------------------------------------------
+# Set global CMake variables
+# ----------------------------------------------------------------------------
+# Print all warnings and enable C++11 support
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
+
+# ----------------------------------------------------------------------------
+# NI Libraries
+# ----------------------------------------------------------------------------
+set(NI_LIBS ni_core ni_layers)
+
+# ----------------------------------------------------------------------------
+# ELM Libraries (must preceed OpenCV)
+# ----------------------------------------------------------------------------
+# ELM Layers describe the model pipeline
+# ----------------------------------------------------------------------------
 add_definitions(-D__WITH_PCL)
+include(../ni/cmake/DetectELM.cmake)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -102,7 +118,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  ${catkin_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS} ${ELM_INCLUDE_DIRS}
 )
 
 # Declare a cpp library
@@ -137,7 +153,7 @@ list_filterout(HEADERS  ${REGEX_EXCLUDE_FROM_MODULE})
 #)
 set(NODE_NAME depth_map_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
-target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES})
+target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
 add_dependencies(${NODE_NAME} beginner_tutorials_generate_messages_cpp)
 
 add_executable(talker_node src/talker_node.cpp)
