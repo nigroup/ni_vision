@@ -22,7 +22,7 @@ ELM_INSTANTIATE_LAYER_TYPED_TEST_CASE_P(DepthMap);
 const std::string NAME_CLOUD        = "in";
 const std::string NAME_DEPTH_MAP    = "out";
 
-class DepthGradientTest : public ::testing::Test
+class DepthMapTest : public ::testing::Test
 {
 public:
 
@@ -48,12 +48,12 @@ protected:
     LayerConfig config_;        ///< default config for tests
 };
 
-TEST_F(DepthGradientTest, Reset_EmptyConfig)
+TEST_F(DepthMapTest, Reset_EmptyConfig)
 {
     EXPECT_NO_THROW(to_->Reset(LayerConfig())) << "All params are optional, no?";
 }
 
-TEST_F(DepthGradientTest, Response)
+TEST_F(DepthMapTest, Response)
 {
     CloudXYZPtr cld(new CloudXYZ());
 
@@ -72,7 +72,7 @@ TEST_F(DepthGradientTest, Response)
     EXPECT_TRUE(sig.Exists(NAME_DEPTH_MAP));
 }
 
-TEST_F(DepthGradientTest, Depth_larger_max)
+TEST_F(DepthMapTest, Depth_larger_max)
 {
     CloudXYZPtr cld(new CloudXYZ());
 
@@ -100,7 +100,7 @@ TEST_F(DepthGradientTest, Depth_larger_max)
 
 }
 
-TEST_F(DepthGradientTest, DepthMapDims)
+TEST_F(DepthMapTest, DepthMapDims)
 {
     const int R=10;
     const int C=10;
@@ -126,7 +126,7 @@ TEST_F(DepthGradientTest, DepthMapDims)
     }
 }
 
-TEST_F(DepthGradientTest, DepthMap)
+TEST_F(DepthMapTest, DepthMap)
 {
     CloudXYZPtr cld(new CloudXYZ(3, 2));
 
