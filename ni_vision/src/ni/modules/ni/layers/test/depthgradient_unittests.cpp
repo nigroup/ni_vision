@@ -16,7 +16,7 @@ using namespace ni;
 
 namespace {
 
-//ELM_INSTANTIATE_LAYER_TYPED_TEST_CASE_P(DepthGradient);
+ELM_INSTANTIATE_LAYER_TYPED_TEST_CASE_P(DepthGradient);
 
 class DepthGradientTest : public ::testing::Test
 {

@@ -1,23 +1,42 @@
 #ifndef _NI_LAYERS_DEPTHGRADIENT_H_
 #define _NI_LAYERS_DEPTHGRADIENT_H_
 
-#include "elm/layers/base_layer_derivations/base_featuretransformationlayer.h"
+#include <opencv2/core/core.hpp>
+
+#include "elm/layers/base_layer_derivations/base_singleinputfeaturelayer.h"
 
 namespace ni {
 
-/** class to implement depth gradient
-  *
-  */
-class DepthGradient : public elm::base_FeatureTransformationLayer
+/** @brief class to implement depth gradient
+ *
+ * Input name already defined by parent
+ */
+class DepthGradient : public elm::base_SingleInputFeatureLayer
 {
 public:
+    // paramters
+    static const std::string PARAM_GRAD_WEIGHT; ///< constant of the weighted depth
+    static const std::string PARAM_GRAD_MAX;    ///< threshold for very steep depth-gradient
+
+    // defaults
+    static const float DEFAULT_GRAD_WEIGHT;     ///< 0.2
+    static const float DEFAULT_GRAD_MAX;        ///< 0.04
+
+    // I/O keys
+    static const std::string KEY_OUTPUT_GRAD_X; ///< output key for gradient in x (horizontal) direction
+    static const std::string KEY_OUTPUT_GRAD_Y; ///< output key gradient in y (vertical) direction
+
     virtual void Clear();
 
     virtual void Reconfigure(const elm::LayerConfig &config);
 
     virtual void Reset(const elm::LayerConfig &config);
 
+    virtual void OutputNames(const elm::LayerOutputNames &io);
+
     virtual void Activate(const elm::Signal &signal);
+
+    virtual void Response(elm::Signal &signal);
 
     /** Default constructor, still requires configurations
       * \see Reconfigure
@@ -29,9 +48,17 @@ public:
       */
     DepthGradient(const elm::LayerConfig& config);
 
-public:
-
 protected:
+
+    // members
+    std::string name_out_grad_x_;
+    std::string name_out_grad_y_;
+
+    cv::Mat1f grad_x_;          ///< gradient in x (horizontal) direction
+    cv::Mat1f grad_y_;          ///< gradient in y (vertical) direction
+
+    float max_; ///< upper threshold for gradient values in either direction
+    float w_;   ///< gradient weight
 };
 
 } // namespace ni
