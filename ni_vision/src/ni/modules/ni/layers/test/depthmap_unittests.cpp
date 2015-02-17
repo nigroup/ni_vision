@@ -53,7 +53,7 @@ TEST_F(DepthMapTest, Reset_EmptyConfig)
     EXPECT_NO_THROW(to_->Reset(LayerConfig())) << "All params are optional, no?";
 }
 
-TEST_F(DepthMapTest, Response)
+TEST_F(DepthMapTest, Response_exists)
 {
     CloudXYZPtr cld(new CloudXYZ());
 
