@@ -4,6 +4,10 @@
 #include <boost/foreach.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include <opencv2/highgui/highgui.hpp>
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
+
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 
@@ -24,6 +28,7 @@ public:
      * @param nh node handle
      */
     DepthMapNode(ros::NodeHandle &nh)
+        : it_(nh)
     {
         /**
          * The subscribe() call is how you tell ROS that you want to receive messages
@@ -41,16 +46,13 @@ public:
          * away the oldest ones.
          */
         cloud_sub_ = nh.subscribe<elm::CloudXYZ>("/camera/depth_registered/points", 30, &DepthMapNode::callback, this);
+
+        img_pub_ = it_.advertise("/image_converter/output_video", 1);
+
+
     }
 
 protected:
-    /**
-     * @brief Default constructor
-     */
-    DepthMapNode()
-    {
-    }
-
     /**
      * @brief Point cloud callback
      * @param msg point cloud message
@@ -61,19 +63,29 @@ protected:
 
         printf ("Cloud: width = %d, height = %d\n", msg->width, msg->height);
 
-        BOOST_FOREACH (const pcl::PointXYZ& pt, msg->points) {
+//        BOOST_FOREACH (const pcl::PointXYZ& pt, msg->points) {
 
-            printf ("\t(%f, %f, %f)\n", pt.x, pt.y, pt.z);
-        }
+//            printf ("\t(%f, %f, %f)\n", pt.x, pt.y, pt.z);
+//        }
 
         cloud_ = msg;
+
+        cv::Mat image(50, 50, CV_8UC1);
+        randn(image, 0, 200);
+        sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", image).toImageMsg();
+
+        img_pub_.publish(img_msg);
 
         mtx_.unlock ();
     }
 
     // members
     ros::Subscriber cloud_sub_;     ///< point cloud subscriber
-    boost::mutex mtx_;              ///< mutex object for thread safety
+
+    image_transport::ImageTransport it_;    ///< faciliatate image publishers and subscribers
+    image_transport::Publisher img_pub_;    ///< depth map image publisher
+
+    boost::mutex mtx_;                      ///< mutex object for thread safety
 
     boost::shared_ptr<const elm::CloudXYZ > cloud_;  ///< most recent point cloud
 };
@@ -90,7 +102,7 @@ int main(int argc, char** argv)
      * You must call one of the versions of ros::init() before using any other
      * part of the ROS system.
      */
-    ros::init(argc, argv, "sub_pcl");
+    ros::init(argc, argv, "depth_map");
 
     /**
      * NodeHandle is the main access point to communications with the ROS system.
