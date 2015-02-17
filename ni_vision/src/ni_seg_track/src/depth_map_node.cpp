@@ -4,6 +4,7 @@
 #include <boost/foreach.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include <sensor_msgs/image_encodings.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
@@ -11,7 +12,14 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include "elm/core/pcl/typedefs_fwd.h"
+#include "elm/core/cv/mat_utils.h"
+#include "elm/core/inputname.h"
+#include "elm/core/layerconfig.h"
+#include "elm/core/signal.h"            // Signal class: Stimulus -> layer activation -> response
+#include "elm/core/pcl/typedefs_fwd.h"  // point cloud typedef
+
+#include "ni/layers/depthmap.h"
+#include "ni/layers/layerfactoryni.h"
 
 /**
  * @brief The DepthMap node
@@ -28,7 +36,9 @@ public:
      * @param nh node handle
      */
     DepthMapNode(ros::NodeHandle &nh)
-        : it_(nh)
+        : it_(nh),
+          name_in_("/camera/depth_registered/points"),
+          name_out_("/ni/seg_track/depth_map")
     {
         /**
          * The subscribe() call is how you tell ROS that you want to receive messages
@@ -45,11 +55,16 @@ public:
          * is the number of messages that will be buffered up before beginning to throw
          * away the oldest ones.
          */
-        cloud_sub_ = nh.subscribe<elm::CloudXYZ>("/camera/depth_registered/points", 30, &DepthMapNode::callback, this);
+        cloud_sub_ = nh.subscribe<elm::CloudXYZ>(name_in_, 30, &DepthMapNode::callback, this);
 
-        img_pub_ = it_.advertise("/image_converter/output_video", 1);
+        // Instantiate DepthMap layer
+        elm::LayerConfig cfg;
+        elm::LayerIONames io;
+        io.Input(ni::DepthMap::KEY_INPUT_STIMULUS, name_in_);
+        io.Output(ni::DepthMap::KEY_OUTPUT_RESPONSE, name_out_);
+        layer_ = ni::LayerFactoryNI::CreateShared("DepthMap", cfg, io);
 
-
+        img_pub_ = it_.advertise(name_out_, 1);
     }
 
 protected:
@@ -60,23 +75,28 @@ protected:
     void callback(const elm::CloudXYZ::ConstPtr& msg)
     {
         mtx_.lock ();
+        {
+            sig_.Clear();
 
-        printf ("Cloud: width = %d, height = %d\n", msg->width, msg->height);
+            cloud_.reset(new elm::CloudXYZ(*msg)); // TODO: avoid copy
 
-//        BOOST_FOREACH (const pcl::PointXYZ& pt, msg->points) {
+            sig_.Append(name_in_, cloud_);
 
-//            printf ("\t(%f, %f, %f)\n", pt.x, pt.y, pt.z);
-//        }
+            layer_->Activate(sig_);
+            layer_->Response(sig_);
 
-        cloud_ = msg;
+            // get calculated depth map
+            cv::Mat1f img = sig_.MostRecentMat1f(name_out_);
 
-        cv::Mat image(50, 50, CV_8UC1);
-        randn(image, 0, 200);
-        sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", image).toImageMsg();
+            // convert in preparation to publish depth map image
+            sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(
+                        std_msgs::Header(),
+                        sensor_msgs::image_encodings::TYPE_32FC1,
+                        img).toImageMsg();
 
-        img_pub_.publish(img_msg);
-
-        mtx_.unlock ();
+            img_pub_.publish(img_msg);
+        }
+        mtx_.unlock (); // release mutex
     }
 
     // members
@@ -87,7 +107,15 @@ protected:
 
     boost::mutex mtx_;                      ///< mutex object for thread safety
 
-    boost::shared_ptr<const elm::CloudXYZ > cloud_;  ///< most recent point cloud
+    std::string name_in_;   ///< Signal name and subscribing topic name
+    std::string name_out_;   ///< Signal name and publishing topic name
+
+    elm::CloudXYZPtr cloud_;  ///< most recent point cloud
+
+    ni::LayerFactoryNI::LayerShared layer_; ///< pointer to layer instance
+
+    elm::Signal sig_;
+
 };
 
 int main(int argc, char** argv)
