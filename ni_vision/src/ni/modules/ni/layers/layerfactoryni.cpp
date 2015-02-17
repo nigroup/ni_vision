@@ -9,6 +9,7 @@
  *  2. Add it to the initialization of g_layerRegistry map.
  */
 #include "ni/layers/depthgradient.h"
+#include "ni/layers/depthmap.h"
 #include "elm/layers/attentionwindow.h"
 #include "elm/layers/gradassignment.h"
 #include "elm/layers/graphcompatibility.h"
@@ -36,6 +37,7 @@ typedef Registor_<base_Layer>::Registry LayerRegistry;
 LayerRegistry g_layerRegistry = map_list_of
         LAYER_REGISTRY_PAIR( AttentionWindow )
         LAYER_REGISTRY_PAIR( DepthGradient )
+        LAYER_REGISTRY_PAIR( DepthMap )
         LAYER_REGISTRY_PAIR( GradAssignment )
         LAYER_REGISTRY_PAIR( GraphCompatibility )
         LAYER_REGISTRY_PAIR( ICP )
