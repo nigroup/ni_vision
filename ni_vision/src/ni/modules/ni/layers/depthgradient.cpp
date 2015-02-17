@@ -153,27 +153,19 @@ void DepthGradient::Activate(const Signal &signal)
 {
     Mat1f in = signal.MostRecentMat1f(name_input_);
 
+    ELM_THROW_BAD_DIMS_IF(in.cols < 2,
+                          "Input must have > 1 cols to compute gradient in x direction.");
+
     // compute gradient in x direction:
-
-    // - forward difference
-    grad_x_ = in.colRange(1, in.cols)-in.colRange(0, in.cols-1);
-
-    if(w_ != 0.f) {
-
-        grad_x_ /= w_;
-    }
+    computeDerivative(in, 0, grad_x_);
 
     grad_x_.setTo(max_, grad_x_ > max_);
 
+    ELM_THROW_BAD_DIMS_IF(in.rows < 2,
+                          "Input must have > 1 rows to compute gradient in y direction.");
+
     // compute gradient in y direction:
-
-    // - forward difference
-    grad_y_ = in.rowRange(1, in.rows)-in.rowRange(0, in.rows-1);
-
-    if(w_ != 0.f) {
-
-        grad_y_ /= w_;
-    }
+    computeDerivative(in, 1, grad_y_);
 
     grad_y_.setTo(max_, grad_y_ > max_);
 }
@@ -196,4 +188,33 @@ DepthGradient::DepthGradient(const LayerConfig& config)
     Clear();
     Reconfigure(config);
     IONames(config);
+}
+
+void DepthGradient::computeDerivative(const Mat1f &src, int dim, Mat1f &dst) const
+{
+    Mat1f in_shift;
+    Mat1f diff;
+
+    if(dim == 0) {
+
+        // horizontal
+        in_shift = src.colRange(1, src.cols);
+        diff = in_shift - src.colRange(0, src.cols-1);
+    }
+    else if(dim == 1) {
+
+        // vertical
+        in_shift = src.rowRange(1, src.rows);
+        diff = in_shift - src.rowRange(0, src.rows-1);
+    }
+    else {
+
+        stringstream s;
+        s << "Invalid dimension value (" << dim <<"). " <<
+             "Expecting either 0 for vertical or 1 for horizontal.";
+        ELM_THROW_VALUE_ERROR(s.str());
+    }
+
+    // gradient =  diff ./ (in*w)
+    divide(diff, in_shift, dst, 1./static_cast<double>(w_));
 }

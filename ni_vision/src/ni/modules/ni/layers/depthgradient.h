@@ -49,6 +49,15 @@ public:
     DepthGradient(const elm::LayerConfig& config);
 
 protected:
+    /**
+     * @brief compute derivative of an image along a given dimension
+     * using forward difference.
+     *
+     * @param src image
+     * @param dim dimension (0 for horizontal derivative, 1 for vertical)
+     * @param dst destination
+     */
+    virtual void computeDerivative(const cv::Mat1f &src, int dim, cv::Mat1f &dst) const;
 
     // members
     std::string name_out_grad_x_;
