@@ -191,7 +191,26 @@ void DSegm_NeighborMatrix1 (std::vector<int> vInputMap, std::vector<int> input_i
  * seg_map - segment map (which maps every point to the segment number it lies in)
  * seg_list - segment buffer */
 void DSegm_MatchPoints (int idx_ref, int idx_cand, int nSegCnt, std::vector<int>& seg_map, std::vector<int>& seg_list) {
+
+    /* if not zero (not assigned?)
+     * then:
+     *      see below
+     * else:
+     *  assign candidate to ref, ref now belongs to candidate's segment
+     */
     if (seg_map[idx_ref]) {
+
+        /* reference point already assigned to a segment
+         * if reference and candidate belong to different segments
+         * @todo: Why can't we compare seg_map[idx_ref] != seg_map[idx_cand] directly?
+         *
+         * seg_list contains values > 0.
+         *
+         * get max(both point's segments)
+         * get min(both point's segments)
+         * replace each occurence of max with min
+         * @todo: Why?
+         */
         if(seg_list[seg_map[idx_ref]] != seg_list[seg_map[idx_cand]]) {
             int seg_min = min(seg_list[seg_map[idx_ref]], seg_list[seg_map[idx_cand]]);
             int seg_max = max(seg_list[seg_map[idx_ref]], seg_list[seg_map[idx_cand]]);
@@ -270,7 +289,7 @@ void DSegmentation (std::vector<float> vnDGrad,
                     std::vector<int> input_idx,
                     int tau_s,
                     float nDSegmGradDist,
-                    float nDepthGradNone,
+                    float nDepthGradNone, // = 1000
                     int width,
                     int nMapSize,
                     int x_min,
@@ -288,37 +307,80 @@ void DSegmentation (std::vector<float> vnDGrad,
     float nNnDepthGradRef, nDSegmDistGradTmp;
     int nIdxCand = 0;
     int nSegCntTmp = 1, nSegCntTmpMax = 10000;
-    std::vector<int> vnPatchMap(nMapSize, 0);
+    std::vector<int> vnPatchMap(nMapSize, 0);   ///< @todo what is this for?
     std::vector<int> vnLblBuffTmp(nSegCntTmpMax, 0);
     std::vector<int> vnSBTmp(nSegCntTmpMax, 0);
     std::vector<float> vnDGrad_local(nMapSize, 1000);
-    std::vector<float> vnIdxMissing(input_idx.size(), 0);
+    std::vector<float> vnIdxMissing(input_idx.size(), 0); // list of misses, list of indices no longer valid
     int cnt_miss = 0;
 
-    float dg_high = nDepthGradNone * 0.8;
+    float dg_high = nDepthGradNone * 0.8; // 0.8 * 1000 = 800
 
 
     for(size_t i = 0 ; i < input_idx.size(); i++) {
+
+        // begin filter of indices at which gradient exceeds upper threshold
+
+        // if gradient value at valid index is > 10% * nDepthGradNone
         if (vnDGrad[input_idx[i]] > nDepthGradNone*0.1){
+
+            // add index to list of misses
+            // increment number of missed indices
             vnIdxMissing[cnt_miss++] = input_idx[i];
-            continue;
+            continue; // skip iteration altogether
         }
 
-        nNnDepthGradRef = vnDGrad[input_idx[i]];
-        vnDGrad_local[input_idx[i]] = nNnDepthGradRef;
-        GetPixelPos(input_idx[i], width, x, y);
+        // end filter
 
+        // in the case of the iteration not skipped
+
+        nNnDepthGradRef = vnDGrad[input_idx[i]];    // backup gradient value for current valid index
+        vnDGrad_local[input_idx[i]] = nNnDepthGradRef;  ///< @todo What's vnDGrad_local for?
+        GetPixelPos(input_idx[i], width, x, y); // demultiplex index value into x and y coordinates
+
+        // if x/y is within valid area
         if (y > y_min) {
-            nIdxCand = input_idx[i] - width;
+            nIdxCand = input_idx[i] - width; // one row above
+
+            // at first this condition is never true, see below *
             if (vnPatchMap[nIdxCand]) {
+
+                /* assign value to nDSegmDistGradTmp for this iteration
+                 *
+                 * if depth gradient at index is > 80% * nDepthGradNone
+                 * OR
+                 * if depth gradient at index (one row up = y-1) is > 80% * nDepthGradNone
+                 *      - false the first time around because nDGrad_local initialized with 1000 everywhere
+                 *
+                 * then: nDSegmDistGradTmp is nDepthGradNone
+                 *
+                 * else (see below)
+                 */
                 if (nNnDepthGradRef > dg_high || vnDGrad_local[nIdxCand] > dg_high) nDSegmDistGradTmp = nDepthGradNone;
                 else {
+                    /* else then:
+                     *  nDSegmDistGradTmp = |gradient - gradient(y-1)|
+                     * first time around gradient(y-1) == 1000
+                     */
                     nDSegmDistGradTmp = fabs(nNnDepthGradRef - vnDGrad_local[nIdxCand]);
+
+                    /* if abs|difference| < nDSegmGradDist
+                     * then:
+                     *  check if (current point) and point (one row above)
+                     *  are in the same segment
+                     *  this call modifies: vnPatchMap, vnLblBuffTmp
+                     *          modifies only vnPatchMap if input_idx[i] not assigned to a segment yet,
+                     *          by assigning it to candidates's segment
+                     *          if it's already assigned
+                     *          then: see DSegm_MatchPoints, swaps segment values, @todo why?
+                     */
                     if (nDSegmDistGradTmp < nDSegmGradDist) DSegm_MatchPoints(input_idx[i], nIdxCand, nSegCntTmp, vnPatchMap, vnLblBuffTmp);
                 }
             }
         }
         if (x > x_min) {
+            /* same logic as why but comparing to left neighbor
+             */
             nIdxCand = input_idx[i] - 1;
             if (vnPatchMap[nIdxCand]) {
                 if (nNnDepthGradRef > dg_high || vnDGrad_local[nIdxCand] > dg_high) nDSegmDistGradTmp = nDepthGradNone;
@@ -328,17 +390,22 @@ void DSegmentation (std::vector<float> vnDGrad,
                 }
             }
         }
+
+        // * at first vnPatchMap is all-zeros
         if (!vnPatchMap[input_idx[i]]) {
-            vnPatchMap[input_idx[i]] = nSegCntTmp;
-            vnLblBuffTmp[nSegCntTmp] = nSegCntTmp; nSegCntTmp++;
+
+            // nSegCntTmp is a counter that starts with 1
+            vnPatchMap[input_idx[i]] = nSegCntTmp;  // assign segment count to patch for this index, not sure what this means yet.
+            vnLblBuffTmp[nSegCntTmp] = nSegCntTmp; nSegCntTmp++; // assign segment count to vnLblBuffTmp, not sure what this means yet.
+            // if segment counter exceeds max, cap count at max value (=10000, pretty high)
             if (nSegCntTmp > nSegCntTmpMax -1) {nSegCntTmp = nSegCntTmpMax; printf("ffff %d %d %d\n", (int)i, input_idx[i], nSegCntTmp); break;}
         }
 
-        ///< @todo fix. This never resolves to true.
+        ///< @todo fix. This condition never resolves to true.
         if (x < x_min && x > x_max && y < y_min && y > y_max) printf("--------------- %d %d %d %d %d %d %d\n", input_idx[i], x, y, x_min, x_max, y_min, y_max);
-        vnSBTmp[vnPatchMap[input_idx[i]]]++;
+        vnSBTmp[vnPatchMap[input_idx[i]]]++; // increment value for this segment @todo: does this represent pixel count per segment?
     }
-    vnLblBuffTmp.resize(nSegCntTmp);
+    vnLblBuffTmp.resize(nSegCntTmp);    // reduce vectors to their effective sizes
     vnIdxMissing.resize(cnt_miss);
 
 
@@ -349,6 +416,8 @@ void DSegmentation (std::vector<float> vnDGrad,
     ///////////////////////////////////////////////
     std::vector<int> vnLB(nSegCntTmp, 0);
     std::vector<int> vnSB(nSegCntTmp, 0);
+    // seg_cnt still 1 at this point and is incremented with each assignment to vnLB
+    // @todo why do we have two ways for incrementing the content of vnLB and vnSB?
     for (int i = 1; i < nSegCntTmp; i++){
         if (vnLblBuffTmp[i] == i) {
             vnSB[seg_cnt] = vnSBTmp[i];
@@ -368,13 +437,17 @@ void DSegmentation (std::vector<float> vnDGrad,
 
 
     if (seg_cnt < 3) {
+        /* In the case of 3 segments
+         * We refer to the surface of missed indices as segment 1
+         * and decrement effective segment count by 1
+         */
         for (int i = 0; i < cnt_miss; i++) vnLblMap[vnIdxMissing[i]] = 1;
         seg_cnt_final = 2;
     }
     else {
         ////// Generation of temporary Labeled Segment Map
         for (size_t i = 0; i < input_idx.size(); i++)
-            vnLblMap[input_idx[i]] = vnLB[vnPatchMap[input_idx[i]]];
+            vnLblMap[input_idx[i]] = vnLB[vnPatchMap[input_idx[i]]]; // @todo ???
 
 
 
