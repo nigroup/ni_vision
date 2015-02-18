@@ -334,6 +334,7 @@ void DSegmentation (std::vector<float> vnDGrad,
             if (nSegCntTmp > nSegCntTmpMax -1) {nSegCntTmp = nSegCntTmpMax; printf("ffff %d %d %d\n", (int)i, input_idx[i], nSegCntTmp); break;}
         }
 
+        ///< @todo fix. This never resolves to true.
         if (x < x_min && x > x_max && y < y_min && y > y_max) printf("--------------- %d %d %d %d %d %d %d\n", input_idx[i], x, y, x_min, x_max, y_min, y_max);
         vnSBTmp[vnPatchMap[input_idx[i]]]++;
     }
