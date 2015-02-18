@@ -266,8 +266,20 @@ void DSegm_MergeSegments(int ref, int cand, bool clear, int n, std::vector<int> 
  * vnLblMapFinal - segment map
  * nSegCnt - count of segments
  */
-void DSegmentation (std::vector<float> vnDGrad, std::vector<int> input_idx, int tau_s, float nDSegmGradDist, float nDepthGradNone,
-                        int width, int nMapSize, int x_min, int x_max, int y_min, int y_max, std::vector<int> &vnLblMap, std::vector<int> &vnLblMapFinal, int &nSegCnt) {
+void DSegmentation (std::vector<float> vnDGrad,
+                    std::vector<int> input_idx,
+                    int tau_s,
+                    float nDSegmGradDist,
+                    float nDepthGradNone,
+                    int width,
+                    int nMapSize,
+                    int x_min,
+                    int x_max,
+                    int y_min,
+                    int y_max,
+                    std::vector<int> &vnLblMap,
+                    std::vector<int> &vnLblMapFinal,
+                    int &nSegCnt) {
 
     int seg_cnt = 1;
     int seg_cnt_final = 1;
