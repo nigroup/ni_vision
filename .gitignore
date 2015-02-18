@@ -48,6 +48,7 @@ docs/
 !docs/*.bib
 !docs/doxygenConf
 !docs/doxygenConf.txt
+!docs/logo.png
 
 # CMake
 cmake_install.cmake
