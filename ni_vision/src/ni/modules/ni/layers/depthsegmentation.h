@@ -37,8 +37,6 @@ public:
 
 protected:
 
-
-
     // members
     int tau_size_;
     float max_grad_;
