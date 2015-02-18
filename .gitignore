@@ -44,7 +44,7 @@
 *.swo
 
 # Generated documentation
-docs/*
+docs/
 !docs/*.bib
 !docs/doxygenConf
 !docs/doxygenConf.txt
