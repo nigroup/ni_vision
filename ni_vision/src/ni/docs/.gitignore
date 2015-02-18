@@ -1,0 +1,15 @@
+# Editor backup files
+*~
+*.swp
+*.swo
+
+# Generated documentation
+*
+!.gitignore
+!*.bib
+!doxygenConf
+!doxygenConf.txt
+!logo.png
+
+# ...even if they are in subdirectories
+!*/
