@@ -44,11 +44,7 @@
 *.swo
 
 # Generated documentation
-docs/
-!docs/*.bib
-!docs/doxygenConf
-!docs/doxygenConf.txt
-!docs/logo.png
+# see .gitignore in docs directories
 
 # CMake
 cmake_install.cmake
