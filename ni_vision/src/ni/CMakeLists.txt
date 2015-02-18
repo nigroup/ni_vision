@@ -33,10 +33,14 @@ set(CMAKE_VERBOSE ON CACHE BOOL "Verbose mode")
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED
+  roscpp
+  cv_bridge
+  pcl_ros
+)
 
 # ----------------------------------------------------------------------------
-# System dependencies are found with CMake's conventions
+# System dependencies found with CMake's conventions
 # ----------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------
@@ -50,41 +54,13 @@ find_package(catkin REQUIRED)
 include(cmake/DetectGTest.cmake)
 
 # ----------------------------------------------------------------------------
-# Boost
-# ----------------------------------------------------------------------------
-# Whatever STL can't do yet
-#
-# File system operations
-# serialization
-# graph representation
-#
-# platform independence
-#
-# If a feature does appear in STL, check it out and migrate over.
-# ----------------------------------------------------------------------------
-include(cmake/DetectBoost.cmake)
-
-# ----------------------------------------------------------------------------
 # ELM Libraries (must preceed OpenCV)
 # ----------------------------------------------------------------------------
 # ELM Layers describe the model pipeline
 # ----------------------------------------------------------------------------
 include(cmake/DetectELM.cmake)
 
-# ----------------------------------------------------------------------------
-# OpenCV
-# ----------------------------------------------------------------------------
-# Matrix definitions operations
-# Image processing
-# ----------------------------------------------------------------------------
-include(cmake/DetectOpenCV.cmake)
-
-# ----------------------------------------------------------------------------
-# Point Cloud Library (PCL)
-# ----------------------------------------------------------------------------
-include(cmake/DetectPCL.cmake)
-
-# Dependencies covered
+# Non-catkin dependencies covered
 # ----------------------------------------------------------------------------
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -143,6 +119,21 @@ include(cmake/DetectPCL.cmake)
 #   std_msgs  # Or other packages containing msgs
 # )
 
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+include_directories(${${ROOT_PROJECT}_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
+
+## configure sub modules (i.e. libraries)
+
+set(${ROOT_PROJECT}_LIBS ${${ROOT_PROJECT}_LIBS} ${catkin_LIBRARIES})
+
+add_subdirectory(modules/${ROOT_PROJECT})
+
+## Building of libraries is handled by modules
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -154,39 +145,10 @@ include(cmake/DetectPCL.cmake)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS modules/${ROOT_PROJECT}
-#  LIBRARIES ni_lib
-#  CATKIN_DEPENDS other_catkin_pkg
+  LIBRARIES ni_core ni_layers
+  CATKIN_DEPENDS cv_bridge
 #  DEPENDS system_lib
 )
-
-###########
-## Build ##
-###########
-
-## Specify additional locations of header files
-
-include_directories(${${ROOT_PROJECT}_INCLUDE_DIRS})
-
-## configure sub modules (i.e. libraries)
-
-add_subdirectory(modules/${ROOT_PROJECT})
-
-## Declare a cpp library
-# add_library(ni_lib
-#   src/${PROJECT_NAME}/ni_lib.cpp
-# )
-
-## Declare a cpp executable
-# add_executable(ni_lib_node src/ni_lib_node.cpp)
-
-## Add cmake target dependencies of the executable/library
-## as an example, message headers may need to be generated before nodes
-# add_dependencies(ni_lib_node ni_lib_generate_messages_cpp)
-
-## Specify libraries to link a library or executable target against
-# target_link_libraries(ni_lib_node
-#   ${catkin_LIBRARIES}
-# )
 
 #############
 ## Install ##
@@ -282,27 +244,8 @@ status("    ELM:    "   ELM_FOUND THEN "Yes"  ELSE NO)
 status("        lib Dir.:  "   ELM_FOUND THEN "${ELM_LIB_DIR}" ELSE "-")
 set(ELM_LIB_NAMES ${ELM_LIBS})
 convert_to_lib_name(ELM_LIB_NAMES ${ELM_LIB_NAMES})
+list_unique(ELM_LIB_NAMES ${ELM_LIB_NAMES})
 status("        components :  "      ELM_FOUND THEN ${ELM_LIB_NAMES} ELSE "-")
-
-status("")
-status("    OpenCV:    "   OpenCV_FOUND THEN "${OpenCV_VERSION_MAJOR}.${OpenCV_VERSION_MINOR}.${OpenCV_VERSION_PATCH} (${OpenCV_VERSION})" ELSE NO)
-status("        lib Dir.:      "   OpenCV_FOUND THEN "${OpenCV_DIR}/lib" ELSE "-")
-status("        include Dir.:  "   OpenCV_FOUND THEN "${OpenCV_INCLUDE_DIRS}" ELSE "-")
-set(OpenCV_MODULES ${OpenCV_LIBS})
-convert_to_lib_name(OpenCV_MODULES ${OpenCV_MODULES})
-status("        modules :  "      OpenCV_FOUND THEN ${OpenCV_MODULES} ELSE "-")
-
-status("")
-status("    Boost:    "   Boost_FOUND THEN "${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION} (${Boost_VERSION})"  ELSE NO)
-status("        lib Dir.:  "   Boost_FOUND THEN "${BOOST_ROOT}/lib" ELSE "-")
-set(Boost_LIB_NAMES ${Boost_LIBRARIES})
-convert_to_lib_name(Boost_LIB_NAMES ${Boost_LIB_NAMES})
-status("        components :  "      Boost_FOUND THEN ${Boost_LIB_NAMES} ELSE "-")
-
-status("")
-status("    PCL:  "   PCL_FOUND THEN YES (${PCL_VERSION}) ELSE NO)
-status("        lib Dir.:  "      PCL_FOUND THEN "${PCL_LIBRARY_DIRS}" ELSE "-")
-status("        components :  "   PCL_FOUND THEN "${PCL_COMPONENTS_REQ}" ELSE "-")
 
 status("")
 
