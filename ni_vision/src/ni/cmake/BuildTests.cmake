@@ -20,7 +20,7 @@ FUNCTION(build_tests test_project filter)
         add_executable(${test_project} ${SRCS})
 
         add_dependencies(${test_project} ${${ROOT_PROJECT}_MODULES})
-            set(${test_project}_LIBS ${${ROOT_PROJECT}_LIBS} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} ${${ROOT_PROJECT}_MODULES})
+            set(${test_project}_LIBS ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} ${${ROOT_PROJECT}_LIBS} ${${ROOT_PROJECT}_MODULES})
             list(REMOVE_DUPLICATES ${test_project}_LIBS)
             target_link_libraries(${test_project} ${${test_project}_LIBS})
 
