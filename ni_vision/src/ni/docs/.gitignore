@@ -11,5 +11,3 @@
 !doxygenConf.txt
 !logo.png
 
-# ...even if they are in subdirectories
-!*/
