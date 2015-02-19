@@ -8,6 +8,7 @@
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"
 #include "elm/ts/layer_assertions.h"
+#include "elm/ts/layer_feat_transf_assertions.h"
 #include "elm/core/debug_utils.h"
 
 using namespace std;
@@ -18,6 +19,7 @@ using namespace ni;
 namespace {
 
 ELM_INSTANTIATE_LAYER_TYPED_TEST_CASE_P(DepthSegmentation);
+ELM_INSTANTIATE_LAYER_FEAT_TRANSF_TYPED_TEST_CASE_P(DepthSegmentation);
 
 const std::string NAME_GRAD_Y       = "g";
 const std::string NAME_OUT_SEG_MAP  = "seg_map";
@@ -52,8 +54,9 @@ TEST_F(DepthSegmentationTest, Reset_EmptyConfig)
     EXPECT_NO_THROW(to_->Reset(LayerConfig())) << "All params are optional, no?";
 }
 
-TEST_F(DepthSegmentationTest, dummy)
+TEST_F(DepthSegmentationTest, Response_dims)
 {
+
 }
 
 } // annonymous namespace for test cases and fixtures
