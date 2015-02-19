@@ -37,6 +37,12 @@ public:
 
 protected:
 
+    /**
+     * @brief compare pixels for merging them into same surface or keeping them separate
+     * @param current pixel value
+     * @param neighbor neighboring pixel value (e.g. 1 row above, column to the left)
+     * @return true on match to merge, false to instruct keep apart
+     */
     bool comparePixels(float current, float neighbor) const;
 
     /**
@@ -45,6 +51,8 @@ protected:
      * @return map of surface labels (intensity value represents surface assignment ofr that element)
      */
     cv::Mat1i group(const cv::Mat1f &g) const;
+
+
 
     // members
     int tau_size_;
