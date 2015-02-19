@@ -77,6 +77,22 @@ TEST_F(DepthSegmentationTest, Response_dims)
     }
 }
 
+TEST_F(DepthSegmentationTest, Stimulus_single_element)
+{
+    Signal sig;
+    EXPECT_NO_THROW(sig.Append(NAME_GRAD_Y, Mat1f(1, 1)));
+
+    to_->Activate(sig);
+    to_->Response(sig);
+
+    Mat1f seg_map = sig.MostRecentMat1f(NAME_OUT_SEG_MAP);
+
+    EXPECT_EQ(1, seg_map.rows);
+    EXPECT_EQ(1, seg_map.cols);
+
+    EXPECT_FLOAT_EQ(0.f, seg_map(0));
+}
+
 /**
  * @brief derive from DepthSegmentation and expose protected methods
  * to test individually
