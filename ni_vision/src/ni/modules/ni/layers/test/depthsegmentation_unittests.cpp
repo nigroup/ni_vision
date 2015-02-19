@@ -56,7 +56,25 @@ TEST_F(DepthSegmentationTest, Reset_EmptyConfig)
 
 TEST_F(DepthSegmentationTest, Response_dims)
 {
+    const int R=10;
+    const int C=10;
 
+    for(int r=2; r<R; r++) {
+
+        for(int c=2; c<C; c++) {
+
+            Signal sig;
+            sig.Append(NAME_GRAD_Y, Mat1f(r, c));
+
+            to_->Activate(sig);
+            to_->Response(sig);
+
+            Mat1f seg_map = sig.MostRecentMat1f(NAME_OUT_SEG_MAP);
+
+            EXPECT_EQ(r, seg_map.rows);
+            EXPECT_EQ(c, seg_map.cols);
+        }
+    }
 }
 
 } // annonymous namespace for test cases and fixtures
