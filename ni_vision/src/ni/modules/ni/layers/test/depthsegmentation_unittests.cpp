@@ -123,6 +123,14 @@ public:
     {
         DepthSegmentation::group(g);
     }
+
+    /**
+     * @brief expose working Mat with surface labels
+     */
+    Mat1f m() const {
+
+        return m_.clone();
+    }
 };
 
 class DepthSegmentationProtectedTest : public ::testing::Test
@@ -164,6 +172,98 @@ TEST_F(DepthSegmentationProtectedTest, ComparePixels)
     EXPECT_TRUE(to_->comparePixels(x, x+max_grad_-1e-5));
     EXPECT_FALSE(to_->comparePixels(x+max_grad_, x));
     EXPECT_TRUE(to_->comparePixels(x+max_grad_-1e-5, x));
+}
+
+/**
+ * @brief test surface labels after initial grouping
+ * initialize test input as function of max gradient threshold
+ * 2 elements, 2 distinct surfaces
+ */
+TEST_F(DepthSegmentationProtectedTest, Grouped_surfaces_2_el_2_seg)
+{
+    float data[2] = {0.0f, 1.0f};
+    Mat1f in = Mat1f(1, 2, data).clone();
+    in *= max_grad_;
+
+    to_->group(in);
+    Mat1f seg_map = to_->m();
+
+    ASSERT_NE(seg_map(0), seg_map(1));
+    EXPECT_FLOAT_EQ(1.f, seg_map(0));
+    EXPECT_FLOAT_EQ(2.f, seg_map(1));
+}
+
+/**
+ * @brief test surface labels after initial grouping
+ * initialize test input as function of max gradient threshold
+ * 2 elements, 1 distinct surfaces
+ */
+TEST_F(DepthSegmentationProtectedTest, Grouped_surfaces_2_el_1_seg)
+{
+    float data[2] = {0.0f, 0.8f};
+    Mat1f in = Mat1f(1, 2, data).clone();
+    in *= max_grad_;
+
+    to_->group(in);
+    Mat1f seg_map = to_->m();
+
+    ASSERT_FLOAT_EQ(seg_map(0), seg_map(1));
+    EXPECT_FLOAT_EQ(1.f, seg_map(0));
+    EXPECT_FLOAT_EQ(1.f, seg_map(1));
+}
+
+/**
+ * @brief test surface labels after initial grouping
+ * initialize test input as function of max gradient threshold
+ * 4 elements, 4 distinct surfaces
+ */
+TEST_F(DepthSegmentationProtectedTest, Grouped_surfaces_4_el_4_seg)
+{
+    // break into 4 by increasing top-right and bottom-left values
+    // this way we avoid neighbors matching
+    float data[4] = {0.0f, 2.0f, 2.0, 0.5f};
+    Mat1f in = Mat1f(2, 2, data).clone();
+    in *= max_grad_;
+
+    to_->group(in);
+    Mat1f seg_map = to_->m();
+
+    for(size_t i=0; i<seg_map.total(); i++) {
+
+        for(size_t j=0; j<seg_map.total(); j++) {
+
+            if(i!=j) {
+
+                ASSERT_NE(seg_map(i), seg_map(j));
+            }
+        }
+    }
+}
+
+/**
+ * @brief test surface labels after initial grouping
+ * initialize test input as function of max gradient threshold
+ * 4 elements, 2 distinct surfaces
+ */
+TEST_F(DepthSegmentationProtectedTest, Grouped_surfaces_4_el_2_seg)
+{
+    // break into 4 by increasing top-right and bottom-left values
+    // this way we avoid neighbors matching
+    float data[4] = {0.0f, 2.0f, 2.0, 1.2f};
+    Mat1f in = Mat1f(2, 2, data).clone();
+    in *= max_grad_;
+
+    to_->group(in);
+    Mat1f seg_map = to_->m();
+
+    // we expect first element to be assigned a surface
+    // and the rest be assigned another.
+    ASSERT_NE(seg_map(0), seg_map(1));
+
+    for(size_t i=2; i<seg_map.total(); i++) {
+
+        EXPECT_FLOAT_EQ(seg_map(1), seg_map(i));
+    }
 }
 
 } // annonymous namespace for test cases and fixtures
