@@ -105,7 +105,6 @@ void DepthSegmentation::group(const Mat1f g)
 
     Mat1b not_nan = g == g;
 
-
     for(int r=1; r<g.rows; r++) {
 
         for(int c=1; c<g.cols; c++) {
@@ -137,8 +136,12 @@ void DepthSegmentation::group(const Mat1f g)
 
                             // left follows current unless they're already equivalent
                             if(surface_labels(r, c-1) != surface_labels(r, c)) {
-                                surface_labels.setTo(surface_labels(r, c),
-                                                     surface_labels == surface_labels(r, c-1));
+
+                                /* propagate new assignment to top left quadrant
+                                 * relative to current pixel
+                                 */
+                                Mat1i tl = surface_labels(Rect2i(0, 0, c+1, r+1));
+                                tl.setTo(surface_labels(r, c), tl == surface_labels(r, c-1));
                             }
                         }
                         else {
@@ -154,9 +157,9 @@ void DepthSegmentation::group(const Mat1f g)
 
                     surface_labels(r, c) = ++surface_count; // assign to new surface
                 }
-            }
-        }
-    }
+            } // not_nan
+        } // column
+    } // row
 
     m_ = surface_labels;
 }
