@@ -8,19 +8,22 @@
  *  1. include its header below
  *  2. Add it to the initialization of g_layerRegistry map.
  */
-#include "ni/layers/depthgradient.h"
-#include "ni/layers/depthmap.h"
-#include "ni/layers/depthsegmentation.h"
 #include "elm/layers/attentionwindow.h"
 #include "elm/layers/gradassignment.h"
 #include "elm/layers/graphcompatibility.h"
 #include "elm/layers/icp.h"
 #include "elm/layers/layer_y.h"
+#include "elm/layers/medianblur.h"
 #include "elm/encoding/populationcode.h"
 #include "elm/layers/saliencyitti.h"
 #include "elm/layers/sinkhornbalancing.h"
 #include "elm/layers/triangulation.h"
 #include "elm/layers/weightedsum.h"
+
+#include "ni/layers/depthgradient.h"
+#include "ni/layers/depthmap.h"
+#include "ni/layers/depthsegmentation.h"
+
 
 using boost::assign::map_list_of;
 using namespace elm;
@@ -44,6 +47,7 @@ LayerRegistry g_layerRegistry = map_list_of
         LAYER_REGISTRY_PAIR( GraphCompatibility )
         LAYER_REGISTRY_PAIR( ICP )
         LAYER_REGISTRY_PAIR( LayerY )
+        LAYER_REGISTRY_PAIR( MedianBlur )
         LAYER_REGISTRY_PAIR( MutexPopulationCode )
         LAYER_REGISTRY_PAIR( SaliencyItti )
         LAYER_REGISTRY_PAIR( SinkhornBalancing )
