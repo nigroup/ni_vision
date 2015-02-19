@@ -8,10 +8,12 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
+#include <opencv2/contrib/contrib.hpp>
 
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 
+#include "elm/core/debug_utils.h"
 #include "elm/core/cv/mat_utils.h"
 #include "elm/core/inputname.h"
 #include "elm/core/layerconfig.h"
@@ -74,17 +76,22 @@ public:
             elm::LayerConfig cfg;
             elm::LayerIONames io;
             io.Input(ni::DepthGradient::KEY_INPUT_STIMULUS, "depth_map");
-            io.Input(ni::DepthGradient::KEY_OUTPUT_GRAD_X, "depth_grad_x");
-            io.Input(ni::DepthGradient::KEY_OUTPUT_GRAD_Y, "depth_grad_y");
+            io.Output(ni::DepthGradient::KEY_OUTPUT_GRAD_X, "depth_grad_x");
+            io.Output(ni::DepthGradient::KEY_OUTPUT_GRAD_Y, "depth_grad_y");
             layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthGradient", cfg, io));
         }
         {
             // Instantiate MedianBlur layer
             // applied on vertical gradient component
             elm::LayerConfig cfg;
+
+            elm::PTree p;
+            p.put(elm::MedianBlur::PARAM_APERTURE_SIZE, 5);
+            cfg.Params(p);
+
             elm::LayerIONames io;
             io.Input(elm::MedianBlur::KEY_INPUT_STIMULUS, "depth_grad_y");
-            io.Input(elm::MedianBlur::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth");
+            io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth");
             layers_.push_back(ni::LayerFactoryNI::CreateShared("MedianBlur", cfg, io));
         }
         {
@@ -93,7 +100,7 @@ public:
             elm::LayerConfig cfg;
             elm::LayerIONames io;
             io.Input(ni::DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth");
-            io.Input(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
+            io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
         }
 
@@ -115,17 +122,26 @@ protected:
 
             sig_.Append(name_in_, cloud_);
 
-            layer_->Activate(sig_);
-            layer_->Response(sig_);
+            for(size_t i=0; i<layers_.size(); i++) {
+
+                layers_[i]->Activate(sig_);
+                layers_[i]->Response(sig_);
+            }
 
             // get calculated depth map
             cv::Mat1f img = sig_.MostRecentMat1f(name_out_);
 
+            cv::Mat img_color;
+
+            cv::applyColorMap(elm::ConvertTo8U(img),
+                              img_color,
+                              cv::COLORMAP_HSV);
+
             // convert in preparation to publish depth map image
             sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(
                         std_msgs::Header(),
-                        sensor_msgs::image_encodings::TYPE_32FC1,
-                        img).toImageMsg();
+                        sensor_msgs::image_encodings::BGR8,
+                        img_color).toImageMsg();
 
             img_pub_.publish(img_msg);
         }
