@@ -21,6 +21,18 @@ const string DepthSegmentation::PARAM_TAU_SIZE = "tau_size";
 
 // defaults
 const float DepthSegmentation::DEFAULT_MAX_GRAD = 0.005f;
+const int DepthSegmentation::DEFAULT_TAU_SIZE   = 200;
+
+/** @todo why does define guard lead to undefined reference error?
+ */
+//#ifdef __WITH_GTEST
+#include <boost/assign/list_of.hpp>
+template <>
+elm::MapIONames LayerAttr_<DepthSegmentation>::io_pairs = boost::assign::map_list_of
+        ELM_ADD_INPUT_PAIR(detail::BASE_SINGLE_INPUT_FEATURE_LAYER__KEY_INPUT_STIMULUS)
+        ELM_ADD_OUTPUT_PAIR(detail::BASE_MATOUTPUT_LAYER__KEY_OUTPUT_RESPONSE)
+        ;
+//#endif // __WITH_GTEST
 
 DepthSegmentation::DepthSegmentation()
     : base_FeatureTransformationLayer()
@@ -49,15 +61,23 @@ void DepthSegmentation::Reset(const LayerConfig &config)
 void DepthSegmentation::Reconfigure(const LayerConfig &config)
 {
     PTree p = config.Params();
-    tau_size_ = p.get<int>(PARAM_TAU_SIZE);
-    max_grad_ = p.get<float>(PARAM_MAX_GRAD);
+    tau_size_ = p.get<int>(PARAM_TAU_SIZE, DEFAULT_TAU_SIZE);
+    max_grad_ = p.get<float>(PARAM_MAX_GRAD, DEFAULT_MAX_GRAD);
 }
 
 void DepthSegmentation::Activate(const Signal &signal)
 {
     Mat1f g = signal.MostRecent(name_input_); // weighted gradient after thresholding
 
-    /* 1. Group pixels into surfaces based on depth discontinuities:
+    group(g);
+
+
+
+}
+
+void DepthSegmentation::group(const Mat1f g)
+{
+    /* Group pixels into surfaces based on depth discontinuities:
      *
      * row-wise iteration from top-left to bottom-right
      * for each pixel
@@ -78,4 +98,56 @@ void DepthSegmentation::Activate(const Signal &signal)
      *      else if current pixel is undefined
      *          skip pixel
      */
+    const int LABEL_UNASSIGNED = 0;
+    Mat1i surface_labels(g.size(), LABEL_UNASSIGNED);
+
+    int surface_count = LABEL_UNASSIGNED;
+
+    Mat1b not_nan = g == g;
+
+
+    for(int r=1; r<g.rows; r++) {
+
+        for(int c=1; c<g.cols; c++) {
+
+            // skip for 'undefined' pixel
+            if(not_nan(r, c)) {
+
+                bool is_matched = false;
+                float current = g(r, c);
+
+                // neighbor above
+                if(not_nan(r-1, c)) {
+
+                    if(comparePixels(current, g(r-1, c))) {
+
+                        // current follows above
+                        is_matched = true;
+                        surface_labels(r, c) = surface_labels(r-1, c);
+                    }
+                }
+
+                // neighbor to the left
+                if(not_nan(r, c-1)) {
+
+                    if(comparePixels(current, g(r, c-1))) {
+
+                        // left follows current
+                        is_matched = is_matched || true;
+                    }
+                }
+
+                if(!is_matched) {
+
+                    surface_labels(r, c) = ++surface_count; // assign to new surface
+                }
+            }
+        }
+    }
+
+}
+
+bool DepthSegmentation::comparePixels(float current, float neighbor)
+{
+    return fabs(current-neighbor) < max_grad_;
 }
