@@ -10,6 +10,7 @@
  */
 #include "ni/layers/depthgradient.h"
 #include "ni/layers/depthmap.h"
+#include "ni/layers/depthsegmentation.h"
 #include "elm/layers/attentionwindow.h"
 #include "elm/layers/gradassignment.h"
 #include "elm/layers/graphcompatibility.h"
@@ -38,6 +39,7 @@ LayerRegistry g_layerRegistry = map_list_of
         LAYER_REGISTRY_PAIR( AttentionWindow )
         LAYER_REGISTRY_PAIR( DepthGradient )
         LAYER_REGISTRY_PAIR( DepthMap )
+        LAYER_REGISTRY_PAIR( DepthSegmentation )
         LAYER_REGISTRY_PAIR( GradAssignment )
         LAYER_REGISTRY_PAIR( GraphCompatibility )
         LAYER_REGISTRY_PAIR( ICP )
