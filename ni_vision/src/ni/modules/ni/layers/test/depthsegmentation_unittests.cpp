@@ -119,17 +119,9 @@ public:
         return DepthSegmentation::comparePixels(current, neighbor);
     }
 
-    void group(const cv::Mat1f g)
+    Mat1i group(const cv::Mat1f &g)
     {
-        DepthSegmentation::group(g);
-    }
-
-    /**
-     * @brief expose working Mat with surface labels
-     */
-    Mat1f m() const {
-
-        return m_.clone();
+        return DepthSegmentation::group(g);
     }
 };
 
@@ -185,8 +177,7 @@ TEST_F(DepthSegmentationProtectedTest, Grouped_surfaces_2_el_2_seg)
     Mat1f in = Mat1f(1, 2, data).clone();
     in *= max_grad_;
 
-    to_->group(in);
-    Mat1f seg_map = to_->m();
+    Mat1i seg_map = to_->group(in);
 
     ASSERT_NE(seg_map(0), seg_map(1));
     EXPECT_FLOAT_EQ(1.f, seg_map(0));
@@ -204,8 +195,7 @@ TEST_F(DepthSegmentationProtectedTest, Grouped_surfaces_2_el_1_seg)
     Mat1f in = Mat1f(1, 2, data).clone();
     in *= max_grad_;
 
-    to_->group(in);
-    Mat1f seg_map = to_->m();
+    Mat1i seg_map = to_->group(in);
 
     ASSERT_FLOAT_EQ(seg_map(0), seg_map(1));
     EXPECT_FLOAT_EQ(1.f, seg_map(0));
@@ -225,8 +215,7 @@ TEST_F(DepthSegmentationProtectedTest, Grouped_surfaces_4_el_4_seg)
     Mat1f in = Mat1f(2, 2, data).clone();
     in *= max_grad_;
 
-    to_->group(in);
-    Mat1f seg_map = to_->m();
+    Mat1i seg_map = to_->group(in);
 
     for(size_t i=0; i<seg_map.total(); i++) {
 
@@ -253,8 +242,7 @@ TEST_F(DepthSegmentationProtectedTest, Grouped_surfaces_4_el_2_seg)
     Mat1f in = Mat1f(2, 2, data).clone();
     in *= max_grad_;
 
-    to_->group(in);
-    Mat1f seg_map = to_->m();
+    Mat1i seg_map = to_->group(in);
 
     // we expect first element to be assigned a surface
     // and the rest be assigned another.

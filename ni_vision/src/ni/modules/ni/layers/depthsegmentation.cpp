@@ -69,13 +69,14 @@ void DepthSegmentation::Activate(const Signal &signal)
 {
     Mat1f g = signal.MostRecent(name_input_); // weighted gradient after thresholding
 
-    group(g);
+
+    m_ = group(g);
 
 
 
 }
 
-void DepthSegmentation::group(const Mat1f g)
+Mat1i DepthSegmentation::group(const Mat1f &g) const
 {
     /* Group pixels into surfaces based on depth discontinuities:
      *
@@ -161,10 +162,10 @@ void DepthSegmentation::group(const Mat1f g)
         } // column
     } // row
 
-    m_ = surface_labels;
+    return surface_labels;
 }
 
-bool DepthSegmentation::comparePixels(float current, float neighbor)
+bool DepthSegmentation::comparePixels(float current, float neighbor) const
 {
     return fabs(current-neighbor) < max_grad_;
 }

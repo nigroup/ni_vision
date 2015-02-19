@@ -37,13 +37,14 @@ public:
 
 protected:
 
-    bool comparePixels(float current, float neighbor);
+    bool comparePixels(float current, float neighbor) const;
 
     /**
      * @brief group pixels into surfaces based on depth discontinuities
      * @param g weighted gradient after thresholding
+     * @return map of surface labels (intensity value represents surface assignment ofr that element)
      */
-    void group(const cv::Mat1f g);
+    cv::Mat1i group(const cv::Mat1f &g) const;
 
     // members
     int tau_size_;
