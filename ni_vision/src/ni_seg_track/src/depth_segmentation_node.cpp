@@ -18,7 +18,11 @@
 #include "elm/core/signal.h"            // Signal class: Stimulus -> layer activation -> response
 #include "elm/core/pcl/typedefs_fwd.h"  // point cloud typedef
 
+#include "elm/layers/medianblur.h"
+
 #include "ni/layers/depthmap.h"
+#include "ni/layers/depthgradient.h"
+#include "ni/layers/depthsegmentation.h"
 #include "ni/layers/layerfactoryni.h"
 
 /**
@@ -69,9 +73,28 @@ public:
             // Instantiate Depth Gradient layer
             elm::LayerConfig cfg;
             elm::LayerIONames io;
-            io.Input(ni::DepthMap::KEY_INPUT_STIMULUS, "depth_map");
-            io.Output(ni::DepthMap::KEY_OUTPUT_RESPONSE, "depth_grad");
-            layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthGrad", cfg, io));
+            io.Input(ni::DepthGradient::KEY_INPUT_STIMULUS, "depth_map");
+            io.Input(ni::DepthGradient::KEY_OUTPUT_GRAD_X, "depth_grad_x");
+            io.Input(ni::DepthGradient::KEY_OUTPUT_GRAD_Y, "depth_grad_y");
+            layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthGradient", cfg, io));
+        }
+        {
+            // Instantiate MedianBlur layer
+            // applied on vertical gradient component
+            elm::LayerConfig cfg;
+            elm::LayerIONames io;
+            io.Input(elm::MedianBlur::KEY_INPUT_STIMULUS, "depth_grad_y");
+            io.Input(elm::MedianBlur::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth");
+            layers_.push_back(ni::LayerFactoryNI::CreateShared("MedianBlur", cfg, io));
+        }
+        {
+            // Instantiate Depth segmentation layer
+            // applied on smoothed vertical gradient component
+            elm::LayerConfig cfg;
+            elm::LayerIONames io;
+            io.Input(ni::DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth");
+            io.Input(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
+            layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
         }
 
         img_pub_ = it_.advertise(name_out_, 1);
