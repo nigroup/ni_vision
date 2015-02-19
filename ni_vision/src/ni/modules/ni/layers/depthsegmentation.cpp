@@ -76,6 +76,11 @@ void DepthSegmentation::Activate(const Signal &signal)
 
 }
 
+bool DepthSegmentation::comparePixels(float current, float neighbor) const
+{
+    return fabs(current-neighbor) < max_grad_;
+}
+
 Mat1i DepthSegmentation::group(const Mat1f &g) const
 {
     /* Group pixels into surfaces based on depth discontinuities:
@@ -165,7 +170,4 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
     return surface_labels;
 }
 
-bool DepthSegmentation::comparePixels(float current, float neighbor) const
-{
-    return fabs(current-neighbor) < max_grad_;
-}
+
