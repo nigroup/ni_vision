@@ -1,5 +1,8 @@
 #include "ni/layers/depthsegmentation.h"
 
+#include <opencv2/highgui/highgui.hpp>
+#include "elm/core/debug_utils.h"
+
 #include "elm/core/exception.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"
@@ -52,5 +55,27 @@ void DepthSegmentation::Reconfigure(const LayerConfig &config)
 
 void DepthSegmentation::Activate(const Signal &signal)
 {
+    Mat1f g = signal.MostRecent(name_input_); // weighted gradient after thresholding
 
+    /* 1. Group pixels into surfaces based on depth discontinuities:
+     *
+     * row-wise iteration from top-left to bottom-right
+     * for each pixel
+     *  do:
+     *      compare pixel to preceeding horizontal and vertical neighbors
+     *      (e.g. g(r, c-1) g(r-1, c)
+     *      if neither current nor neighbor is 'undefined'
+     *          AND
+     *          difference is < threshold
+     *          then:
+     *              assign pixel matching neighbors segment (e.g. merge pixels to surface)
+     *              if both pixel matches to both neighbors
+     *              then:
+     *              merge all into same surface // todo: what about neighbors preceeding neighbors?
+     *      else if could not match and current pixel is defined
+     *          then:
+     *          start new surface and assing pixel to it
+     *      else if current pixel is undefined
+     *          skip pixel
+     */
 }

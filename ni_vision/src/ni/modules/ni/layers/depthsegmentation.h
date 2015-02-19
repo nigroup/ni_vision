@@ -10,7 +10,7 @@ namespace ni {
  *
  * I/O keys defined by parent class
  *
- * @cite Mohr2014
+ * @cite Mohr2014 (Section 2.2  Segmentation of Surface)
  */
 class DepthSegmentation : elm::base_FeatureTransformationLayer
 {
