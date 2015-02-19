@@ -1,4 +1,5 @@
 // load point clouds and align them to generate full 3D model
+// define a suitable cost function and optimize it using simulated annealing
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -45,19 +46,22 @@ static const double rotAng = 45.0 * 2.0 * M_PI / 360.0;  //angle of rotation (tu
 // a1 = a2 * params[2]
 // a3 = a2 * params[3]
 static const int n = 5;  // degrees of freedom
-static const bool vary[n] = {1, 1, 1, 1, 0};  // specify which parameters should be optimized (true) and which should be considered fixed (false)
+static const bool vary[n] = {1, 1, 1, 1, 0};  // specify which parameters should be optimized (true / 1) and which should be considered fixed (false / 0)
 
 // initial values and step sizes
 static const float pRange[n][2] =  { {0.0, 0.01},
                                      {0.0, 0.01},
-                                     {0.0, 0.001},
-                                     {0.0, 0.001},
-                                     {rotAng, 0.001} };
+                                     {0.0, 0.01},
+                                     {0.0, 0.01},
+                                     {rotAng, 0.01} };
 
 
 // pairs of point clouds which are considered in the cost function
 static const int numPairs = 1;
 static const int pairs[numPairs][2] = { {0,1} };
+
+// construct kd-trees for efficient nearest neighbor search
+pcl::KdTreeFLANN<pcl::PointXYZRGB> * kdtree[numPairs];
 
 
 // parameters for cost function and simulated annealing
@@ -91,6 +95,18 @@ int main()
         pcl::io::loadPCDFile (fn_in, clouds[i]);
     }
 
+
+    // construct kd-trees
+    for (int p = 0; p < numPairs; p++)
+    {
+        kdtree[p] = new pcl::KdTreeFLANN<pcl::PointXYZRGB>;
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr ref(new pcl::PointCloud<pcl::PointXYZRGB>);
+        pcl::copyPointCloud<pcl::PointXYZRGB>(clouds[pairs[p][0]], *ref);
+        std::cout << "setInputCloud..." << std::endl;
+        kdtree[p]->setInputCloud (ref);
+        std::cout << "done" << std::endl;
+    }
+
      // compute the mean of the reference point cloud
      Eigen::Vector4f centroid; //ignore 4th entry
      pcl::compute3DCentroid(clouds[0], centroid);
@@ -99,7 +115,7 @@ int main()
      Eigen::VectorXf params(n);
 
      //----------------------------------------------------------------------------------------
-     if (!optimize)
+     /* if (!optimize)
      {
          // show results for various combinations af parameters
          float best = INFINITY;
@@ -143,7 +159,7 @@ int main()
          cv::waitKey();
 
          params << bestx, bestz;
-     }
+     } */
      //------------------------------------------------------------------------------------------------
 
 
@@ -223,25 +239,25 @@ float cost(const Eigen::VectorXf params, pcl::PointCloud<pcl::PointXYZRGB> *clou
     int K = 1;         // for k-nearest neighbors
     float normConst = sqrt(3) * 255.0 / p1;  //normalization constant, RGB distances should be comparable to XYZ distances
 
+
+    pcl::PointXYZRGB neighbor;
+    pcl::PointCloud<pcl::PointXYZRGB>::iterator it;
     for (int p = 0; p < numPairs; p++)
     {
         // use XYZ to find the nearest neighbor
-        pcl::KdTreeFLANN<pcl::PointXYZRGB> kdtree;
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr ref(new pcl::PointCloud<pcl::PointXYZRGB>);
-        pcl::copyPointCloud<pcl::PointXYZRGB>(clouds[pairs[p][0]], *ref);
-        kdtree.setInputCloud (ref);
+        //pcl::KdTreeFLANN<pcl::PointXYZRGB> kdtree;
+        //pcl::PointCloud<pcl::PointXYZRGB>::Ptr ref(new pcl::PointCloud<pcl::PointXYZRGB>);
+        //pcl::copyPointCloud<pcl::PointXYZRGB>(clouds[pairs[p][0]], *ref);
+        //kdtree.setInputCloud (ref);
 
         // iterate over second point cloud
-        pcl::PointXYZRGB neighbor;
-        pcl::PointCloud<pcl::PointXYZRGB>::iterator it;
-
         for (it = clouds_rot[p].begin(); it < clouds_rot[p].end(); it++)
         {
             pcl::PointXYZRGB searchPoint = *it;
             std::vector<int> pointIdxNKNSearch(K);
             std::vector<float> pointNKNSquaredDistance(K);
-            kdtree.nearestKSearch (searchPoint, K, pointIdxNKNSearch, pointNKNSquaredDistance);
-            neighbor = ref->points[pointIdxNKNSearch[0]];
+            kdtree[p]->nearestKSearch (searchPoint, K, pointIdxNKNSearch, pointNKNSquaredDistance);
+            neighbor = clouds[pairs[p][0]].points[pointIdxNKNSearch[0]];
             double dist = sqrt(pointNKNSquaredDistance[0]);
 
             // compute difference between RGB values

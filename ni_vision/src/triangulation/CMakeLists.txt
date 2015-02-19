@@ -176,12 +176,14 @@ add_executable (triangulation_2 src/triangulation_2.cpp)
 add_executable (pairwise_incremental_registration src/pairwise_incremental_registration.cpp)
 add_executable (3D_model src/3D_model.cpp)
 add_executable (3D_model_optimize src/3D_model_optimize.cpp)
+add_executable (3D_match src/3D_match.cpp)
 target_link_libraries (triangulation ${PCL_LIBRARIES})
 target_link_libraries (triangulation_2 ${PCL_LIBRARIES})
 target_link_libraries (pairwise_incremental_registration ${PCL_LIBRARIES})
 target_link_libraries (3D_model ${PCL_LIBRARIES})
 target_link_libraries (3D_model_optimize ${PCL_LIBRARIES})
 target_link_libraries(3D_model_optimize ${OpenCV_LIBRARIES})
+target_link_libraries (3D_match ${PCL_LIBRARIES})
 
 
 
