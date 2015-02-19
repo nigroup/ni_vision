@@ -105,9 +105,9 @@ void DepthSegmentation::group(const Mat1f g)
 
     Mat1b not_nan = g == g;
 
-    for(int r=1; r<g.rows; r++) {
+    for(int r=0; r<g.rows; r++) {
 
-        for(int c=1; c<g.cols; c++) {
+        for(int c=0; c<g.cols; c++) {
 
             // skip for 'undefined' pixel
             if(not_nan(r, c)) {
@@ -115,8 +115,8 @@ void DepthSegmentation::group(const Mat1f g)
                 bool is_matched = false;
                 float current = g(r, c);
 
-                // neighbor above
-                if(not_nan(r-1, c)) {
+                // neighbor above, skip for row 0
+                if(r > 0 && not_nan(r-1, c)) {
 
                     if(comparePixels(current, g(r-1, c))) {
 
@@ -126,8 +126,8 @@ void DepthSegmentation::group(const Mat1f g)
                     }
                 }
 
-                // neighbor to the left
-                if(not_nan(r, c-1)) {
+                // neighbor to the left, skip for column 0
+                if(c > 0 && not_nan(r, c-1)) {
 
                     if(comparePixels(current, g(r, c-1))) {
 
