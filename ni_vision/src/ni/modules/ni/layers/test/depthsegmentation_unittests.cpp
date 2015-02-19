@@ -59,9 +59,9 @@ TEST_F(DepthSegmentationTest, Response_dims)
     const int R=10;
     const int C=10;
 
-    for(int r=3; r<R; r++) {
+    for(int r=2; r<R; r++) {
 
-        for(int c=3; c<C; c++) {
+        for(int c=2; c<C; c++) {
 
             Signal sig;
             sig.Append(NAME_GRAD_Y, Mat1f(r, c));
@@ -139,8 +139,9 @@ TEST_F(DepthSegmentationProtectedTest, ComparePixels)
     EXPECT_TRUE(to_->comparePixels(-10.f, -10.f));
     EXPECT_TRUE(to_->comparePixels(0.f, 0.f));
     EXPECT_TRUE(to_->comparePixels(10000.f, 10000.f));
-    EXPECT_TRUE(to_->comparePixels(12345.f, -12345.f));
-    EXPECT_TRUE(to_->comparePixels(-12345.f, 12345.f));
+
+    EXPECT_FALSE(to_->comparePixels(12345.f, -12345.f));
+    EXPECT_FALSE(to_->comparePixels(-12345.f, 12345.f));
 
     float x = 2.f;
     EXPECT_FALSE(to_->comparePixels(x, x+max_grad_));
@@ -148,6 +149,5 @@ TEST_F(DepthSegmentationProtectedTest, ComparePixels)
     EXPECT_FALSE(to_->comparePixels(x+max_grad_, x));
     EXPECT_TRUE(to_->comparePixels(x+max_grad_-1e-5, x));
 }
-
 
 } // annonymous namespace for test cases and fixtures
