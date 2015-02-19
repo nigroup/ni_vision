@@ -132,8 +132,21 @@ void DepthSegmentation::group(const Mat1f g)
 
                     if(comparePixels(current, g(r, c-1))) {
 
-                        // left follows current
-                        is_matched = is_matched || true;
+                        // already matched with neighbor above?
+                        if(is_matched) {
+
+                            // left follows current unless they're already equivalent
+                            if(surface_labels(r, c-1) != surface_labels(r, c)) {
+                                surface_labels.setTo(surface_labels(r, c),
+                                                     surface_labels == surface_labels(r, c-1));
+                            }
+                        }
+                        else {
+
+                            // current follows left
+                            is_matched = true;
+                            surface_labels(r, c) = surface_labels(r, c-1);
+                        }
                     }
                 }
 
@@ -145,6 +158,7 @@ void DepthSegmentation::group(const Mat1f g)
         }
     }
 
+    m_ = surface_labels;
 }
 
 bool DepthSegmentation::comparePixels(float current, float neighbor)
