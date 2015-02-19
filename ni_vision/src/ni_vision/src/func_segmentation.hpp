@@ -379,7 +379,7 @@ void DSegmentation (std::vector<float> vnDGrad,
             }
         }
         if (x > x_min) {
-            /* same logic as why but comparing to left neighbor
+            /* same logic as y but comparing to left neighbor
              */
             nIdxCand = input_idx[i] - 1;
             if (vnPatchMap[nIdxCand]) {
