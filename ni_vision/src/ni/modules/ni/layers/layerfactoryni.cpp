@@ -20,10 +20,10 @@
 #include "elm/layers/triangulation.h"
 #include "elm/layers/weightedsum.h"
 
+#include "ni/layers/mapneighadjacency.h"
 #include "ni/layers/depthgradient.h"
 #include "ni/layers/depthmap.h"
 #include "ni/layers/depthsegmentation.h"
-
 
 using boost::assign::map_list_of;
 using namespace elm;
@@ -47,6 +47,7 @@ LayerRegistry g_layerRegistry = map_list_of
         LAYER_REGISTRY_PAIR( GraphCompatibility )
         LAYER_REGISTRY_PAIR( ICP )
         LAYER_REGISTRY_PAIR( LayerY )
+        LAYER_REGISTRY_PAIR( MapNeighAdjacency )
         LAYER_REGISTRY_PAIR( MedianBlur )
         LAYER_REGISTRY_PAIR( MutexPopulationCode )
         LAYER_REGISTRY_PAIR( SaliencyItti )
