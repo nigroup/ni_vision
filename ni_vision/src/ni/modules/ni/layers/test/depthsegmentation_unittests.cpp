@@ -90,7 +90,7 @@ TEST_F(DepthSegmentationTest, Stimulus_single_element)
     EXPECT_EQ(1, seg_map.rows);
     EXPECT_EQ(1, seg_map.cols);
 
-    EXPECT_FLOAT_EQ(0.f, seg_map(0));
+    EXPECT_FLOAT_EQ(0.f, seg_map(DepthSegmentation::DEFAULT_LABEL_UNASSIGNED+1.f));
 }
 
 /**
@@ -114,15 +114,21 @@ public:
         IONames(config);
     }
 
-    bool comparePixels(float current, float neighbor)
+    bool comparePixels(float current, float neighbor) const
     {
         return DepthSegmentation::comparePixels(current, neighbor);
     }
 
-    Mat1i group(const cv::Mat1f &g)
+    Mat1i group(const cv::Mat1f &g) const
     {
         return DepthSegmentation::group(g);
     }
+
+    cv::Mat1i computeSegmentNeighAdjacency(const cv::Mat1i &segment_map) const
+    {
+        return DepthSegmentation::computeSegmentNeighAdjacency(segment_map);
+    }
+
 };
 
 class DepthSegmentationProtectedTest : public ::testing::Test
@@ -253,5 +259,77 @@ TEST_F(DepthSegmentationProtectedTest, Grouped_surfaces_4_el_2_seg)
         EXPECT_FLOAT_EQ(seg_map(1), seg_map(i));
     }
 }
+
+TEST_F(DepthSegmentationProtectedTest, SegmentNeighAdj_4_el_2_seg)
+{
+    // break into 4 by increasing top-right and bottom-left values
+    // this way we avoid neighbors matching
+    float data[4] = {0.0f, 2.0f,
+                     2.0f, 1.2f};
+    Mat1f in = Mat1f(2, 2, data).clone();
+    in *= max_grad_;
+
+    Mat1i seg_map = to_->group(in);
+    Mat1i seg_neigh_adj = to_->computeSegmentNeighAdjacency(seg_map);
+
+    EXPECT_EQ(2, seg_neigh_adj.rows);
+    EXPECT_EQ(2, seg_neigh_adj.cols);
+
+    EXPECT_MAT_EQ(seg_neigh_adj, seg_neigh_adj.t()) << "adj. matrix is not symmetric";
+
+    // verify adj. has all-zeros diagonal
+    for(int r=0; r<seg_neigh_adj.rows; r++) {
+
+        EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(r, r)) << "Non-zero value in diagonal.";
+    }
+
+    // verify values in adj. matrix
+    EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(0, 0));
+    EXPECT_FLOAT_EQ(1.f, seg_neigh_adj(0, 1));
+    EXPECT_FLOAT_EQ(1.f, seg_neigh_adj(1, 0));
+    EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(1, 1));
+}
+
+TEST_F(DepthSegmentationProtectedTest, SegmentNeighAdj_4_el_4_seg)
+{
+    // break into 4 by increasing top-right and bottom-left values
+    // this way we avoid neighbors matching
+    const int NB_SURFACES = 4;
+    float data[NB_SURFACES] = {0.0f, 2.0f,
+                               2.0f, 0.5f};
+    Mat1f in = Mat1f(2, 2, data).clone();
+    in *= max_grad_;
+
+    Mat1i seg_map = to_->group(in);
+    Mat1i seg_neigh_adj = to_->computeSegmentNeighAdjacency(seg_map);
+
+    EXPECT_MAT_DIMS_EQ(seg_neigh_adj, Size2i(NB_SURFACES, NB_SURFACES));
+
+    EXPECT_MAT_EQ(seg_neigh_adj, seg_neigh_adj.t()) << "adj. matrix is not symmetric";
+
+    // verify adj. has all-zeros diagonal
+    for(int r=0; r<seg_neigh_adj.rows; r++) {
+
+        EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(r, r)) << "Non-zero value in diagonal.";
+    }
+
+    // verify each surface/segment has two neighbors
+    for(int r=0; r<seg_neigh_adj.rows; r++) {
+
+        EXPECT_FLOAT_EQ(2.f, cv::sum(seg_neigh_adj.row(r))[0]);
+    }
+
+    /* verify connectivity - we only need to verify whom the surface is not connected to
+     * since the surface neighborhood adjacency describes an undirected graph
+     * there is some redundancy in the assertions
+     * let's keep them anyway for a better overview of what we're testing
+     */
+    EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(0, 3));
+    EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(1, 2));
+    EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(2, 1)); // redunant assertion
+    EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(0, 3)); // redunant assertion
+
+}
+
 
 } // annonymous namespace for test cases and fixtures

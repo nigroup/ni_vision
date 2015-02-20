@@ -23,6 +23,8 @@ public:
     static const int DEFAULT_TAU_SIZE;      ///< = 200 @todo units?
     static const float DEFAULT_MAX_GRAD;    ///< = 0.005f;
 
+    static const int DEFAULT_LABEL_UNASSIGNED; ///< =0 value for labeling elements not assigned to any segment
+
     DepthSegmentation();
 
     DepthSegmentation(const elm::LayerConfig &config);
@@ -52,7 +54,7 @@ protected:
      */
     cv::Mat1i group(const cv::Mat1f &g) const;
 
-
+    cv::Mat1i computeSegmentNeighAdjacency(const cv::Mat1i &segment_map) const;
 
     // members
     int tau_size_;

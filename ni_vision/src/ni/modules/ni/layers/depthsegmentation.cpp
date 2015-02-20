@@ -4,6 +4,7 @@
 #include "elm/core/debug_utils.h"
 
 #include "elm/core/exception.h"
+#include "elm/core/graph/graphmap.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"
 #include "elm/ts/layerattr_.h"
@@ -20,8 +21,9 @@ const string DepthSegmentation::PARAM_MAX_GRAD = "max_grad";
 const string DepthSegmentation::PARAM_TAU_SIZE = "tau_size";
 
 // defaults
-const float DepthSegmentation::DEFAULT_MAX_GRAD = 0.005f;
-const int DepthSegmentation::DEFAULT_TAU_SIZE   = 200;
+const float DepthSegmentation::DEFAULT_MAX_GRAD         = 0.005f;
+const int DepthSegmentation::DEFAULT_TAU_SIZE           = 200;
+const int DepthSegmentation::DEFAULT_LABEL_UNASSIGNED   = 0;
 
 /** @todo why does define guard lead to undefined reference error?
  */
@@ -104,10 +106,9 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
      *      else if current pixel is undefined
      *          skip pixel
      */
-    const int LABEL_UNASSIGNED = 0;
-    Mat1i surface_labels(g.size(), LABEL_UNASSIGNED);
+    Mat1i surface_labels(g.size(), DEFAULT_LABEL_UNASSIGNED);
 
-    int surface_count = LABEL_UNASSIGNED;
+    int surface_count = DEFAULT_LABEL_UNASSIGNED;
 
     Mat1b not_nan = g == g;
 
@@ -170,4 +171,10 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
     return surface_labels;
 }
 
-
+Mat1i DepthSegmentation::computeSegmentNeighAdjacency(const Mat1i &segment_map) const
+{
+    GraphMap seg_graph(segment_map, segment_map > DEFAULT_LABEL_UNASSIGNED);
+    Mat1f adj;
+    seg_graph.AdjacencyMat(adj);
+    return adj;
+}
