@@ -230,6 +230,9 @@ void DSegm_MatchPoints (int idx_ref, int idx_cand, int nSegCnt, std::vector<int>
 
 /* Merging two segments
  *
+ * Segments are not merged in the sense of reduced to a single entry
+ * but rather info of the merged segment is duplicated.
+ *
  * Input:
  * ref - reference segment
  * cand - candidate segment
@@ -464,31 +467,35 @@ void DSegmentation (std::vector<float> vnDGrad,
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         vnLB.assign(seg_cnt, 0);
-        std::vector<bool> vbCB(seg_cnt, false);
+        std::vector<bool> vbCB(seg_cnt, false); // true for large enough segment
 
+        // indicate which segments are large enough and need not be absorbed by larger segments
         for (int i = 1; i < seg_cnt; i++) {
             vnLB[i] = i;
             if (vnSB[i] > tau_s) vbCB[i] = true;
         }
 
-
+        // iterate thoruh segments to merge small ones into their largest neighbor
         for (int i = 1; i < seg_cnt; i++) {
-            if (vbCB[i]) continue;
+            if (vbCB[i]) continue;  // large enough
 
             int max_n = 0, max_size = 0;
             bool clear = false;
+            // iterate through neighbors
             for (int j = 1; j < seg_cnt; j++) {
-                if (i == j) continue;
+                if (i == j) continue;   // exclude self of course
                 if (mbNeighbor[i][j]) {
+
+                    // for large neighbors find largest one
                     if (vbCB[j]) {
                         if (vnSB[vnLB[j]] > max_size) {
                             max_n = j;
                             max_size = vnSB[vnLB[j]];
                         }
                     }
-                    else
+                    else    // merge small neighbors
                         DSegm_MergeSegments(i, j, clear, seg_cnt, vnLB, vnSB, vbCB);
-                }
+                } // is neighbor (i connected to j)?
             }
 
             if (max_n) {
