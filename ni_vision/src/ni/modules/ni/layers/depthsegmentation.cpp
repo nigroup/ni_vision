@@ -171,10 +171,3 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
     return surface_labels;
 }
 
-Mat1i DepthSegmentation::computeSegmentNeighAdjacency(const Mat1i &segment_map) const
-{
-    GraphMap seg_graph(segment_map, segment_map > DEFAULT_LABEL_UNASSIGNED);
-    Mat1f adj;
-    seg_graph.AdjacencyMat(adj);
-    return adj;
-}
