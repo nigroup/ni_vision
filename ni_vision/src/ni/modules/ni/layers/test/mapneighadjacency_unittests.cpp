@@ -55,8 +55,8 @@ TEST_F(MapNeighAdjacencyTest, SegmentNeighAdj_4_el_2_seg)
 {
     // break into 4 by increasing top-right and bottom-left values
     // this way we avoid neighbors matching
-    float data[4] = {0.0f, 2.0f,
-                     2.0f, 1.2f};
+    float data[4] = {1.0f, 2.0f,
+                     2.0f, 2.0f};
     Mat1f in = Mat1f(2, 2, data).clone();
 
     Signal sig;
@@ -90,8 +90,8 @@ TEST_F(MapNeighAdjacencyTest, SegmentNeighAdj_4_el_4_seg)
     // break into 4 by increasing top-right and bottom-left values
     // this way we avoid neighbors matching
     const int NB_SURFACES = 4;
-    float data[NB_SURFACES] = {0.0f, 2.0f,
-                               2.0f, 0.5f};
+    float data[NB_SURFACES] = {1.0f, 2.0f,
+                               3.0f, 4.0f};
     Mat1f in = Mat1f(2, 2, data).clone();
 
     Signal sig;
