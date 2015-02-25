@@ -6,7 +6,7 @@
 namespace ni {
 
 /**
- * @brief Layer class for generating neighborhood adjacency from a 2d map
+ * @brief Layer class for small map areas and merging them with largest neighbor
  * I/O keys defined by parent class
  */
 class MapAreaFilter : public elm::base_FeatureTransformationLayer
