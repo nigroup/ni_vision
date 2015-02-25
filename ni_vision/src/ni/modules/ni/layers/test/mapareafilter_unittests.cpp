@@ -51,41 +51,63 @@ TEST_F(MapAreaFilterTest, Reset_EmptyConfig)
     EXPECT_NO_THROW(to_->Reset(LayerConfig())) << "All params are optional, no?";
 }
 
-TEST_F(MapAreaFilterTest, SegmentNeighAdj_4_el_2_seg)
+TEST_F(MapAreaFilterTest, Response_dims)
 {
-    // break into 4 by increasing top-right and bottom-left values
-    // this way we avoid neighbors matching
-    float data[4] = {1.0f, 2.0f,
-                     2.0f, 2.0f};
-    Mat1f in = Mat1f(2, 2, data).clone();
+    PTree p;
+    p.put(MapAreaFilter::PARAM_TAU_SIZE, 1);
+    config_.Params(p);
 
-    Signal sig;
-    sig.Append(NAME_IN_MAP, in);
+    for(int r=2; r<10; r++) {
 
-    to_->Activate(sig);
-    to_->Response(sig);
+        for(int c=2; c<10; c++) {
 
-    Mat1i seg_neigh_adj = sig.MostRecentMat1f(NAME_OUT_MAP);
+            Mat1f in = Mat1f(r, c);
+            for(size_t i=0; i<in.total(); i++) {
 
-    EXPECT_EQ(2, seg_neigh_adj.rows);
-    EXPECT_EQ(2, seg_neigh_adj.cols);
+                in(i) = static_cast<float>(i);
+            }
 
-    EXPECT_MAT_EQ(seg_neigh_adj, seg_neigh_adj.t()) << "adj. matrix is not symmetric";
+            Signal sig;
+            sig.Append(NAME_IN_MAP, in);
 
-    // verify adj. has all-zeros diagonal
-    for(int r=0; r<seg_neigh_adj.rows; r++) {
+            to_->Activate(sig);
+            to_->Response(sig);
 
-        EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(r, r)) << "Non-zero value in diagonal.";
+            EXPECT_MAT_DIMS_EQ(sig.MostRecentMat1f(NAME_OUT_MAP), Size2i(c, r));
+        }
     }
-
-    // verify values in adj. matrix
-    EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(0, 0));
-    EXPECT_FLOAT_EQ(1.f, seg_neigh_adj(0, 1));
-    EXPECT_FLOAT_EQ(1.f, seg_neigh_adj(1, 0));
-    EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(1, 1));
 }
 
-TEST_F(MapAreaFilterTest, SegmentNeighAdj_4_el_4_seg)
+TEST_F(MapAreaFilterTest, Map_constant)
+{
+    Mat1f in = Mat1f(320, 240, 50.f);
+
+    std::vector<int> tau_values;
+    tau_values.push_back(0);
+    tau_values.push_back(1);
+    tau_values.push_back(in.rows*2);
+    tau_values.push_back(static_cast<int>(in.total()));
+
+    for(size_t i=0; i<tau_values.size(); i++)
+    {
+        PTree p;
+        p.put(MapAreaFilter::PARAM_TAU_SIZE, tau_values[i]);
+        config_.Params(p);
+        to_->Reconfigure(config_);
+
+        Signal sig;
+        sig.Append(NAME_IN_MAP, in);
+
+        to_->Activate(sig);
+        to_->Response(sig);
+
+        Mat1f map_filtered = sig.MostRecentMat1f(NAME_OUT_MAP);
+
+        EXPECT_MAT_EQ(map_filtered, in);
+    }
+}
+
+TEST_F(MapAreaFilterTest, Map_4_el_4_seg)
 {
     // break into 4 by increasing top-right and bottom-left values
     // this way we avoid neighbors matching
@@ -94,40 +116,21 @@ TEST_F(MapAreaFilterTest, SegmentNeighAdj_4_el_4_seg)
                                3.0f, 4.0f};
     Mat1f in = Mat1f(2, 2, data).clone();
 
+    PTree p;
+    p.put(MapAreaFilter::PARAM_TAU_SIZE, 1);
+    config_.Params(p);
+
+    to_->Reconfigure(config_);
+
     Signal sig;
     sig.Append(NAME_IN_MAP, in);
 
     to_->Activate(sig);
     to_->Response(sig);
 
-    Mat1i seg_neigh_adj = sig.MostRecentMat1f(NAME_OUT_MAP);
+    Mat1f map_filtered = sig.MostRecentMat1f(NAME_OUT_MAP);
 
-    EXPECT_MAT_DIMS_EQ(seg_neigh_adj, Size2i(NB_SURFACES, NB_SURFACES));
-
-    EXPECT_MAT_EQ(seg_neigh_adj, seg_neigh_adj.t()) << "adj. matrix is not symmetric";
-
-    // verify adj. has all-zeros diagonal
-    for(int r=0; r<seg_neigh_adj.rows; r++) {
-
-        EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(r, r)) << "Non-zero value in diagonal.";
-    }
-
-    // verify each surface/segment has two neighbors
-    for(int r=0; r<seg_neigh_adj.rows; r++) {
-
-        EXPECT_FLOAT_EQ(2.f, cv::sum(seg_neigh_adj.row(r))[0]);
-    }
-
-    /* verify connectivity - we only need to verify whom the surface is not connected to
-     * since the surface neighborhood adjacency describes an undirected graph
-     * there is some redundancy in the assertions
-     * let's keep them anyway for a better overview of what we're testing
-     */
-    EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(0, 3));
-    EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(1, 2));
-    EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(2, 1)); // redunant assertion
-    EXPECT_FLOAT_EQ(0.f, seg_neigh_adj(0, 3)); // redunant assertion
-
+    EXPECT_MAT_EQ(map_filtered, in);
 }
 
 

@@ -85,6 +85,10 @@ void MapAreaFilter::Activate(const Signal &signal)
     ELM_COUT_VAR(elm::Reshape(x));
 
 
-    seg_graph.AdjacencyMat(m_);
+    Mat1f adj;
+    seg_graph.AdjacencyMat(adj);
 
+
+
+    m_ = map;
 }
