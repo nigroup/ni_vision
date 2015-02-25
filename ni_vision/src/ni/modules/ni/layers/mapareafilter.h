@@ -20,9 +20,11 @@ public:
 
     static const int DEFAULT_LABEL_UNASSIGNED; ///< =0 value for labeling elements not assigned to any segment
 
-    MapNeighAdjacency();
+    ~MapAreaFilter();
 
-    MapNeighAdjacency(const elm::LayerConfig &config);
+    MapAreaFilter();
+
+    MapAreaFilter(const elm::LayerConfig &config);
 
     void Clear();
 

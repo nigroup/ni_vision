@@ -32,6 +32,10 @@ elm::MapIONames LayerAttr_<MapAreaFilter>::io_pairs = boost::assign::map_list_of
         ELM_ADD_OUTPUT_PAIR(detail::BASE_MATOUTPUT_LAYER__KEY_OUTPUT_RESPONSE)
         ;
 
+MapAreaFilter::~MapAreaFilter()
+{
+}
+
 MapAreaFilter::MapAreaFilter()
     : base_FeatureTransformationLayer()
 {
