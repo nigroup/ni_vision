@@ -51,6 +51,15 @@ TEST_F(MapNeighAdjacencyTest, Reset_EmptyConfig)
     EXPECT_NO_THROW(to_->Reset(LayerConfig())) << "All params are optional, no?";
 }
 
+TEST_F(MapNeighAdjacencyTest, No_params)
+{
+    PTree p;
+    p.put("foo", 1);
+    LayerConfig cfg;
+    cfg.Params(p);
+    EXPECT_THROW(to_->Reset(cfg), ExceptionKeyError);
+}
+
 TEST_F(MapNeighAdjacencyTest, SegmentNeighAdj_4_el_2_seg)
 {
     // break into 4 by increasing top-right and bottom-left values

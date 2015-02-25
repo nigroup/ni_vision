@@ -13,11 +13,6 @@ class MapNeighAdjacency : public elm::base_FeatureTransformationLayer
 {
 public:
     // parameters
-    static const std::string PARAM_TAU_SIZE;    ///< threshold for size differences
-
-    // defaults
-    static const int DEFAULT_TAU_SIZE;      ///< = 200 pixels
-
     static const int DEFAULT_LABEL_UNASSIGNED; ///< =0 value for labeling elements not assigned to any segment
 
     MapNeighAdjacency();
@@ -35,7 +30,6 @@ public:
 protected:
 
     // members
-    int tau_size_;
 };
 
 } // namespace ni
