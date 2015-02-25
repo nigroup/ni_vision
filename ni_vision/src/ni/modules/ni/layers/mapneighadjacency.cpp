@@ -31,6 +31,10 @@ elm::MapIONames LayerAttr_<MapNeighAdjacency>::io_pairs = boost::assign::map_lis
         ;
 //#endif // __WITH_GTEST
 
+MapNeighAdjacency::~MapNeighAdjacency()
+{
+}
+
 MapNeighAdjacency::MapNeighAdjacency()
     : base_FeatureTransformationLayer()
 {

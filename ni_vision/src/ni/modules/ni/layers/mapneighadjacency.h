@@ -15,6 +15,8 @@ public:
     // parameters
     static const int DEFAULT_LABEL_UNASSIGNED; ///< =0 value for labeling elements not assigned to any segment
 
+    ~MapNeighAdjacency();
+
     MapNeighAdjacency();
 
     MapNeighAdjacency(const elm::LayerConfig &config);
