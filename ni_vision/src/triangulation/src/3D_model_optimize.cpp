@@ -28,7 +28,7 @@ typedef boost::variate_generator<boost::mt19937, boost::normal_distribution<floa
 bool optimize = 1; // if false, test different combinations of parameters and visualize the cost function (for n==2)
 
 // information about the data set
-std::string setName = "Dose_few_views";   // name of the folder
+std::string setName = "../../Klorix";   // name of the folder
 static const int numClouds = 8;  //number of point clouds
 static const double rotAng = 45.0 * 2.0 * M_PI / 360.0;  //angle of rotation (turn table) in radians
 
@@ -70,7 +70,7 @@ double cWeight = 1;        // weight of RGB distance relative to XYZ distance in
 float T0 = 1;              // initial temperature
 double beta1 = 0.995;      // temperature decay in each iteration
 double beta2 = 0.998;      // variance decay (gaussian sampling of the next candidate state in simulated annealing)
-int max_it_noAccept = 50;  // stopping rule for simulated annealing: maximum number of iterations without acceptance of new state
+int max_it_noAccept = 100;  // stopping rule for simulated annealing: maximum number of iterations without acceptance of new state
 
 
 

@@ -13,9 +13,12 @@
 #include <pcl/kdtree/kdtree.h>
 #include <boost/random.hpp>
 #include <boost/random/normal_distribution.hpp>
+#include <limits>
+#include <cmath>
 
 
 // visualization
+bool visualize = 1;
 #include <pcl/visualization/pcl_visualizer.h>
 boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
 
@@ -24,24 +27,27 @@ typedef boost::variate_generator<boost::mt19937, boost::normal_distribution<floa
 
 // parametrization
 static const int n = 6;  // degrees of freedom
-static const bool vary[n] = {1, 1, 1, 1, 1, 1};  // specify which parameters should be optimized (true / 1) and which should be considered fixed (false / 0)
+static const int vary[6] = {0, 1, 2, 3, 4, 5};  // specify which parameters should be optimized
 
 // initial values and step sizes
-static const float pRange[n][2] =  { {0.0, 0.01},
-                                     {0.0, 0.01},
-                                     {0.0, 0.01},
-                                     {0.0, 1.0},
-                                     {0.0, 1.0},
-                                     {0.0, 1.0} };
+static const float pRange[n][2] =  { {0.0, 0.1},
+                                     {0.0, 0.1},
+                                     {0.0, 0.1},
+                                     {0.0, 1},
+                                     {0.0, 1},
+                                     {0.0, 1} };
 
 
 // parameters for cost function and simulated annealing
-double p1 = 0.1;          // maximum distance of neighbors which are considered a match in cost function
+double p1 = 0.01;          // maximum distance of neighbors which are considered a match in cost function
 double cWeight = 1;        // weight of RGB distance relative to XYZ distance in cost function
+double p2 = 1*p1;             // penalty in cost function for each point in the query cloud that doesn't have a match in the model cloud
 float T0 = 1;              // initial temperature
 double beta1 = 0.995;      // temperature decay in each iteration
 double beta2 = 0.998;      // variance decay (gaussian sampling of the next candidate state in simulated annealing)
 int max_it_noAccept = 100;  // stopping rule for simulated annealing: maximum number of iterations without acceptance of new state
+int it_interval = 100;      // stopping rule for simulated annealing: the algorithm stopps if the relative change of the function value
+float min_change = 0.01;    // within it_interval iterations is smaller than min_change
 
 
 // function declarations
@@ -50,8 +56,10 @@ float cost(const Eigen::VectorXf params, pcl::PointCloud<pcl::PointXYZRGB> * mod
 float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZRGB> *model,
                         pcl::PointCloud<pcl::PointXYZRGB> *query, pcl::KdTreeFLANN<pcl::PointXYZRGB> * kdtree);
 void sample_gaussian(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor, int it, generator * sampler);
+void sample_gaussian_single(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor, int it, generator * sampler, int i);
 void homogeneousTransform(const Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZRGB> & query, pcl::PointCloud<pcl::PointXYZRGB> & aligned);
-
+void homogeneousTransform2(const Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZRGB> & query, pcl::PointCloud<pcl::PointXYZRGB> & aligned);
+void homogeneousTransform3(const Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZRGB> & query, pcl::PointCloud<pcl::PointXYZRGB> & aligned);
 
 
 int main()
@@ -101,7 +109,7 @@ int main()
 
     // transform query using the final parameters and save result to pcd file
     pcl::PointCloud<pcl::PointXYZRGB> aligned;
-    homogeneousTransform(params, query, aligned);
+    homogeneousTransform3(params, query, aligned);
     pcl::PointCloud<pcl::PointXYZRGB> result;
     pcl::copyPointCloud<pcl::PointXYZRGB>(aligned, result);
     result += model;
@@ -123,7 +131,7 @@ float cost(const Eigen::VectorXf params, pcl::PointCloud<pcl::PointXYZRGB> * mod
 
     // transform query
     pcl::PointCloud<pcl::PointXYZRGB> aligned;
-    homogeneousTransform(params, *query, aligned);
+    homogeneousTransform3(params, *query, aligned);
 
     // compute cost function
     float cost = 0;
@@ -133,6 +141,7 @@ float cost(const Eigen::VectorXf params, pcl::PointCloud<pcl::PointXYZRGB> * mod
 
     pcl::PointXYZRGB neighbor;
     pcl::PointCloud<pcl::PointXYZRGB>::iterator it;
+
 
     // iterate over transformed cloud
     for (it = aligned.begin(); it < aligned.end(); it++)
@@ -161,7 +170,11 @@ float cost(const Eigen::VectorXf params, pcl::PointCloud<pcl::PointXYZRGB> * mod
         // update cost
         if (dist < p1)
             cost = cost + dist - p1 + cWeight * cdist;
+        else
+            cost += p2;
+
     }
+
 
 
     return cost;
@@ -186,49 +199,51 @@ float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZR
     f_best = f_old = cost(params, model, query, kdtree);
     std::cout << "initial costs: " << f_old << std::endl;
     int it = 1;  //number of iterations
-    int it_noAccept = 0;  //number of iterations without acceptance of new state
     float dE;
+    float f_before[it_interval+1] ;
 
     do
     {
         std::cout << "aktuelle Kosten: " << f_old << std::endl;
+        f_before[(it-1) % (it_interval+1)] = f_old;
 
         // draw new candidate state and compute corresponding value of the cost function
-        sample_gaussian(params, neighbor, it, &sampler);
-        std::cout << neighbor << std::endl;
-        pcl::PointCloud<pcl::PointXYZRGB> aligned;
-        homogeneousTransform(params, *query, aligned);
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr ref(new pcl::PointCloud<pcl::PointXYZRGB>);
-        pcl::copyPointCloud<pcl::PointXYZRGB>(aligned, *ref);
-        viewer->addPointCloud<pcl::PointXYZRGB> (ref, "aligned");
-        std::cout << "press q to continue" << std::endl;
-        viewer->spin();
-        viewer->removePointCloud("aligned");
-
-
-        f_new = cost(neighbor, model, query, kdtree);
-        if (f_new < f_best)
+        for (int i = 0; i < sizeof(vary)/sizeof(vary[0]); i++)
         {
-            f_best = f_new;
-            params_best = neighbor;
-        }
-        dE = f_new - f_old;
+            sample_gaussian_single(params, neighbor, it, &sampler, vary[i]);
 
-        // accept or refuse to accept new state
-        if ( dE < 0 || exp(-dE/T) > (double(rand()) / RAND_MAX) )
-        {
-            params = neighbor;
-            f_old = f_new;
-            it_noAccept = 0;
+            f_new = cost(neighbor, model, query, kdtree);
+            if (f_new < f_best)
+            {
+                f_best = f_new;
+                params_best = neighbor;
+            }
+            dE = f_new - f_old;
+
+            // accept or refuse to accept new state
+            if ( dE < 0 || exp(-dE/T) > (double(rand()) / RAND_MAX) )
+            {
+                params = neighbor;
+                f_old = f_new;
+
+                if (visualize)
+                {
+                    pcl::PointCloud<pcl::PointXYZRGB> aligned;
+                    homogeneousTransform3(neighbor, *query, aligned);
+                    pcl::PointCloud<pcl::PointXYZRGB>::Ptr ref(new pcl::PointCloud<pcl::PointXYZRGB>);
+                    pcl::copyPointCloud<pcl::PointXYZRGB>(aligned, *ref);
+                    viewer->addPointCloud<pcl::PointXYZRGB> (ref, "aligned");
+                    std::cout << "press q to continue" << std::endl;
+                    viewer->spin();
+                    viewer->removePointCloud("aligned");
+                }
+            }
         }
-        else
-            it_noAccept ++;
 
         // update temperature (annealing) and iteration counter
         T *= beta1;
         it ++;
-    } while( it_noAccept < max_it_noAccept);
-
+    } while( it <= it_interval+1 || fabs(f_before[(it-2) % it_interval]-f_old)/fabs(f_before[(it-2) % it_interval]) > min_change);
     std::cout << "number of iterations in simulated annealing: " << it-1 << std::endl;
 
     params = params_best;
@@ -250,6 +265,19 @@ void sample_gaussian(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor,
 }
 
 
+// generate new sample for simulated annealing
+// one component/dimension at a time
+void sample_gaussian_single(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor, int it, generator * sampler, int i)
+{
+    static double fact = 1;
+    fact *=beta2;
+    neighbor = params;
+    neighbor[i] += fact * pRange[i][1] * (*sampler)();
+    //std::cout << neighbor << std::endl;
+}
+
+
+
 void homogeneousTransform(const Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZRGB> & query, pcl::PointCloud<pcl::PointXYZRGB> & aligned)
 {
     Eigen::AngleAxisd rollAngle(params[3], Eigen::Vector3d::UnitZ());
@@ -264,5 +292,42 @@ void homogeneousTransform(const Eigen::VectorXf & params, pcl::PointCloud<pcl::P
     transform.row(3) << 0, 0, 0, 1;
     pcl::transformPointCloud(query, aligned, transform);
 }
+
+
+void homogeneousTransform2(const Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZRGB> & query, pcl::PointCloud<pcl::PointXYZRGB> & aligned)
+{
+    float a2 = params[5] / sqrt(1 + params[3]*params[3] + params[4]*params[4]);
+    float a1 = a2 * params[3];
+    float a3 = a2 * params[4];
+    float axis_angle[3] = {a1, a2, a3};
+    float rotation_matrix[9];
+    pcl::recognition::aux::axisAngleToRotationMatrix(axis_angle, rotation_matrix);
+    Eigen::Matrix< float, 4, 4 > transform;
+    transform.row(0) << rotation_matrix[0] , rotation_matrix[1] ,rotation_matrix[2] , params[0];
+    transform.row(1) << rotation_matrix[3] , rotation_matrix[4] ,rotation_matrix[5] , params[1];
+    transform.row(2) << rotation_matrix[6] , rotation_matrix[7] ,rotation_matrix[8] , params[2];
+    transform.row(3) << 0, 0, 0, 1;
+    pcl::transformPointCloud(query, aligned, transform);
+}
+
+
+
+void homogeneousTransform3(const Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZRGB> & query, pcl::PointCloud<pcl::PointXYZRGB> & aligned)
+{
+    float a1 = params[3];
+    float a2 = params[4];
+    float a3 = params[5];
+    float axis_angle[3] = {a1, a2, a3};
+    float rotation_matrix[9];
+    pcl::recognition::aux::axisAngleToRotationMatrix(axis_angle, rotation_matrix);
+    Eigen::Matrix< float, 4, 4 > transform;
+    transform.row(0) << rotation_matrix[0] , rotation_matrix[1] ,rotation_matrix[2] , params[0];
+    transform.row(1) << rotation_matrix[3] , rotation_matrix[4] ,rotation_matrix[5] , params[1];
+    transform.row(2) << rotation_matrix[6] , rotation_matrix[7] ,rotation_matrix[8] , params[2];
+    transform.row(3) << 0, 0, 0, 1;
+    pcl::transformPointCloud(query, aligned, transform);
+}
+
+
 
 
