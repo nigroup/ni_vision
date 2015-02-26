@@ -63,7 +63,7 @@ public:
          * is the number of messages that will be buffered up before beginning to throw
          * away the oldest ones.
          */
-        cloud_sub_ = nh.subscribe<elm::CloudXYZ>(name_in_, 30, &DepthMapNode::callback, this);
+        cloud_sub_ = nh.subscribe<elm::CloudXYZ>(name_in_, 1, &DepthMapNode::callback, this);
 
         {
             // Instantiate DepthMap layer
