@@ -5,10 +5,11 @@
 #include <boost/thread/mutex.hpp>
 
 #include <sensor_msgs/image_encodings.h>
-#include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
-#include <opencv2/contrib/contrib.hpp>
+
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/contrib/contrib.hpp>          // applyColorMap()
 
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
@@ -25,6 +26,7 @@
 #include "ni/layers/depthmap.h"
 #include "ni/layers/depthgradient.h"
 #include "ni/layers/depthsegmentation.h"
+#include "ni/layers/mapareafilter.h"
 #include "ni/layers/layerfactoryni.h"
 
 /**
@@ -100,8 +102,24 @@ public:
             elm::LayerConfig cfg;
             elm::LayerIONames io;
             io.Input(ni::DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth");
-            io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
+            io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, "depth_seg_raw");
+            //io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
+        }
+        {
+            // Instantiate Map Area Filter layer for smoothing surfaces
+            // by merging small-sized surfaces together
+            // then merging them with largest neighbor
+            elm::LayerConfig cfg;
+
+            elm::PTree params;
+            params.put(ni::MapAreaFilter::PARAM_TAU_SIZE, 200);
+            cfg.Params(params);
+
+            elm::LayerIONames io;
+            io.Input(ni::MapAreaFilter::KEY_INPUT_STIMULUS, "depth_seg_raw");
+            io.Output(ni::MapAreaFilter::KEY_OUTPUT_RESPONSE, name_out_);
+             layers_.push_back(ni::LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
         }
 
         img_pub_ = it_.advertise(name_out_, 1);
