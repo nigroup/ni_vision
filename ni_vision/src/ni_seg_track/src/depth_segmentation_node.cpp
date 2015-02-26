@@ -113,6 +113,21 @@ public:
             io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
         }
+        {
+            // Instantiate Map Area Filter layer for smoothing surfaces
+            // by merging small-sized surfaces together
+            // then merging them with largest neighbor
+            elm::LayerConfig cfg;
+
+            elm::PTree params;
+            params.put(ni::MapAreaFilter::PARAM_TAU_SIZE, 100);
+            cfg.Params(params);
+
+            elm::LayerIONames io;
+            io.Input(ni::MapAreaFilter::KEY_INPUT_STIMULUS, "depth_seg_raw");
+            io.Output(ni::MapAreaFilter::KEY_OUTPUT_RESPONSE, name_out_);
+            //layers_.push_back(ni::LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
+        }
 
         img_pub_ = it_.advertise(name_out_, 1);
     }
