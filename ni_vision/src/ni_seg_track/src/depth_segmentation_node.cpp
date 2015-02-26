@@ -120,7 +120,7 @@ public:
             elm::LayerConfig cfg;
 
             elm::PTree params;
-            params.put(ni::MapAreaFilter::PARAM_TAU_SIZE, 100);
+            params.put(ni::MapAreaFilter::PARAM_TAU_SIZE, 200);
             cfg.Params(params);
 
             elm::LayerIONames io;
