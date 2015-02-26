@@ -52,4 +52,13 @@ TEST_F(SurfaceTest, lastSeenCount)
     }
 }
 
+TEST_F(SurfaceTest, Id)
+{
+    for(int i=-11; i<=11; i++) {
+
+        to_.id(i);
+        EXPECT_EQ(i, to_.id());
+    }
+}
+
 } // annonymous namespace for unit tests

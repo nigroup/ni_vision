@@ -48,6 +48,18 @@ public:
     void lastSeenCount(bool is_last_seen);
 
     /**
+     * @brief Set surface id
+     * @param new_id
+     */
+    void id(int new_id);
+
+    /**
+     * @brief get surface id
+     * @return surface id
+     */
+    int id() const;
+
+    /**
      * @brief Default Constructor
      */
     Surface();

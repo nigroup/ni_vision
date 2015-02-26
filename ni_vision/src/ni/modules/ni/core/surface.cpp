@@ -37,3 +37,13 @@ void Surface::lastSeenCount(bool is_last_seen)
         last_seen_count_++;
     }
 }
+
+void Surface::id(int new_id)
+{
+    id_ = new_id;
+}
+
+int Surface::id() const
+{
+    return id_;
+}
