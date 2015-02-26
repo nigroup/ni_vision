@@ -475,7 +475,7 @@ void DSegmentation (std::vector<float> vnDGrad,
             if (vnSB[i] > tau_s) vbCB[i] = true;
         }
 
-        // iterate thoruh segments to merge small ones into their largest neighbor
+        // iterate through segments to merge small ones into their largest neighbor
         for (int i = 1; i < seg_cnt; i++) {
             if (vbCB[i]) continue;  // large enough
 
