@@ -160,6 +160,7 @@ void DepthGradient::Activate(const Signal &signal)
     computeDerivative(in, 0, grad_x_);
 
     grad_x_.setTo(max_, grad_x_ > max_);
+    grad_x_.setTo(-max_, grad_x_ < -max_);
 
     ELM_THROW_BAD_DIMS_IF(in.rows < 2,
                           "Input must have > 1 rows to compute gradient in y direction.");
@@ -168,6 +169,7 @@ void DepthGradient::Activate(const Signal &signal)
     computeDerivative(in, 1, grad_y_);
 
     grad_y_.setTo(max_, grad_y_ > max_);
+    grad_y_.setTo(-max_, grad_y_ < -max_);
 }
 
 void DepthGradient::Response(Signal &signal)
@@ -216,5 +218,5 @@ void DepthGradient::computeDerivative(const Mat1f &src, int dim, Mat1f &dst) con
     }
 
     // gradient =  diff ./ (in*w)
-    divide(diff, in_shift, dst, 1./static_cast<double>(w_));
+    divide(diff, in_shift+w_, dst);//, 1./static_cast<double>(w_));
 }
