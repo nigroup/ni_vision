@@ -20,16 +20,12 @@ using namespace ni;
 // defaults
 const int MapNeighAdjacency::DEFAULT_LABEL_UNASSIGNED   = 0;
 
-/** @todo why does define guard lead to undefined reference error?
- */
-//#ifdef __WITH_GTEST
 #include <boost/assign/list_of.hpp>
 template <>
 elm::MapIONames LayerAttr_<MapNeighAdjacency>::io_pairs = boost::assign::map_list_of
         ELM_ADD_INPUT_PAIR(detail::BASE_SINGLE_INPUT_FEATURE_LAYER__KEY_INPUT_STIMULUS)
         ELM_ADD_OUTPUT_PAIR(detail::BASE_MATOUTPUT_LAYER__KEY_OUTPUT_RESPONSE)
         ;
-//#endif // __WITH_GTEST
 
 MapNeighAdjacency::~MapNeighAdjacency()
 {
