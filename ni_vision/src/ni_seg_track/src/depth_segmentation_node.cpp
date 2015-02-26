@@ -80,6 +80,7 @@ public:
             io.Input(ni::DepthGradient::KEY_INPUT_STIMULUS, "depth_map");
             io.Output(ni::DepthGradient::KEY_OUTPUT_GRAD_X, "depth_grad_x");
             io.Output(ni::DepthGradient::KEY_OUTPUT_GRAD_Y, "depth_grad_y");
+            //io.Output(ni::DepthGradient::KEY_OUTPUT_GRAD_Y, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthGradient", cfg, io));
         }
         {
@@ -94,32 +95,23 @@ public:
             elm::LayerIONames io;
             io.Input(elm::MedianBlur::KEY_INPUT_STIMULUS, "depth_grad_y");
             io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth");
+            //io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("MedianBlur", cfg, io));
         }
         {
             // Instantiate Depth segmentation layer
             // applied on smoothed vertical gradient component
             elm::LayerConfig cfg;
-            elm::LayerIONames io;
-            io.Input(ni::DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth");
-            io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, "depth_seg_raw");
-            //io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
-            layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
-        }
-        {
-            // Instantiate Map Area Filter layer for smoothing surfaces
-            // by merging small-sized surfaces together
-            // then merging them with largest neighbor
-            elm::LayerConfig cfg;
 
             elm::PTree params;
-            params.put(ni::MapAreaFilter::PARAM_TAU_SIZE, 200);
+            params.put(ni::DepthSegmentation::PARAM_MAX_GRAD, 0.003f);
             cfg.Params(params);
 
             elm::LayerIONames io;
-            io.Input(ni::MapAreaFilter::KEY_INPUT_STIMULUS, "depth_seg_raw");
-            io.Output(ni::MapAreaFilter::KEY_OUTPUT_RESPONSE, name_out_);
-             layers_.push_back(ni::LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
+            io.Input(ni::DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth");
+            io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, "depth_seg_raw");
+            io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
+            layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
         }
 
         img_pub_ = it_.advertise(name_out_, 1);
@@ -148,7 +140,13 @@ protected:
 
             // get calculated depth map
             cv::Mat1f img = sig_.MostRecentMat1f(name_out_);
-            cv::Mat mask_not_assigned = img == 0.f;
+
+            //double min_val, max_val;
+            //cv::minMaxIdx(img, &min_val, &max_val);
+            //ELM_COUT_VAR(img);
+
+            img.setTo(0.f, img != img); // mask nan
+            cv::Mat mask_not_assigned = img <= 0.f;
 
             cv::Mat img_color;
 
