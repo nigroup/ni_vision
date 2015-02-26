@@ -10,6 +10,8 @@
 #include "elm/core/signal.h"
 #include "elm/ts/layerattr_.h"
 
+#include "ni/core/surface.h"
+
 using namespace std;
 using namespace cv;
 using namespace elm;
@@ -71,24 +73,104 @@ cv::Mat1f sum_pixels(const cv::Mat1f& img, const cv::Mat1b &mask)
     return cv::Mat1f(1, 1, static_cast<float>(cv::countNonZero(mask)));
 }
 
+cv::Mat1f mask_vertex(const cv::Mat1f& img, const cv::Mat1b &mask)
+{
+    return img.clone().setTo(0, mask == 0);
+}
+
 void MapAreaFilter::Activate(const Signal &signal)
 {
     Mat1f map = signal.MostRecent(name_input_); // weighted gradient after thresholding
 
-    GraphAttr seg_graph(map, map > DEFAULT_LABEL_UNASSIGNED);
+    GraphAttr seg_graph(map.clone(), map > DEFAULT_LABEL_UNASSIGNED);
 
-    ELM_COUT_VAR(elm::to_string(seg_graph.VerticesIds()));
+    VecF seg_ids = seg_graph.VerticesIds();
+    Mat1f seg_sizes = elm::Reshape(seg_graph.applyVerticesToMap(sum_pixels));
+
+    for(size_t i=0; i<seg_ids.size(); i++) {
+
+        float cur_seg_id = seg_ids[i];
+        float cur_seg_size = seg_sizes(i);
+
+        if(cur_seg_size <= tau_size_) {
+
+            try {
+
+                VecF neigh_ids = seg_graph.getNeighbors(cur_seg_id);
+                int nb_neighbors = static_cast<int>(neigh_ids.size());
+
+                if(nb_neighbors < 1) {
+
+                    continue; // nothing to do
+                }
+
+                // create list of neighbors
+                std::vector<Surface> neighbors(nb_neighbors);
+                VecF neigh_sizes(nb_neighbors); // keep a list of sizes for sorting
+
+                for(int i=0; i<nb_neighbors; i++) {
+
+                    float neigh_size = seg_sizes(
+                                seg_graph.VertexIndex(neigh_ids[i]));
+
+                    Surface neighbor;
+                    neighbor.id(static_cast<int>(neigh_ids[i]));
+                    neighbor.pixelIndices(VecI(static_cast<int>(neigh_size)));
+
+                    neighbors[i] = neighbor;
+
+                    neigh_sizes[i] = neigh_size;
+                }
+
+                // sort neighbors according to size/area of pixels covered
+                Mat1i neigh_sizes_sorted_idx;
+                cv::sortIdx(neigh_sizes, neigh_sizes_sorted_idx, SORT_ASCENDING);
+
+                std::vector<Surface> neighbors_sorted(nb_neighbors);
+                for(size_t i=0; i<neigh_sizes_sorted_idx.total(); i++) {
+                    neighbors_sorted[neigh_sizes_sorted_idx(i)] = neighbors[i];
+                }
+
+                // merge small neighbors into current segment
+                bool too_large = false;
+                for(int i=0; i<nb_neighbors && !too_large; i++) {
+
+                    // access sorted list
+                    Surface neighbor = neighbors_sorted[i];
+
+                    bool too_large = neighbor.pixelCount() > tau_size_;
+                    if(!too_large) {
+
+                        //ELM_COUT_VAR("contractEdges(" << neighbor.id() << "," << cur_seg_id << ")");
+                        seg_graph.contractEdges(neighbor.id(), cur_seg_id);
+
+                        //ELM_COUT_VAR(elm::to_string(seg_graph.VerticesIds()));
+                    }
+                }
 
 
-    VecMat1f x = seg_graph.applyVerticesToMap(sum_pixels);
+                // find largest neighbor that is actually large enough
 
-    ELM_COUT_VAR(elm::Reshape(x));
+                Surface largest_neigh = neighbors_sorted[nb_neighbors-1];
+                if(largest_neigh.pixelCount() > tau_size_)
+                {
+                    // merge current segment into larget neighbor
+                    seg_graph.contractEdges(cur_seg_id, largest_neigh.id());
+                }
+            }
+            catch(ExceptionKeyError &e) {
 
+                //ELM_COUT_VAR(e.what());
+                //ELM_COUT_VAR(cur_seg_id << " gone.");
+            }
+        } // large enough?
+    } // each segment
 
-    Mat1f adj;
-    seg_graph.AdjacencyMat(adj);
+    // replace with getter to Graph's underlying map image
+    VecMat1f masked_maps = seg_graph.applyVerticesToMap(mask_vertex);
+    m_ = Mat1f::zeros(map.size());
+    for(size_t i=0; i<masked_maps.size(); i++) {
 
-
-
-    m_ = map;
+        m_ += masked_maps[i];
+    }
 }

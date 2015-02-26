@@ -117,7 +117,7 @@ TEST_F(MapAreaFilterTest, Map_4_el_4_seg)
     Mat1f in = Mat1f(2, 2, data).clone();
 
     PTree p;
-    p.put(MapAreaFilter::PARAM_TAU_SIZE, 1);
+    p.put(MapAreaFilter::PARAM_TAU_SIZE, 0);
     config_.Params(p);
 
     to_->Reconfigure(config_);
@@ -133,5 +133,98 @@ TEST_F(MapAreaFilterTest, Map_4_el_4_seg)
     EXPECT_MAT_EQ(map_filtered, in);
 }
 
+TEST_F(MapAreaFilterTest, MapVariableAreas)
+{
+    // break into 4 by increasing top-right and bottom-left values
+    // this way we avoid neighbors matching
+    const int N = 20;
+    float data[N] = {1.f, 1.f, 1.f, 2.f, 3.f,
+                     1.f, 1.f, 1.f, 2.f, 4.f,
+                     1.f, 1.f, 1.f, 2.f, 5.f,
+                     6.f, 6.f, 6.f, 7.f, 5.f};
+    Mat1f in = Mat1f(4, 5, data).clone();
+
+    PTree p;
+    p.put(MapAreaFilter::PARAM_TAU_SIZE, 2);
+    config_.Params(p);
+
+    to_->Reconfigure(config_);
+
+    Signal sig;
+    sig.Append(NAME_IN_MAP, in);
+
+    to_->Activate(sig);
+    to_->Response(sig);
+
+    Mat1f map_filtered = sig.MostRecentMat1f(NAME_OUT_MAP);
+
+    //ELM_COUT_VAR(map_filtered);
+
+    EXPECT_MAT_DIMS_EQ(map_filtered, in.size());
+    Mat1f map_filtered_expected = in.clone();
+    map_filtered_expected.setTo(2.f, in == 3.f);
+    map_filtered_expected.setTo(2.f, in == 4.f);
+    map_filtered_expected.setTo(2.f, in == 5.f);
+    map_filtered_expected.setTo(2.f, in == 7.f);
+
+    EXPECT_MAT_EQ(map_filtered_expected, map_filtered);
+}
+
+TEST_F(MapAreaFilterTest, MapVariableAreas_all_large)
+{
+    // break into 4 by increasing top-right and bottom-left values
+    // this way we avoid neighbors matching
+    const int N = 20;
+    float data[N] = {1.f, 1.f, 1.f, 2.f, 3.f,
+                     1.f, 1.f, 1.f, 2.f, 3.f,
+                     1.f, 1.f, 1.f, 2.f, 3.f,
+                     6.f, 6.f, 6.f, 6.f, 3.f};
+    Mat1f in = Mat1f(4, 5, data).clone();
+
+    PTree p;
+    p.put(MapAreaFilter::PARAM_TAU_SIZE, 2);
+    config_.Params(p);
+
+    to_->Reconfigure(config_);
+
+    Signal sig;
+    sig.Append(NAME_IN_MAP, in);
+
+    to_->Activate(sig);
+    to_->Response(sig);
+
+    Mat1f map_filtered = sig.MostRecentMat1f(NAME_OUT_MAP);
+
+    //ELM_COUT_VAR(map_filtered);
+
+    EXPECT_MAT_EQ(in, map_filtered);
+}
+
+TEST_F(MapAreaFilterTest, MapVariableAreas_which_neighbor)
+{
+    // break into 4 by increasing top-right and bottom-left values
+    // this way we avoid neighbors matching
+    const int N = 7;
+    float data[N] = {1.f, 1.f, 1.f, 2.f, 3.f, 3.f, 3.f};
+    Mat1f in = Mat1f(1, 7, data).clone();
+
+    PTree p;
+    p.put(MapAreaFilter::PARAM_TAU_SIZE, 2);
+    config_.Params(p);
+
+    to_->Reconfigure(config_);
+
+    Signal sig;
+    sig.Append(NAME_IN_MAP, in);
+
+    to_->Activate(sig);
+    to_->Response(sig);
+
+    Mat1f map_filtered = sig.MostRecentMat1f(NAME_OUT_MAP);
+
+    Mat1f map_filtered_expected = in.clone();
+    map_filtered_expected.setTo(3.f, in == 2.f);
+    EXPECT_MAT_EQ(map_filtered_expected, map_filtered);
+}
 
 } // annonymous namespace for test cases and fixtures

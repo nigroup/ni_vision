@@ -8,6 +8,8 @@ namespace ni {
 /**
  * @brief Layer class for small map areas and merging them with largest neighbor
  * I/O keys defined by parent class
+ *
+ * all map segments with size <= tau will be merged with smaller and largest neighbor
  */
 class MapAreaFilter : public elm::base_FeatureTransformationLayer
 {
@@ -16,9 +18,9 @@ public:
     static const std::string PARAM_TAU_SIZE;    ///< threshold for size differences
 
     // defaults
-    static const int DEFAULT_TAU_SIZE;      ///< = 200 pixels
+    static const int DEFAULT_TAU_SIZE;          ///< = 200 pixels
 
-    static const int DEFAULT_LABEL_UNASSIGNED; ///< =0 value for labeling elements not assigned to any segment
+    static const int DEFAULT_LABEL_UNASSIGNED;  ///< =0 value for labeling elements not assigned to any segment
 
     ~MapAreaFilter();
 
