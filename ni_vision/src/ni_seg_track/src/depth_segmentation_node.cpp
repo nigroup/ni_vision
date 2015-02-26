@@ -148,12 +148,15 @@ protected:
 
             // get calculated depth map
             cv::Mat1f img = sig_.MostRecentMat1f(name_out_);
+            cv::Mat mask_not_assigned = img == 0.f;
 
             cv::Mat img_color;
 
             cv::applyColorMap(elm::ConvertTo8U(img),
                               img_color,
                               cv::COLORMAP_HSV);
+
+            img_color.setTo(cv::Scalar(0), mask_not_assigned);
 
             // convert in preparation to publish depth map image
             sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(
