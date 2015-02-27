@@ -110,7 +110,7 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
 
     int surface_count = DEFAULT_LABEL_UNASSIGNED;
 
-    Mat1b not_nan = g == g;
+    Mat1b not_nan = (g == g); // @todo explain how this detects nan
     cv::bitwise_and(not_nan, g < 100.f, not_nan);
 
     for(int r=0; r<g.rows; r++) {

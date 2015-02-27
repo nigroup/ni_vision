@@ -65,17 +65,23 @@ public:
          */
         cloud_sub_ = nh.subscribe<elm::CloudXYZ>(name_in_, 1, &DepthMapNode::callback, this);
 
-        {
+        { // 0
             // Instantiate DepthMap layer
             elm::LayerConfig cfg;
             elm::LayerIONames io;
             io.Input(ni::DepthMap::KEY_INPUT_STIMULUS, name_in_);
             io.Output(ni::DepthMap::KEY_OUTPUT_RESPONSE, "depth_map");
+            //io.Output(ni::DepthMap::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthMap", cfg, io));
         }
-        {
+        { // 1
             // Instantiate Depth Gradient layer
             elm::LayerConfig cfg;
+
+            elm::PTree p;
+            p.put(ni::DepthGradient::PARAM_GRAD_MAX, 0.04f);
+            cfg.Params(p);
+
             elm::LayerIONames io;
             io.Input(ni::DepthGradient::KEY_INPUT_STIMULUS, "depth_map");
             io.Output(ni::DepthGradient::KEY_OUTPUT_GRAD_X, "depth_grad_x");
@@ -83,7 +89,7 @@ public:
             //io.Output(ni::DepthGradient::KEY_OUTPUT_GRAD_Y, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthGradient", cfg, io));
         }
-        {
+        { // 2
             // Instantiate MedianBlur layer
             // applied on vertical gradient component
             elm::LayerConfig cfg;
@@ -95,7 +101,7 @@ public:
             elm::LayerIONames io;
             io.Input(elm::MedianBlur::KEY_INPUT_STIMULUS, "depth_grad_y");
             io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth");
-            //io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, name_out_);
+            io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("MedianBlur", cfg, io));
         }
         {
@@ -111,7 +117,7 @@ public:
             io.Input(ni::DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth");
             io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, "depth_seg_raw");
             io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
-            layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
+            //layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
         }
         {
             // Instantiate Map Area Filter layer for smoothing surfaces
@@ -151,14 +157,31 @@ protected:
 
                 layers_[i]->Activate(sig_);
                 layers_[i]->Response(sig_);
+
+                if(i==2) {
+
+                    cv::Mat1f gy = sig_.MostRecentMat1f("depth_grad_y");
+                    //cv::Mat1f gys = sig_.MostRecentMat1f("depth_grad_y_smooth");
+                    cv::Mat1f gys = sig_.MostRecentMat1f(name_out_);
+                    //gys(0) = 10.f;
+
+                    cv::imshow("gys", elm::ConvertTo8U(gy));
+
+                    gys.setTo(std::numeric_limits<float>::quiet_NaN(), gy != gy);
+                    gys.setTo(std::numeric_limits<float>::quiet_NaN(), gy > 0.03);
+                    sig_.Append("depth_grad_y_smooth", gys);
+                }
             }
 
             // get calculated depth map
             cv::Mat1f img = sig_.MostRecentMat1f(name_out_);
 
+            //img(0) = 10.f;
             //double min_val, max_val;
             //cv::minMaxIdx(img, &min_val, &max_val);
             //ELM_COUT_VAR(img);
+            cv::imshow("y", elm::ConvertTo8U(img));
+            cv::waitKey(1);
 
             img.setTo(0.f, img != img); // mask nan
             cv::Mat mask_not_assigned = img <= 0.f;

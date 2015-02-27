@@ -1,5 +1,8 @@
 #include "ni/layers/depthgradient.h"
 
+#include <opencv2/highgui/highgui.hpp>
+
+#include "elm/core/debug_utils.h"
 #include "elm/core/exception.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"
@@ -159,17 +162,26 @@ void DepthGradient::Activate(const Signal &signal)
     // compute gradient in x direction:
     computeDerivative(in, 0, grad_x_);
 
-    grad_x_.setTo(max_, grad_x_ > max_);
-    grad_x_.setTo(-max_, grad_x_ < -max_);
+    grad_x_.setTo(std::numeric_limits<float>::quiet_NaN(), abs(grad_x_) > max_);
+    //grad_x_.setTo(-max_, grad_x_ < -max_);
 
     ELM_THROW_BAD_DIMS_IF(in.rows < 2,
                           "Input must have > 1 rows to compute gradient in y direction.");
 
     // compute gradient in y direction:
     computeDerivative(in, 1, grad_y_);
+    //ELM_COUT_VAR(grad_y_);
+    Mat1f tmp(grad_y_.size(), std::numeric_limits<float>::quiet_NaN());
+    grad_y_.copyTo(tmp, abs(grad_y_) <= max_);
+    //cv::imshow("t1", tmp);
+    //cv::imshow("t2", ConvertTo8U(tmp));
+    //grad_y_.setTo(std::numeric_limits<float>::quiet_NaN(), abs(grad_y_) > max_);
+    //ELM_COUT_VAR(grad_y_);
 
-    grad_y_.setTo(max_, grad_y_ > max_);
-    grad_y_.setTo(-max_, grad_y_ < -max_);
+    //cv::imshow("y2", grad_y_);
+    //cv::waitKey(0);
+    //grad_y_.setTo(-max_, grad_y_ < -max_);
+    grad_y_ = tmp;
 }
 
 void DepthGradient::Response(Signal &signal)
