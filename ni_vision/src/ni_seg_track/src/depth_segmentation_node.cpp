@@ -177,6 +177,8 @@ protected:
                     //grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_x) > 0.04f);
                     grad_y_smooth.setTo(NAN_VALUE, elm::isnan(grad_y));
                     //grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_y) > 0.04f);
+                    cv::imshow("grad_y_smooth", elm::ConvertTo8U(grad_y_smooth));
+
                     sig_.Append("depth_grad_y_smooth", grad_y_smooth);
                 }
             }
