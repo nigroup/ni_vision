@@ -30,6 +30,10 @@
 #include "ni/layers/mapareafilter.h"
 #include "ni/layers/layerfactoryni.h"
 
+using namespace cv;
+using namespace elm;
+
+namespace ni {
 
 /**
  * @brief The DepthMap node
@@ -65,93 +69,93 @@ public:
          * is the number of messages that will be buffered up before beginning to throw
          * away the oldest ones.
          */
-        cloud_sub_ = nh.subscribe<elm::CloudXYZ>(name_in_, 1, &DepthSegmentationNode::callback, this);
+        cloud_sub_ = nh.subscribe<CloudXYZ>(name_in_, 1, &DepthSegmentationNode::callback, this);
 
         { // 0
             // Instantiate DepthMap layer
-            elm::LayerConfig cfg;
-            elm::LayerIONames io;
-            io.Input(ni::DepthMap::KEY_INPUT_STIMULUS, name_in_);
-            io.Output(ni::DepthMap::KEY_OUTPUT_RESPONSE, "depth_map");
-            //io.Output(ni::DepthMap::KEY_OUTPUT_RESPONSE, name_out_);
-            layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthMap", cfg, io));
+            LayerConfig cfg;
+            LayerIONames io;
+            io.Input(DepthMap::KEY_INPUT_STIMULUS, name_in_);
+            io.Output(DepthMap::KEY_OUTPUT_RESPONSE, "depth_map");
+            //io.Output(DepthMap::KEY_OUTPUT_RESPONSE, name_out_);
+            layers_.push_back(LayerFactoryNI::CreateShared("DepthMap", cfg, io));
         }
         { // 1
             // Instantiate Depth Gradient layer
-            elm::LayerConfig cfg;
+            LayerConfig cfg;
 
-            elm::PTree p;
-            p.put(ni::DepthGradient::PARAM_GRAD_WEIGHT, 0.5f);
+            PTree p;
+            p.put(DepthGradient::PARAM_GRAD_WEIGHT, 0.5f);
             cfg.Params(p);
 
-            elm::LayerIONames io;
-            io.Input(ni::DepthGradient::KEY_INPUT_STIMULUS, "depth_map");
-            io.Output(ni::DepthGradient::KEY_OUTPUT_GRAD_X, "depth_grad_x");
-            io.Output(ni::DepthGradient::KEY_OUTPUT_GRAD_Y, "depth_grad_y");
-            //io.Output(ni::DepthGradient::KEY_OUTPUT_GRAD_Y, name_out_);
-            layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthGradient", cfg, io));
+            LayerIONames io;
+            io.Input(DepthGradient::KEY_INPUT_STIMULUS, "depth_map");
+            io.Output(DepthGradient::KEY_OUTPUT_GRAD_X, "depth_grad_x");
+            io.Output(DepthGradient::KEY_OUTPUT_GRAD_Y, "depth_grad_y");
+            //io.Output(DepthGradient::KEY_OUTPUT_GRAD_Y, name_out_);
+            layers_.push_back(LayerFactoryNI::CreateShared("DepthGradient", cfg, io));
         }
         { // 2
             // Instantiate MedianBlur layer
             // applied on vertical gradient component
-            elm::LayerConfig cfg;
+            LayerConfig cfg;
 
-            elm::PTree p;
-            p.put(elm::MedianBlur::PARAM_APERTURE_SIZE, 5);
+            PTree p;
+            p.put(MedianBlur::PARAM_APERTURE_SIZE, 5);
             cfg.Params(p);
 
-            elm::LayerIONames io;
-            io.Input(elm::MedianBlur::KEY_INPUT_STIMULUS, "depth_grad_y");
-            io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth");
-            //io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, name_out_);
-            layers_.push_back(ni::LayerFactoryNI::CreateShared("MedianBlur", cfg, io));
+            LayerIONames io;
+            io.Input(MedianBlur::KEY_INPUT_STIMULUS, "depth_grad_y");
+            io.Output(MedianBlur::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth");
+            //io.Output(MedianBlur::KEY_OUTPUT_RESPONSE, name_out_);
+            layers_.push_back(LayerFactoryNI::CreateShared("MedianBlur", cfg, io));
         }
         { // 3
             // Instantiate layer for rectifying smoothed gradient
             // apply thresholds on raw gradient and have them reflect on smoothed component
-            elm::LayerConfig cfg;
+            LayerConfig cfg;
 
-            elm::PTree p;
-            p.put(ni::DepthGradientRectify::PARAM_MAX_GRAD, 0.04f);
+            PTree p;
+            p.put(DepthGradientRectify::PARAM_MAX_GRAD, 0.04f);
             cfg.Params(p);
 
-            elm::LayerIONames io;
-            io.Input(ni::DepthGradientRectify::KEY_INPUT_GRAD_X, "depth_grad_x");
-            io.Input(ni::DepthGradientRectify::KEY_INPUT_GRAD_Y, "depth_grad_y");
-            io.Input(ni::DepthGradientRectify::KEY_INPUT_GRAD_SMOOTH, "depth_grad_y_smooth");
-            io.Output(ni::DepthGradientRectify::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth_r");
-            //io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, name_out_);
-            layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthGradientRectify", cfg, io));
+            LayerIONames io;
+            io.Input(DepthGradientRectify::KEY_INPUT_GRAD_X, "depth_grad_x");
+            io.Input(DepthGradientRectify::KEY_INPUT_GRAD_Y, "depth_grad_y");
+            io.Input(DepthGradientRectify::KEY_INPUT_GRAD_SMOOTH, "depth_grad_y_smooth");
+            io.Output(DepthGradientRectify::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth_r");
+            //io.Output(MedianBlur::KEY_OUTPUT_RESPONSE, name_out_);
+            layers_.push_back(LayerFactoryNI::CreateShared("DepthGradientRectify", cfg, io));
         }
         {
             // Instantiate Depth segmentation layer
             // applied on smoothed vertical gradient component
-            elm::LayerConfig cfg;
+            LayerConfig cfg;
 
-            elm::PTree params;
-            params.put(ni::DepthSegmentation::PARAM_MAX_GRAD, 0.003f);
+            PTree params;
+            params.put(DepthSegmentation::PARAM_MAX_GRAD, 0.003f);
             cfg.Params(params);
 
-            elm::LayerIONames io;
-            io.Input(ni::DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth_r");
-            io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, "depth_seg_raw");
-            //io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
-            layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
+            LayerIONames io;
+            io.Input(DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth_r");
+            io.Output(DepthSegmentation::KEY_OUTPUT_RESPONSE, "depth_seg_raw");
+            //io.Output(DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
+            layers_.push_back(LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
         }
         {
             // Instantiate Map Area Filter layer for smoothing surfaces
             // by merging small-sized surfaces together
             // then merging them with largest neighbor
-            elm::LayerConfig cfg;
+            LayerConfig cfg;
 
-            elm::PTree params;
-            params.put(ni::MapAreaFilter::PARAM_TAU_SIZE, 200);
+            PTree params;
+            params.put(MapAreaFilter::PARAM_TAU_SIZE, 200);
             cfg.Params(params);
 
-            elm::LayerIONames io;
-            io.Input(ni::MapAreaFilter::KEY_INPUT_STIMULUS, "depth_seg_raw");
-            io.Output(ni::MapAreaFilter::KEY_OUTPUT_RESPONSE, name_out_);
-            layers_.push_back(ni::LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
+            LayerIONames io;
+            io.Input(MapAreaFilter::KEY_INPUT_STIMULUS, "depth_seg_raw");
+            io.Output(MapAreaFilter::KEY_OUTPUT_RESPONSE, name_out_);
+            layers_.push_back(LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
         }
 
         img_pub_ = it_.advertise(name_out_, 1);
@@ -162,13 +166,13 @@ protected:
      * @brief Point cloud callback
      * @param msg point cloud message
      */
-    void callback(const elm::CloudXYZ::ConstPtr& msg)
+    void callback(const CloudXYZ::ConstPtr& msg)
     {
         mtx_.lock ();
         {
             sig_.Clear();
 
-            cloud_.reset(new elm::CloudXYZ(*msg)); // TODO: avoid copy
+            cloud_.reset(new CloudXYZ(*msg)); // TODO: avoid copy
 
             sig_.Append(name_in_, cloud_);
 
@@ -179,26 +183,26 @@ protected:
             }
 
             // get calculated depth map
-            cv::Mat1f img = sig_.MostRecentMat1f(name_out_);
+            Mat1f img = sig_.MostRecentMat1f(name_out_);
 
             double min_val, max_val;
-            cv::minMaxIdx(img, &min_val, &max_val);
+            minMaxIdx(img, &min_val, &max_val);
 
-            cv::imshow("img", elm::ConvertTo8U(img));
-            cv::waitKey(1);
+            imshow("img", ConvertTo8U(img));
+            waitKey(1);
 
-            img.setTo(0.f, elm::isnan(img));
-            cv::Mat mask_not_assigned = img <= 0.f;
+            img.setTo(0.f, isnan(img));
+            Mat mask_not_assigned = img <= 0.f;
 
-            cv::Mat img_color;
+            Mat img_color;
 
-            cv::applyColorMap(elm::ConvertTo8U(img),
+            applyColorMap(ConvertTo8U(img),
                               img_color,
-                              cv::COLORMAP_HSV);
+                              COLORMAP_HSV);
 
-            img_color.setTo(cv::Scalar(0), mask_not_assigned);
+            img_color.setTo(Scalar(0), mask_not_assigned);
 
-            cv::imshow("img_color", img_color);
+            imshow("img_color", img_color);
 
             // convert in preparation to publish depth map image
             sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(
@@ -211,7 +215,7 @@ protected:
         mtx_.unlock (); // release mutex
     }
 
-    typedef ni::LayerFactoryNI::LayerShared LayerShared;
+    typedef LayerFactoryNI::LayerShared LayerShared;
     typedef std::vector<LayerShared > VecLayerShared;
 
     // members
@@ -225,12 +229,14 @@ protected:
     std::string name_in_;   ///< Signal name and subscribing topic name
     std::string name_out_;   ///< Signal name and publishing topic name
 
-    elm::CloudXYZPtr cloud_;  ///< most recent point cloud
+    CloudXYZPtr cloud_;  ///< most recent point cloud
 
     VecLayerShared layers_; ///< layer pipeline (ordered list of layer instances)
 
-    elm::Signal sig_;
+    Signal sig_;
 };
+
+} // namespace ni
 
 int main(int argc, char** argv)
 {
@@ -244,7 +250,7 @@ int main(int argc, char** argv)
      * You must call one of the versions of ros::init() before using any other
      * part of the ROS system.
      */
-    ros::init(argc, argv, "depth_map");
+    ros::init(argc, argv, "depth_segmentation");
 
     /**
      * NodeHandle is the main access point to communications with the ROS system.
@@ -252,7 +258,7 @@ int main(int argc, char** argv)
      * NodeHandle destructed will close down the node.
      */
     ros::NodeHandle nh;
-    DepthSegmentationNode depth_map_node(nh);
+    ni::DepthSegmentationNode depth_segmentation_node(nh);
 
     /**
      * ros::spin() will enter a loop, pumping callbacks.  With this version, all
