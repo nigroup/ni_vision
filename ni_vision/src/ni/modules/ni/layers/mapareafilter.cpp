@@ -89,6 +89,9 @@ void MapAreaFilter::Activate(const Signal &signal)
 
     for(size_t i=0; i<seg_ids.size(); i++) {
 
+        ELM_COUT_VAR(elm::to_string(seg_graph.VerticesIds()));
+        ELM_COUT_VAR(elm::Reshape(seg_graph.applyVerticesToMap(sum_pixels)));
+
         float cur_seg_id = seg_ids[i];
         float cur_seg_size = seg_sizes(i);
 
@@ -108,18 +111,18 @@ void MapAreaFilter::Activate(const Signal &signal)
                 std::vector<Surface> neighbors(nb_neighbors);
                 VecF neigh_sizes(nb_neighbors); // keep a list of sizes for sorting
 
-                for(int i=0; i<nb_neighbors; i++) {
+                for(int j=0; j<nb_neighbors; j++) {
 
                     float neigh_size = seg_sizes(
-                                seg_graph.VertexIndex(neigh_ids[i]));
+                                seg_graph.VertexIndex(neigh_ids[j]));
 
                     Surface neighbor;
-                    neighbor.id(static_cast<int>(neigh_ids[i]));
+                    neighbor.id(static_cast<int>(neigh_ids[j]));
                     neighbor.pixelIndices(VecI(static_cast<int>(neigh_size)));
 
-                    neighbors[i] = neighbor;
+                    neighbors[j] = neighbor;
 
-                    neigh_sizes[i] = neigh_size;
+                    neigh_sizes[j] = neigh_size;
                 }
 
                 // sort neighbors according to size/area of pixels covered
@@ -127,23 +130,23 @@ void MapAreaFilter::Activate(const Signal &signal)
                 cv::sortIdx(neigh_sizes, neigh_sizes_sorted_idx, SORT_ASCENDING);
 
                 std::vector<Surface> neighbors_sorted(nb_neighbors);
-                for(size_t i=0; i<neigh_sizes_sorted_idx.total(); i++) {
-                    neighbors_sorted[neigh_sizes_sorted_idx(i)] = neighbors[i];
+                for(size_t j=0; j<neigh_sizes_sorted_idx.total(); j++) {
+                    neighbors_sorted[neigh_sizes_sorted_idx(j)] = neighbors[j];
                 }
 
                 // merge small neighbors into current segment
                 bool too_large = false;
-                for(int i=0; i<nb_neighbors && !too_large; i++) {
+                for(int j=0; j<nb_neighbors && !too_large; j++) {
 
                     // access sorted list
-                    Surface neighbor = neighbors_sorted[i];
+                    Surface neighbor = neighbors_sorted[j];
 
                     bool too_large = neighbor.pixelCount() > tau_size_;
                     if(!too_large) {
 
                         //ELM_COUT_VAR("contractEdges(" << neighbor.id() << "," << cur_seg_id << ")");
                         seg_graph.contractEdges(neighbor.id(), cur_seg_id);
-
+                        seg_sizes(i) = cur_seg_size + neighbor.pixelCount();
                         //ELM_COUT_VAR(elm::to_string(seg_graph.VerticesIds()));
                     }
                 }
@@ -156,6 +159,16 @@ void MapAreaFilter::Activate(const Signal &signal)
                 {
                     // merge current segment into larget neighbor
                     seg_graph.contractEdges(cur_seg_id, largest_neigh.id());
+
+                    bool found = false;
+                    for(size_t j=0; j<seg_sizes.total() && !found; j++) {
+
+                        if(seg_ids[j] == largest_neigh.id()) {
+
+                            seg_sizes(j) = static_cast<float>(largest_neigh.pixelCount());
+                            found = true;
+                        }
+                    }
                 }
             }
             catch(ExceptionKeyError &e) {
