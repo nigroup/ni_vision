@@ -101,7 +101,7 @@ public:
             elm::LayerIONames io;
             io.Input(elm::MedianBlur::KEY_INPUT_STIMULUS, "depth_grad_y");
             io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth");
-            io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, name_out_);
+            //io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("MedianBlur", cfg, io));
         }
         {
@@ -117,7 +117,7 @@ public:
             io.Input(ni::DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth");
             io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, "depth_seg_raw");
             io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
-            //layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
+            layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
         }
         {
             // Instantiate Map Area Filter layer for smoothing surfaces
@@ -160,30 +160,39 @@ protected:
 
                 if(i==2) {
 
-                    cv::Mat1f gy = sig_.MostRecentMat1f("depth_grad_y");
-                    //cv::Mat1f gys = sig_.MostRecentMat1f("depth_grad_y_smooth");
-                    cv::Mat1f gys = sig_.MostRecentMat1f(name_out_);
+                    cv::Mat1f grad_y = sig_.MostRecentMat1f("depth_grad_y");
+                    cv::Mat1f grad_x = sig_.MostRecentMat1f("depth_grad_x");
+                    cv::imshow("gy", elm::ConvertTo8U(grad_y));
+                    cv::imshow("gx", elm::ConvertTo8U(grad_x));
+                    cv::Mat1f grad_y_smooth = sig_.MostRecentMat1f("depth_grad_y_smooth");
+                    //cv::Mat1f gys = sig_.MostRecentMat1f(name_out_);
                     //gys(0) = 10.f;
 
-                    cv::imshow("gys", elm::ConvertTo8U(gy));
+                    const float NAN_VALUE = std::numeric_limits<float>::quiet_NaN();
 
-                    gys.setTo(std::numeric_limits<float>::quiet_NaN(), gy != gy);
-                    gys.setTo(std::numeric_limits<float>::quiet_NaN(), gy > 0.03);
-                    sig_.Append("depth_grad_y_smooth", gys);
+                    // set elements that were originally NaN and > threshold to NaN
+                    // in smoothed gradient's y component
+                    grad_y_smooth.setTo(NAN_VALUE, isnan(grad_x));
+                    grad_y_smooth.setTo(NAN_VALUE, abs(grad_x) > 0.03);
+                    grad_y_smooth.setTo(NAN_VALUE, isnan(grad_y));
+                    grad_y_smooth.setTo(NAN_VALUE, grad_y > 0.03);
+                    sig_.Append("depth_grad_y_smooth", grad_y_smooth);
                 }
             }
 
             // get calculated depth map
             cv::Mat1f img = sig_.MostRecentMat1f(name_out_);
 
-            //img(0) = 10.f;
-            //double min_val, max_val;
-            //cv::minMaxIdx(img, &min_val, &max_val);
+            //img(0) = -0.2f;
+            //img(1) = 0.2f;
+            double min_val, max_val;
+            cv::minMaxIdx(img, &min_val, &max_val);
+            //ELM_COUT_VAR(min_val<<" "<<max_val);
             //ELM_COUT_VAR(img);
             cv::imshow("y", elm::ConvertTo8U(img));
             cv::waitKey(1);
 
-            img.setTo(0.f, img != img); // mask nan
+            img.setTo(0.f, isnan(img));
             cv::Mat mask_not_assigned = img <= 0.f;
 
             cv::Mat img_color;
