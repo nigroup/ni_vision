@@ -18,11 +18,9 @@ using namespace ni;
   */
 // paramters
 const std::string DepthGradient::PARAM_GRAD_WEIGHT = "grad_weight";
-const std::string DepthGradient::PARAM_GRAD_MAX    = "grad_max";
 
 // defaults
-const float DepthGradient::DEFAULT_GRAD_WEIGHT = 0.2f;
-const float DepthGradient::DEFAULT_GRAD_MAX    = 0.04f;
+const float DepthGradient::DEFAULT_GRAD_WEIGHT = 0.f;
 
 // output keys
 const std::string DepthGradient::KEY_OUTPUT_GRAD_X = "grad_x";
@@ -143,7 +141,6 @@ void DepthGradient::Reconfigure(const LayerConfig &config)
 {
     // params
     PTree params = config.Params();
-    max_ = params.get<float>(PARAM_GRAD_MAX, DEFAULT_GRAD_MAX);
     w_ = params.get<float>(PARAM_GRAD_WEIGHT, DEFAULT_GRAD_WEIGHT);
 }
 
@@ -174,7 +171,7 @@ void DepthGradient::Activate(const Signal &signal)
     // compute gradient in y direction:
     computeDerivative(in, 1, grad_y_);
     //grad_y_.setTo(NaN, abs(grad_y_) > max_);
-    vconcat(Mat1f(1, grad_y_.cols, NaN), grad_y_, grad_y_);
+    vconcat(grad_y_, Mat1f(1, grad_y_.cols, NaN), grad_y_);
 }
 
 void DepthGradient::Response(Signal &signal)
@@ -223,6 +220,6 @@ void DepthGradient::computeDerivative(const Mat1f &src, int dim, Mat1f &dst) con
     }
 
     // gradient =  diff ./ (in+w)
-    cv::add(in_shift, w_, in_shift, isnan(in_shift));
+    cv::add(in_shift, w_, in_shift, elm::is_not_nan(in_shift));
     divide(diff, in_shift, dst);
 }

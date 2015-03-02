@@ -4,6 +4,7 @@
 
 #include <memory>
 
+#include "elm/core/cv/mat_utils.h"
 #include "elm/core/exception.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"
@@ -94,11 +95,11 @@ TEST_F(DepthGradientTest, Response_dims)
             Mat1f gradient = sig.MostRecentMat1f(NAME_GRAD_X);
 
             EXPECT_EQ(r, gradient.rows);
-            EXPECT_EQ(c-1, gradient.cols);
+            EXPECT_EQ(c, gradient.cols);
 
             gradient = sig.MostRecentMat1f(NAME_GRAD_Y);
 
-            EXPECT_EQ(r-1, gradient.rows);
+            EXPECT_EQ(r, gradient.rows);
             EXPECT_EQ(c, gradient.cols);
         }
     }
@@ -120,7 +121,7 @@ TEST_F(DepthGradientTest, Invalid_input)
     }
 }
 
-TEST_F(DepthGradientTest, Param_max)
+TEST_F(DepthGradientTest, Param_default_weight_zero)
 {
     Mat1f in(2, 2, 1.f);
     in.col(in.cols-1).setTo(1000.f);
@@ -133,14 +134,17 @@ TEST_F(DepthGradientTest, Param_max)
 
     Mat1f grad_x = sig.MostRecentMat1f(NAME_GRAD_X);
 
-    ELM_COUT_VAR(grad_x);
-    EXPECT_FLOAT_EQ(grad_x(0), DepthGradient::DEFAULT_GRAD_MAX);
-    EXPECT_FLOAT_EQ(grad_x(1), DepthGradient::DEFAULT_GRAD_MAX);
+    EXPECT_FLOAT_EQ((1000.f-1.f)/1000.f, grad_x(0));
+    EXPECT_FLOAT_EQ((1000.f-1.f)/1000.f, grad_x(2));
+
+    EXPECT_EQ(2, countNonZero(elm::isnan(grad_x)));
 
     Mat1f grad_y = sig.MostRecentMat1f(NAME_GRAD_Y);
 
-    EXPECT_LE(grad_y(0), DepthGradient::DEFAULT_GRAD_MAX);
-    EXPECT_LE(grad_y(1), DepthGradient::DEFAULT_GRAD_MAX);
+    EXPECT_FLOAT_EQ(0.f, grad_y(0));
+    EXPECT_FLOAT_EQ(0.f, grad_y(1));
+\
+    EXPECT_EQ(2, countNonZero(elm::isnan(grad_y)));
 }
 
 TEST_F(DepthGradientTest, Param_weight)
@@ -148,7 +152,6 @@ TEST_F(DepthGradientTest, Param_weight)
     const float WEIGHT = 2.f;
 
     PTree params;
-    params.add(DepthGradient::PARAM_GRAD_MAX, 100.f);
     params.add(DepthGradient::PARAM_GRAD_WEIGHT, WEIGHT);
     config_.Params(params);
     to_.reset(new DepthGradient(config_));
@@ -164,13 +167,15 @@ TEST_F(DepthGradientTest, Param_weight)
 
     Mat1f grad_x = sig.MostRecentMat1f(NAME_GRAD_X);
 
-    EXPECT_FLOAT_EQ(1.f/WEIGHT, grad_x(0));
-    EXPECT_FLOAT_EQ(0.f, grad_x(1));
+    EXPECT_FLOAT_EQ(1.f/3.f, grad_x(0));
+    EXPECT_EQ(2, countNonZero(elm::isnan(grad_x)));
+    EXPECT_EQ(2, countNonZero(elm::isnan(grad_x.col(1))));
 
     Mat1f grad_y = sig.MostRecentMat1f(NAME_GRAD_Y);
 
-    EXPECT_FLOAT_EQ(1.f/WEIGHT, grad_y(0));
-    EXPECT_FLOAT_EQ(0.f, grad_y(1));
+    EXPECT_FLOAT_EQ(1.f/3.f, grad_y(0));
+    EXPECT_EQ(2, countNonZero(elm::isnan(grad_y)));
+    EXPECT_EQ(2, countNonZero(elm::isnan(grad_y.row(1))));
 }
 
 } // annonymous namespace for test cases and fixtures
