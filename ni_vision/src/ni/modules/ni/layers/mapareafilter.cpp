@@ -68,6 +68,31 @@ void MapAreaFilter::Reconfigure(const LayerConfig &config)
     tau_size_ = p.get<int>(PARAM_TAU_SIZE, DEFAULT_TAU_SIZE);
 }
 
+int MapAreaFilter::getNeighbors(float vtx_id, const GraphAttr &seg_graph, std::vector<Surface> &neighbors, VecF &neigh_sizes) const
+{
+    VecF neigh_ids = seg_graph.getNeighbors(vtx_id);
+    int nb_neighbors = static_cast<int>(neigh_ids.size());
+
+    // create list of neighbors
+    neighbors = std::vector<Surface>(nb_neighbors);
+    neigh_sizes = VecF(nb_neighbors); // keep a list of sizes for sorting
+
+    for(int j=0; j<nb_neighbors; j++) {
+
+        float neigh_size = seg_graph.getAttributes(neigh_ids[j])(0);
+
+        Surface neighbor;
+        neighbor.id(static_cast<int>(neigh_ids[j]));
+        neighbor.pixelIndices(VecI(static_cast<int>(neigh_size)));
+
+        neighbors[j] = neighbor;
+
+        neigh_sizes[j] = neigh_size;
+    }
+
+    return nb_neighbors;
+}
+
 cv::Mat1f sum_pixels(const cv::Mat1f& img, const cv::Mat1b &mask)
 {
     return cv::Mat1f(1, 1, static_cast<float>(cv::countNonZero(mask)));
@@ -87,43 +112,35 @@ void MapAreaFilter::Activate(const Signal &signal)
     VecF seg_ids = seg_graph.VerticesIds();
     Mat1f seg_sizes = elm::Reshape(seg_graph.applyVerticesToMap(sum_pixels));
 
+    // assign size to vector attributes
+    for(size_t i=0; i<seg_sizes.total(); i++) {
+
+        seg_graph.addAttributes(seg_ids[i], seg_sizes.col(i));
+    }
+
     for(size_t i=0; i<seg_ids.size(); i++) {
 
-        ELM_COUT_VAR(elm::to_string(seg_graph.VerticesIds()));
-        ELM_COUT_VAR(elm::Reshape(seg_graph.applyVerticesToMap(sum_pixels)));
+        //ELM_COUT_VAR(elm::to_string(seg_graph.VerticesIds()));
+        //ELM_COUT_VAR(elm::Reshape(seg_graph.applyVerticesToMap(sum_pixels)));
 
         float cur_seg_id = seg_ids[i];
-        float cur_seg_size = seg_sizes(i);
 
-        if(cur_seg_size <= tau_size_) {
+        try {
 
-            try {
+            float cur_seg_size = seg_graph.getAttributes(cur_seg_id)(0);
 
-                VecF neigh_ids = seg_graph.getNeighbors(cur_seg_id);
-                int nb_neighbors = static_cast<int>(neigh_ids.size());
+            if(cur_seg_size <= tau_size_) {
+
+                // create list of neighbors
+                std::vector<Surface> neighbors;
+                VecF neigh_sizes; // keep a list of sizes for sorting
+                int nb_neighbors = getNeighbors(cur_seg_id, seg_graph, neighbors, neigh_sizes);
 
                 if(nb_neighbors < 1) {
 
                     continue; // nothing to do
                 }
-
-                // create list of neighbors
-                std::vector<Surface> neighbors(nb_neighbors);
-                VecF neigh_sizes(nb_neighbors); // keep a list of sizes for sorting
-
-                for(int j=0; j<nb_neighbors; j++) {
-
-                    float neigh_size = seg_sizes(
-                                seg_graph.VertexIndex(neigh_ids[j]));
-
-                    Surface neighbor;
-                    neighbor.id(static_cast<int>(neigh_ids[j]));
-                    neighbor.pixelIndices(VecI(static_cast<int>(neigh_size)));
-
-                    neighbors[j] = neighbor;
-
-                    neigh_sizes[j] = neigh_size;
-                }
+                //ELM_COUT_VAR(nb_neighbors);
 
                 // sort neighbors according to size/area of pixels covered
                 Mat1i neigh_sizes_sorted_idx;
@@ -131,7 +148,9 @@ void MapAreaFilter::Activate(const Signal &signal)
 
                 std::vector<Surface> neighbors_sorted(nb_neighbors);
                 for(size_t j=0; j<neigh_sizes_sorted_idx.total(); j++) {
-                    neighbors_sorted[neigh_sizes_sorted_idx(j)] = neighbors[j];
+
+                    int new_idx = static_cast<int>(neigh_sizes_sorted_idx(j));
+                    neighbors_sorted[new_idx] = neighbors[j];
                 }
 
                 // merge small neighbors into current segment
@@ -141,16 +160,15 @@ void MapAreaFilter::Activate(const Signal &signal)
                     // access sorted list
                     Surface neighbor = neighbors_sorted[j];
 
-                    bool too_large = neighbor.pixelCount() > tau_size_;
-                    if(!too_large) {
+                    if(neighbor.pixelCount() <= tau_size_) {
 
                         //ELM_COUT_VAR("contractEdges(" << neighbor.id() << "," << cur_seg_id << ")");
                         seg_graph.contractEdges(neighbor.id(), cur_seg_id);
-                        seg_sizes(i) = cur_seg_size + neighbor.pixelCount();
+                        float new_cur_size = cur_seg_size + static_cast<float>(neighbor.pixelCount());
+                        seg_graph.addAttributes(cur_seg_id, Mat1f(1, 1, new_cur_size));
                         //ELM_COUT_VAR(elm::to_string(seg_graph.VerticesIds()));
                     }
                 }
-
 
                 // find largest neighbor that is actually large enough
 
@@ -158,6 +176,8 @@ void MapAreaFilter::Activate(const Signal &signal)
                 if(largest_neigh.pixelCount() > tau_size_)
                 {
                     // merge current segment into larget neighbor
+                    //ELM_COUT_VAR("contractEdges(" << cur_seg_id << "," << largest_neigh.id() << ")");
+
                     seg_graph.contractEdges(cur_seg_id, largest_neigh.id());
 
                     bool found = false;
@@ -165,18 +185,21 @@ void MapAreaFilter::Activate(const Signal &signal)
 
                         if(seg_ids[j] == largest_neigh.id()) {
 
-                            seg_sizes(j) = static_cast<float>(largest_neigh.pixelCount());
+                            //seg_sizes(j) = static_cast<float>(largest_neigh.pixelCount());
+                            float new_size = cur_seg_size + static_cast<float>(largest_neigh.pixelCount());
+                            seg_graph.addAttributes(largest_neigh.id(), Mat1f(1, 1, new_size));
                             found = true;
                         }
                     }
                 }
-            }
-            catch(ExceptionKeyError &e) {
+                }
+            } // large enough?
 
-                //ELM_COUT_VAR(e.what());
-                //ELM_COUT_VAR(cur_seg_id << " gone.");
-            }
-        } // large enough?
+        catch(ExceptionKeyError &e) {
+
+            //ELM_COUT_VAR(e.what());
+            //ELM_COUT_VAR(cur_seg_id << " gone.");
+        }
     } // each segment
 
     // replace with getter to Graph's underlying map image
