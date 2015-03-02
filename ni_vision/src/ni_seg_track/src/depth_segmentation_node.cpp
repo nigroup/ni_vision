@@ -25,9 +25,11 @@
 
 #include "ni/layers/depthmap.h"
 #include "ni/layers/depthgradient.h"
+#include "ni/layers/depthgradientrectify.h"
 #include "ni/layers/depthsegmentation.h"
 #include "ni/layers/mapareafilter.h"
 #include "ni/layers/layerfactoryni.h"
+
 
 /**
  * @brief The DepthMap node
@@ -79,7 +81,6 @@ public:
             elm::LayerConfig cfg;
 
             elm::PTree p;
-            //p.put(ni::DepthGradient::PARAM_GRAD_MAX, 0.04f);
             p.put(ni::DepthGradient::PARAM_GRAD_WEIGHT, 0.5f);
             cfg.Params(p);
 
@@ -105,6 +106,23 @@ public:
             //io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("MedianBlur", cfg, io));
         }
+        { // 3
+            // Instantiate layer for rectifying smoothed gradient
+            // apply thresholds on raw gradient and have them reflect on smoothed component
+            elm::LayerConfig cfg;
+
+            elm::PTree p;
+            p.put(ni::DepthGradientRectify::PARAM_MAX_GRAD, 0.04f);
+            cfg.Params(p);
+
+            elm::LayerIONames io;
+            io.Input(ni::DepthGradientRectify::KEY_INPUT_GRAD_X, "depth_grad_x");
+            io.Input(ni::DepthGradientRectify::KEY_INPUT_GRAD_Y, "depth_grad_y");
+            io.Input(ni::DepthGradientRectify::KEY_INPUT_GRAD_SMOOTH, "depth_grad_y_smooth");
+            io.Output(ni::DepthGradientRectify::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth_r");
+            //io.Output(elm::MedianBlur::KEY_OUTPUT_RESPONSE, name_out_);
+            layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthGradientRectify", cfg, io));
+        }
         {
             // Instantiate Depth segmentation layer
             // applied on smoothed vertical gradient component
@@ -115,7 +133,7 @@ public:
             cfg.Params(params);
 
             elm::LayerIONames io;
-            io.Input(ni::DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth");
+            io.Input(ni::DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth_r");
             io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, "depth_seg_raw");
             //io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
@@ -158,42 +176,14 @@ protected:
 
                 layers_[i]->Activate(sig_);
                 layers_[i]->Response(sig_);
-
-                if(i==2) {
-
-                    cv::Mat1f grad_y = sig_.MostRecentMat1f("depth_grad_y");
-                    cv::Mat1f grad_x = sig_.MostRecentMat1f("depth_grad_x");
-                    cv::imshow("gy", elm::ConvertTo8U(grad_y));
-                    cv::imshow("gx", elm::ConvertTo8U(grad_x));
-                    cv::Mat1f grad_y_smooth = sig_.MostRecentMat1f("depth_grad_y_smooth");
-
-                    //cv::Mat1f gys = sig_.MostRecentMat1f(name_out_);
-                    //gys(0) = 10.f;
-
-                    const float NAN_VALUE = std::numeric_limits<float>::quiet_NaN();
-
-                    // set elements that were originally NaN and > threshold to NaN
-                    // in smoothed gradient's y component
-                    grad_y_smooth.setTo(NAN_VALUE, elm::isnan(grad_x));
-                    grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_x) > 0.04f);
-                    grad_y_smooth.setTo(NAN_VALUE, elm::isnan(grad_y));
-                    grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_y) > 0.04f);
-                    grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_y_smooth) > 0.04f);
-                    cv::imshow("grad_y_smooth", elm::ConvertTo8U(grad_y_smooth));
-
-                    sig_.Append("depth_grad_y_smooth", grad_y_smooth);
-                }
             }
 
             // get calculated depth map
             cv::Mat1f img = sig_.MostRecentMat1f(name_out_);
 
-            //img(0) = -0.2f;
-            //img(1) = 0.2f;
             double min_val, max_val;
             cv::minMaxIdx(img, &min_val, &max_val);
-            //ELM_COUT_VAR(min_val<<" "<<max_val);
-            //ELM_COUT_VAR(img);
+
             cv::imshow("img", elm::ConvertTo8U(img));
             cv::waitKey(1);
 
