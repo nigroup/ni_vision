@@ -117,7 +117,7 @@ public:
             elm::LayerIONames io;
             io.Input(ni::DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth");
             io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, "depth_seg_raw");
-            io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
+            //io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
         }
         {
@@ -133,7 +133,7 @@ public:
             elm::LayerIONames io;
             io.Input(ni::MapAreaFilter::KEY_INPUT_STIMULUS, "depth_seg_raw");
             io.Output(ni::MapAreaFilter::KEY_OUTPUT_RESPONSE, name_out_);
-            //layers_.push_back(ni::LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
+            layers_.push_back(ni::LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
         }
 
         img_pub_ = it_.advertise(name_out_, 1);
@@ -166,6 +166,7 @@ protected:
                     cv::imshow("gy", elm::ConvertTo8U(grad_y));
                     cv::imshow("gx", elm::ConvertTo8U(grad_x));
                     cv::Mat1f grad_y_smooth = sig_.MostRecentMat1f("depth_grad_y_smooth");
+
                     //cv::Mat1f gys = sig_.MostRecentMat1f(name_out_);
                     //gys(0) = 10.f;
 
@@ -177,6 +178,7 @@ protected:
                     grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_x) > 0.04f);
                     grad_y_smooth.setTo(NAN_VALUE, elm::isnan(grad_y));
                     grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_y) > 0.04f);
+                    grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_y_smooth) > 0.04f);
                     cv::imshow("grad_y_smooth", elm::ConvertTo8U(grad_y_smooth));
 
                     sig_.Append("depth_grad_y_smooth", grad_y_smooth);
@@ -193,7 +195,7 @@ protected:
             //ELM_COUT_VAR(min_val<<" "<<max_val);
             //ELM_COUT_VAR(img);
             cv::imshow("img", elm::ConvertTo8U(img));
-            cv::waitKey(1);
+            cv::waitKey(1000);
 
             img.setTo(0.f, elm::isnan(img));
             cv::Mat mask_not_assigned = img <= 0.f;
@@ -204,9 +206,9 @@ protected:
                               img_color,
                               cv::COLORMAP_HSV);
 
-            cv::imshow("img_color", img_color);
-
             img_color.setTo(cv::Scalar(0), mask_not_assigned);
+
+            cv::imshow("img_color", img_color);
 
             // convert in preparation to publish depth map image
             sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(
