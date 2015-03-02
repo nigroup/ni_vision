@@ -174,9 +174,9 @@ protected:
                     // set elements that were originally NaN and > threshold to NaN
                     // in smoothed gradient's y component
                     grad_y_smooth.setTo(NAN_VALUE, elm::isnan(grad_x));
-                    grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_x) > 0.04f);
+                    //grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_x) > 0.04f);
                     grad_y_smooth.setTo(NAN_VALUE, elm::isnan(grad_y));
-                    grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_y) > 0.04f);
+                    //grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_y) > 0.04f);
                     sig_.Append("depth_grad_y_smooth", grad_y_smooth);
                 }
             }
