@@ -192,7 +192,7 @@ protected:
             cv::imshow("y", elm::ConvertTo8U(img));
             cv::waitKey(1);
 
-            img.setTo(0.f, isnan(img));
+            img.setTo(0.f, elm::isnan(img));
             cv::Mat mask_not_assigned = img <= 0.f;
 
             cv::Mat img_color;
