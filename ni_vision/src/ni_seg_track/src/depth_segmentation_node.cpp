@@ -65,17 +65,24 @@ public:
          */
         cloud_sub_ = nh.subscribe<elm::CloudXYZ>(name_in_, 1, &DepthMapNode::callback, this);
 
-        {
+        { // 0
             // Instantiate DepthMap layer
             elm::LayerConfig cfg;
             elm::LayerIONames io;
             io.Input(ni::DepthMap::KEY_INPUT_STIMULUS, name_in_);
             io.Output(ni::DepthMap::KEY_OUTPUT_RESPONSE, "depth_map");
+            //io.Output(ni::DepthMap::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthMap", cfg, io));
         }
-        {
+        { // 1
             // Instantiate Depth Gradient layer
             elm::LayerConfig cfg;
+
+            elm::PTree p;
+            p.put(ni::DepthGradient::PARAM_GRAD_MAX, 0.04f);
+            p.put(ni::DepthGradient::PARAM_GRAD_WEIGHT, 0.5f);
+            cfg.Params(p);
+
             elm::LayerIONames io;
             io.Input(ni::DepthGradient::KEY_INPUT_STIMULUS, "depth_map");
             io.Output(ni::DepthGradient::KEY_OUTPUT_GRAD_X, "depth_grad_x");
@@ -83,7 +90,7 @@ public:
             //io.Output(ni::DepthGradient::KEY_OUTPUT_GRAD_Y, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthGradient", cfg, io));
         }
-        {
+        { // 2
             // Instantiate MedianBlur layer
             // applied on vertical gradient component
             elm::LayerConfig cfg;
@@ -151,16 +158,44 @@ protected:
 
                 layers_[i]->Activate(sig_);
                 layers_[i]->Response(sig_);
+
+                if(i==2) {
+
+                    cv::Mat1f grad_y = sig_.MostRecentMat1f("depth_grad_y");
+                    cv::Mat1f grad_x = sig_.MostRecentMat1f("depth_grad_x");
+                    cv::imshow("gy", elm::ConvertTo8U(grad_y));
+                    cv::imshow("gx", elm::ConvertTo8U(grad_x));
+                    cv::Mat1f grad_y_smooth = sig_.MostRecentMat1f("depth_grad_y_smooth");
+                    //cv::Mat1f gys = sig_.MostRecentMat1f(name_out_);
+                    //gys(0) = 10.f;
+
+                    const float NAN_VALUE = std::numeric_limits<float>::quiet_NaN();
+
+                    // set elements that were originally NaN and > threshold to NaN
+                    // in smoothed gradient's y component
+                    grad_y_smooth.setTo(NAN_VALUE, elm::isnan(grad_x));
+                    grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_x) > 0.04f);
+                    grad_y_smooth.setTo(NAN_VALUE, elm::isnan(grad_y));
+                    grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_y) > 0.04f);
+                    cv::imshow("grad_y_smooth", elm::ConvertTo8U(grad_y_smooth));
+
+                    sig_.Append("depth_grad_y_smooth", grad_y_smooth);
+                }
             }
 
             // get calculated depth map
             cv::Mat1f img = sig_.MostRecentMat1f(name_out_);
 
-            //double min_val, max_val;
-            //cv::minMaxIdx(img, &min_val, &max_val);
+            //img(0) = -0.2f;
+            //img(1) = 0.2f;
+            double min_val, max_val;
+            cv::minMaxIdx(img, &min_val, &max_val);
+            //ELM_COUT_VAR(min_val<<" "<<max_val);
             //ELM_COUT_VAR(img);
+            cv::imshow("img", elm::ConvertTo8U(img));
+            cv::waitKey(1);
 
-            img.setTo(0.f, img != img); // mask nan
+            img.setTo(0.f, elm::isnan(img));
             cv::Mat mask_not_assigned = img <= 0.f;
 
             cv::Mat img_color;
@@ -168,6 +203,8 @@ protected:
             cv::applyColorMap(elm::ConvertTo8U(img),
                               img_color,
                               cv::COLORMAP_HSV);
+
+            cv::imshow("img_color", img_color);
 
             img_color.setTo(cv::Scalar(0), mask_not_assigned);
 

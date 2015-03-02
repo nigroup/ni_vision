@@ -1,5 +1,9 @@
 #include "ni/layers/depthgradient.h"
 
+#include <opencv2/highgui/highgui.hpp>
+
+#include "elm/core/debug_utils.h"
+#include "elm/core/cv/mat_utils.h"
 #include "elm/core/exception.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"
@@ -159,17 +163,18 @@ void DepthGradient::Activate(const Signal &signal)
     // compute gradient in x direction:
     computeDerivative(in, 0, grad_x_);
 
-    grad_x_.setTo(max_, grad_x_ > max_);
-    grad_x_.setTo(-max_, grad_x_ < -max_);
+    const float NaN = std::numeric_limits<float>::quiet_NaN();
+
+    //grad_x_.setTo(NaN, abs(grad_x_) > max_);
+    hconcat(grad_x_, Mat1f(grad_x_.rows, 1, NaN), grad_x_);
 
     ELM_THROW_BAD_DIMS_IF(in.rows < 2,
                           "Input must have > 1 rows to compute gradient in y direction.");
 
     // compute gradient in y direction:
     computeDerivative(in, 1, grad_y_);
-
-    grad_y_.setTo(max_, grad_y_ > max_);
-    grad_y_.setTo(-max_, grad_y_ < -max_);
+    //grad_y_.setTo(NaN, abs(grad_y_) > max_);
+    vconcat(Mat1f(1, grad_y_.cols, NaN), grad_y_, grad_y_);
 }
 
 void DepthGradient::Response(Signal &signal)
@@ -217,6 +222,7 @@ void DepthGradient::computeDerivative(const Mat1f &src, int dim, Mat1f &dst) con
         ELM_THROW_VALUE_ERROR(s.str());
     }
 
-    // gradient =  diff ./ (in*w)
-    divide(diff, in_shift+w_, dst);//, 1./static_cast<double>(w_));
+    // gradient =  diff ./ (in+w)
+    cv::add(in_shift, w_, in_shift, isnan(in_shift));
+    divide(diff, in_shift, dst);
 }

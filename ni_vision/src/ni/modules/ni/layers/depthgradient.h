@@ -10,6 +10,7 @@ namespace ni {
 /** @brief class to implement depth gradient
  *
  * Input name already defined by parent
+ * @todo add test with nan input
  */
 class DepthGradient : public elm::base_SingleInputFeatureLayer
 {
