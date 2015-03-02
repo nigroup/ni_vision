@@ -33,7 +33,7 @@
  * @brief The DepthMap node
  * @todo Is the mutex crucial?
  */
-class DepthMapNode
+class DepthSegmentationNode
 {
 public:
     /**
@@ -43,7 +43,7 @@ public:
      *
      * @param nh node handle
      */
-    DepthMapNode(ros::NodeHandle &nh)
+    DepthSegmentationNode(ros::NodeHandle &nh)
         : it_(nh),
           name_in_("/camera/depth_registered/points"),
           name_out_("/ni/seg_track/depth_segmentation")
@@ -63,7 +63,7 @@ public:
          * is the number of messages that will be buffered up before beginning to throw
          * away the oldest ones.
          */
-        cloud_sub_ = nh.subscribe<elm::CloudXYZ>(name_in_, 1, &DepthMapNode::callback, this);
+        cloud_sub_ = nh.subscribe<elm::CloudXYZ>(name_in_, 1, &DepthSegmentationNode::callback, this);
 
         { // 0
             // Instantiate DepthMap layer
@@ -262,7 +262,7 @@ int main(int argc, char** argv)
      * NodeHandle destructed will close down the node.
      */
     ros::NodeHandle nh;
-    DepthMapNode depth_map_node(nh);
+    DepthSegmentationNode depth_map_node(nh);
 
     /**
      * ros::spin() will enter a loop, pumping callbacks.  With this version, all
