@@ -195,7 +195,7 @@ protected:
             //ELM_COUT_VAR(min_val<<" "<<max_val);
             //ELM_COUT_VAR(img);
             cv::imshow("img", elm::ConvertTo8U(img));
-            cv::waitKey(1000);
+            cv::waitKey(1);
 
             img.setTo(0.f, elm::isnan(img));
             cv::Mat mask_not_assigned = img <= 0.f;
