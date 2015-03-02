@@ -202,7 +202,7 @@ protected:
                               img_color,
                               cv::COLORMAP_HSV);
 
-            cv::imshow("img", img_color);
+            cv::imshow("img_color", img_color);
 
             img_color.setTo(cv::Scalar(0), mask_not_assigned);
 
