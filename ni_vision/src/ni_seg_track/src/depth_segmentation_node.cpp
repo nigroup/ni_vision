@@ -79,7 +79,7 @@ public:
             elm::LayerConfig cfg;
 
             elm::PTree p;
-            p.put(ni::DepthGradient::PARAM_GRAD_MAX, 0.04f);
+            //p.put(ni::DepthGradient::PARAM_GRAD_MAX, 0.04f);
             p.put(ni::DepthGradient::PARAM_GRAD_WEIGHT, 0.5f);
             cfg.Params(p);
 
