@@ -3,6 +3,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "elm/core/debug_utils.h"
 
+#include "elm/core/cv/mat_utils.h"
 #include "elm/core/exception.h"
 #include "elm/core/graph/graphmap.h"
 #include "elm/core/layerconfig.h"
@@ -110,7 +111,7 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
 
     int surface_count = DEFAULT_LABEL_UNASSIGNED;
 
-    Mat1b not_nan = (g == g); // @todo explain how this detects nan
+    Mat1b not_nan = elm::is_not_nan(g);
     cv::bitwise_and(not_nan, g < 100.f, not_nan);
 
     for(int r=0; r<g.rows; r++) {
@@ -148,8 +149,8 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
                                 /* propagate new assignment to top left quadrant
                                  * relative to current pixel
                                  */
-                                Mat1i tl = surface_labels(Rect2i(0, 0, c+1, r+1));
-                                tl.setTo(surface_labels(r, c), tl == surface_labels(r, c-1));
+                                Mat1i top = surface_labels.rowRange(0, r+1);
+                                top.setTo(surface_labels(r, c), top == surface_labels(r, c-1));
                             }
                         }
                         else {
