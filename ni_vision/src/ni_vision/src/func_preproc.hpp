@@ -121,7 +121,7 @@ void MakeDGradMap (std::vector<float> vDepth, std::vector<int> vCloudIdx_d, int 
             }
             if (x > 0) {
                 if (vDepth[idx-1]) {
-                    (vDGradX[idx] = vDepth[idx] - vDepth[idx-1]) / (vDepth[idx] + nDGradConst);;
+                    vDGradX[idx] = (vDepth[idx] - vDepth[idx-1]) / (vDepth[idx] + nDGradConst);
                     if (fabs(vDGradX[idx]) > nDSegmDThres) vDGradX[idx] = nDGradNan;
                     else {
                         if (vDGradX[idx] > nDGradXMax) nDGradXMax = vDGradX[idx];
