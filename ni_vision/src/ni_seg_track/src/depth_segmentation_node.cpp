@@ -117,7 +117,7 @@ public:
             elm::LayerIONames io;
             io.Input(ni::DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth");
             io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, "depth_seg_raw");
-            //io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
+            io.Output(ni::DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(ni::LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
         }
         {
@@ -133,7 +133,7 @@ public:
             elm::LayerIONames io;
             io.Input(ni::MapAreaFilter::KEY_INPUT_STIMULUS, "depth_seg_raw");
             io.Output(ni::MapAreaFilter::KEY_OUTPUT_RESPONSE, name_out_);
-            layers_.push_back(ni::LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
+            //layers_.push_back(ni::LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
         }
 
         img_pub_ = it_.advertise(name_out_, 1);
@@ -174,9 +174,9 @@ protected:
                     // set elements that were originally NaN and > threshold to NaN
                     // in smoothed gradient's y component
                     grad_y_smooth.setTo(NAN_VALUE, elm::isnan(grad_x));
-                    //grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_x) > 0.04f);
+                    grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_x) > 0.04f);
                     grad_y_smooth.setTo(NAN_VALUE, elm::isnan(grad_y));
-                    //grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_y) > 0.04f);
+                    grad_y_smooth.setTo(NAN_VALUE, cv::abs(grad_y) > 0.04f);
                     cv::imshow("grad_y_smooth", elm::ConvertTo8U(grad_y_smooth));
 
                     sig_.Append("depth_grad_y_smooth", grad_y_smooth);

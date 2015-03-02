@@ -165,7 +165,7 @@ void DepthGradient::Activate(const Signal &signal)
 
     const float NaN = std::numeric_limits<float>::quiet_NaN();
 
-    grad_x_.setTo(NaN, abs(grad_x_) > max_);
+    //grad_x_.setTo(NaN, abs(grad_x_) > max_);
     hconcat(grad_x_, Mat1f(grad_x_.rows, 1, NaN), grad_x_);
 
     ELM_THROW_BAD_DIMS_IF(in.rows < 2,
@@ -173,8 +173,8 @@ void DepthGradient::Activate(const Signal &signal)
 
     // compute gradient in y direction:
     computeDerivative(in, 1, grad_y_);
-    grad_y_.setTo(NaN, abs(grad_y_) > max_);
-    vconcat(grad_y_, Mat1f(1, grad_y_.cols, NaN), grad_y_);
+    //grad_y_.setTo(NaN, abs(grad_y_) > max_);
+    vconcat(Mat1f(1, grad_y_.cols, NaN), grad_y_, grad_y_);
 }
 
 void DepthGradient::Response(Signal &signal)
