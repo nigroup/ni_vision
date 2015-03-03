@@ -1,5 +1,7 @@
 #include "ni/layers/prunesmallsegments.h"
 
+#include <boost/assign/list_of.hpp>
+
 #include "elm/core/cv/mat_utils.h"
 #include "elm/core/cv/mat_vector_utils.h"
 #include "elm/core/exception.h"
@@ -13,6 +15,12 @@ using namespace elm;
 using namespace ni;
 
 const std::string PruneSmallSegments::PARAM_MIN_SIZE = "min";
+
+template <>
+elm::MapIONames LayerAttr_<PruneSmallSegments>::io_pairs = boost::assign::map_list_of
+        ELM_ADD_INPUT_PAIR(detail::BASE_SINGLE_INPUT_FEATURE_LAYER__KEY_INPUT_STIMULUS)
+        ELM_ADD_OUTPUT_PAIR(detail::BASE_MATOUTPUT_LAYER__KEY_OUTPUT_RESPONSE)
+        ;
 
 PruneSmallSegments::PruneSmallSegments()
     : base_FeatureTransformationLayer()
