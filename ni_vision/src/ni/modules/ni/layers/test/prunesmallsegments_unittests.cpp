@@ -19,7 +19,6 @@ using namespace ni;
 namespace {
 
 ELM_INSTANTIATE_LAYER_TYPED_TEST_CASE_P(PruneSmallSegments);
-ELM_INSTANTIATE_LAYER_FEAT_TRANSF_TYPED_TEST_CASE_P(PruneSmallSegments);
 
 const std::string NAME_IN_MAP = "map_in";
 const std::string NAME_OUT_MAP = "map_out";
@@ -56,13 +55,9 @@ TEST_F(PruneSmallSegmentsTest, Reset_EmptyConfig)
 
 TEST_F(PruneSmallSegmentsTest, Response_dims)
 {
-    PTree p;
-    p.put(PruneSmallSegments::PARAM_MIN_SIZE, 1);
-    config_.Params(p);
+    for(int r=2; r<10; r++) {
 
-    for(int r=1; r<10; r++) {
-
-        for(int c=1; c<10; c++) {
+        for(int c=2; c<10; c++) {
 
             Mat1f in = Mat1f(r, c);
             for(size_t i=0; i<in.total(); i++) {
@@ -134,13 +129,12 @@ TEST_F(PruneSmallSegmentsTest, MapVariableAreas)
     //ELM_COUT_VAR(map_filtered);
 
     EXPECT_MAT_DIMS_EQ(map_filtered, in.size());
-//    Mat1f map_filtered_expected = in.clone();
-//    map_filtered_expected.setTo(2.f, in == 3.f);
-//    map_filtered_expected.setTo(2.f, in == 4.f);
-//    map_filtered_expected.setTo(2.f, in == 5.f);
-//    map_filtered_expected.setTo(2.f, in == 7.f);
 
-//    EXPECT_MAT_EQ(map_filtered_expected, map_filtered);
+    float expected[N] = {1.f, 1.f, 1.f, 2.f, 0.f,
+                         1.f, 1.f, 1.f, 2.f, 0.f,
+                         1.f, 1.f, 1.f, 2.f, 5.f,
+                         6.f, 6.f, 6.f, 0.f, 5.f};
+    EXPECT_MAT_EQ(map_filtered, Mat1f(4, 5, expected).clone());
 }
 
 TEST_F(PruneSmallSegmentsTest, MapVariableAreas_all_large)
@@ -166,7 +160,7 @@ TEST_F(PruneSmallSegmentsTest, MapVariableAreas_all_large)
 
     //ELM_COUT_VAR(map_filtered);
 
-//    EXPECT_MAT_EQ(in, map_filtered);
+    EXPECT_MAT_EQ(in, map_filtered);
 }
 
 } // annonymous namespace for test cases and fixtures
