@@ -116,7 +116,7 @@ public:
             LayerConfig cfg;
 
             PTree p;
-            p.put(DepthGradientRectify::PARAM_MAX_GRAD, 0.04f);
+            p.put(DepthGradientRectify::PARAM_MAX_GRAD, 0.014f); // paper = 0.04
             cfg.Params(p);
 
             LayerIONames io;
@@ -133,7 +133,7 @@ public:
             LayerConfig cfg;
 
             PTree params;
-            params.put(DepthSegmentation::PARAM_MAX_GRAD, 0.003f);
+            params.put(DepthSegmentation::PARAM_MAX_GRAD, 0.00125f); // paper = 0.003
             cfg.Params(params);
 
             LayerIONames io;
@@ -185,11 +185,14 @@ protected:
             // get calculated depth map
             Mat1f img = sig_.MostRecentMat1f(name_out_);
 
-            double min_val, max_val;
-            minMaxIdx(img, &min_val, &max_val);
+//            double min_val, max_val;
+//            minMaxIdx(sig_.MostRecentMat1f("depth_grad_y_smooth"), &min_val, &max_val);
+//            ELM_COUT_VAR("s"<<min_val << " " << max_val);
+//            minMaxIdx(sig_.MostRecentMat1f("depth_grad_y_smooth_r"), &min_val, &max_val);
+//            ELM_COUT_VAR("r"<<min_val << " " << max_val);
 
-            imshow("img", ConvertTo8U(img));
-            waitKey(1);
+//            imshow("s", ConvertTo8U(sig_.MostRecentMat1f("depth_grad_y_smooth")));
+//            imshow("r", ConvertTo8U(sig_.MostRecentMat1f("depth_grad_y_smooth_r")));
 
             img.setTo(0.f, isnan(img));
             Mat mask_not_assigned = img <= 0.f;
@@ -203,6 +206,7 @@ protected:
             img_color.setTo(Scalar(0), mask_not_assigned);
 
             imshow("img_color", img_color);
+            waitKey(1);
 
             // convert in preparation to publish depth map image
             sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(
