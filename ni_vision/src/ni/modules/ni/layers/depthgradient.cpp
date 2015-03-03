@@ -218,6 +218,6 @@ void DepthGradient::computeDerivative(const Mat1f &src, int dim, Mat1f &dst) con
     }
 
     // gradient =  diff ./ (|in|+w)
-    //cv::add(abs(in_shift), w_, in_shift);
+    cv::add(abs(in_shift), w_, in_shift);
     divide(diff, in_shift, dst);
 }
