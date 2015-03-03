@@ -38,12 +38,14 @@ protected:
         config_.Params(p);
 
         // IO
-        config_.Input(DepthGradientRectify::KEY_INPUT_GRAD_X, NAME_GRAD_X);
-        config_.Input(DepthGradientRectify::KEY_INPUT_GRAD_Y, NAME_GRAD_Y);
-        config_.Input(DepthGradientRectify::KEY_INPUT_GRAD_SMOOTH, NAME_GRAD_SMOOTH);
-        config_.Output(DepthGradientRectify::KEY_OUTPUT_RESPONSE, NAME_OUT_GRAD_RECT);
+        LayerIONames io;
+        io.Input(DepthGradientRectify::KEY_INPUT_GRAD_X, NAME_GRAD_X);
+        io.Input(DepthGradientRectify::KEY_INPUT_GRAD_Y, NAME_GRAD_Y);
+        io.Input(DepthGradientRectify::KEY_INPUT_GRAD_SMOOTH, NAME_GRAD_SMOOTH);
+        io.Output(DepthGradientRectify::KEY_OUTPUT_RESPONSE, NAME_OUT_GRAD_RECT);
 
         to_.reset(new DepthGradientRectify(config_));
+        to_->IONames(io);
     }
 
     shared_ptr<base_Layer> to_; ///< test object
