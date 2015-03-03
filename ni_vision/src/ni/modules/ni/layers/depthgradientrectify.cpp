@@ -64,8 +64,8 @@ void DepthGradientRectify::InputNames(const LayerInputNames &io)
 
 void DepthGradientRectify::Activate(const Signal &signal)
 {
-    Mat1f grad_y = signal.MostRecentMat1f(name_in_grad_x_);
-    Mat1f grad_x = signal.MostRecentMat1f(name_in_grad_y_);
+    Mat1f grad_x = signal.MostRecentMat1f(name_in_grad_x_);
+    Mat1f grad_y = signal.MostRecentMat1f(name_in_grad_y_);
     Mat1f grad_s = signal.MostRecentMat1f(name_in_grad_smooth_).clone();
 
     const float NAN_VALUE = std::numeric_limits<float>::quiet_NaN();
