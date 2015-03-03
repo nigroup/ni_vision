@@ -100,7 +100,9 @@ cv::Mat1f sum_pixels(const cv::Mat1f& img, const cv::Mat1b &mask)
 
 cv::Mat1f mask_vertex(const cv::Mat1f& img, const cv::Mat1b &mask)
 {
-    return img.clone().setTo(0, mask == 0);
+    Mat1b mask_inverted;
+    cv::bitwise_not(mask, mask_inverted);
+    return img.clone().setTo(0, mask_inverted);
 }
 
 void MapAreaFilter::Activate(const Signal &signal)
