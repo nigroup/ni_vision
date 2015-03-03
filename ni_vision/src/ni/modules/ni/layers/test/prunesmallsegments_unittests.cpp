@@ -42,6 +42,7 @@ protected:
         io.Output(PruneSmallSegments::KEY_OUTPUT_RESPONSE, NAME_OUT_MAP);
 
         to_.reset(new PruneSmallSegments(config_));
+        to_->IONames(io);
     }
 
     shared_ptr<base_Layer> to_; ///< test object
