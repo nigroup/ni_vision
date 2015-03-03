@@ -27,6 +27,7 @@
 #include "ni/layers/depthgradientrectify.h"
 #include "ni/layers/depthmap.h"
 #include "ni/layers/depthsegmentation.h"
+#include "ni/layers/prunesmallsegments.h"
 
 using boost::assign::map_list_of;
 using namespace elm;
@@ -55,6 +56,7 @@ LayerRegistry g_layerRegistry = map_list_of
         LAYER_REGISTRY_PAIR( MapNeighAdjacency )
         LAYER_REGISTRY_PAIR( MedianBlur )
         LAYER_REGISTRY_PAIR( MutexPopulationCode )
+        LAYER_REGISTRY_PAIR( PruneSmallSegments )
         LAYER_REGISTRY_PAIR( SaliencyItti )
         LAYER_REGISTRY_PAIR( SoftMaxPopulationCode )
         LAYER_REGISTRY_PAIR( SinkhornBalancing )
