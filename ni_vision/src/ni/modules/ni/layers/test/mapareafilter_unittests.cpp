@@ -223,7 +223,7 @@ TEST_F(MapAreaFilterTest, MapVariableAreas_which_neighbor)
     Mat1f map_filtered = sig.MostRecentMat1f(NAME_OUT_MAP);
 
     Mat1f map_filtered_expected = in.clone();
-    map_filtered_expected.setTo(3.f, in == 2.f);
+    map_filtered_expected.setTo(1.f, in == 2.f);
     EXPECT_MAT_EQ(map_filtered_expected, map_filtered);
 }
 
