@@ -34,7 +34,7 @@ PruneSmallSegments::PruneSmallSegments(const LayerConfig &config)
 
 void PruneSmallSegments::Clear()
 {
-    m_ = Mat1f()
+    m_ = Mat1f();
 }
 
 void PruneSmallSegments::Reconfigure(const LayerConfig &config)
