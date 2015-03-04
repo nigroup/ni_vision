@@ -15,6 +15,7 @@
 #include <boost/random/normal_distribution.hpp>
 #include <limits>
 #include <cmath>
+#include <numeric>
 
 
 // visualization
@@ -27,10 +28,10 @@ typedef boost::variate_generator<boost::mt19937, boost::normal_distribution<floa
 
 // parametrization
 static const int n = 6;  // degrees of freedom
-static const int vary[6] = {0, 1, 2, 3, 4, 5};  // specify which parameters should be optimized
+static const int vary[6] = { 0, 1, 2, 3, 4, 5};  // specify which parameters should be optimized
 
 // initial values and step sizes
-static const float pRange[n][2] =  { {0.0, 0.1},
+static const float pRange[n][2] =  { {0.025, 0.1},
                                      {0.0, 0.1},
                                      {0.0, 0.1},
                                      {0.0, 1},
@@ -39,10 +40,10 @@ static const float pRange[n][2] =  { {0.0, 0.1},
 
 
 // parameters for cost function and simulated annealing
+double varWeight = 0;   // weight of the variance in cost function
 double p1 = 0.01;          // maximum distance of neighbors which are considered a match in cost function
 double cWeight = 1;        // weight of RGB distance relative to XYZ distance in cost function
-double p2 = 1*p1;             // penalty in cost function for each point in the query cloud that doesn't have a match in the model cloud
-float T0 = 1;              // initial temperature
+float T0 =0.001;              // initial temperature
 double beta1 = 0.995;      // temperature decay in each iteration
 double beta2 = 0.998;      // variance decay (gaussian sampling of the next candidate state in simulated annealing)
 int max_it_noAccept = 100;  // stopping rule for simulated annealing: maximum number of iterations without acceptance of new state
@@ -53,10 +54,13 @@ float min_change = 0.01;    // within it_interval iterations is smaller than min
 // function declarations
 float cost(const Eigen::VectorXf params, pcl::PointCloud<pcl::PointXYZRGB> * model,
            pcl::PointCloud<pcl::PointXYZRGB> * query, pcl::KdTreeFLANN<pcl::PointXYZRGB> * kdtree);
+float cost2(const Eigen::VectorXf params, pcl::PointCloud<pcl::PointXYZRGB> * model,
+           pcl::PointCloud<pcl::PointXYZRGB> * query, pcl::KdTreeFLANN<pcl::PointXYZRGB> * kdtree);
 float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZRGB> *model,
                         pcl::PointCloud<pcl::PointXYZRGB> *query, pcl::KdTreeFLANN<pcl::PointXYZRGB> * kdtree);
 void sample_gaussian(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor, int it, generator * sampler);
 void sample_gaussian_single(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor, int it, generator * sampler, int i);
+void sample_gaussian_randomComps(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor, int it, generator * sampler);
 void homogeneousTransform(const Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZRGB> & query, pcl::PointCloud<pcl::PointXYZRGB> & aligned);
 void homogeneousTransform2(const Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZRGB> & query, pcl::PointCloud<pcl::PointXYZRGB> & aligned);
 void homogeneousTransform3(const Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZRGB> & query, pcl::PointCloud<pcl::PointXYZRGB> & aligned);
@@ -109,7 +113,7 @@ int main()
 
     // transform query using the final parameters and save result to pcd file
     pcl::PointCloud<pcl::PointXYZRGB> aligned;
-    homogeneousTransform3(params, query, aligned);
+    homogeneousTransform(params, query, aligned);
     pcl::PointCloud<pcl::PointXYZRGB> result;
     pcl::copyPointCloud<pcl::PointXYZRGB>(aligned, result);
     result += model;
@@ -131,7 +135,7 @@ float cost(const Eigen::VectorXf params, pcl::PointCloud<pcl::PointXYZRGB> * mod
 
     // transform query
     pcl::PointCloud<pcl::PointXYZRGB> aligned;
-    homogeneousTransform3(params, *query, aligned);
+    homogeneousTransform(params, *query, aligned);
 
     // compute cost function
     float cost = 0;
@@ -170,8 +174,6 @@ float cost(const Eigen::VectorXf params, pcl::PointCloud<pcl::PointXYZRGB> * mod
         // update cost
         if (dist < p1)
             cost = cost + dist - p1 + cWeight * cdist;
-        else
-            cost += p2;
 
     }
 
@@ -179,6 +181,59 @@ float cost(const Eigen::VectorXf params, pcl::PointCloud<pcl::PointXYZRGB> * mod
 
     return cost;
 }
+
+
+
+// compute costs of a given set of parameters
+float cost2(const Eigen::VectorXf params, pcl::PointCloud<pcl::PointXYZRGB> * model,
+           pcl::PointCloud<pcl::PointXYZRGB> * query, pcl::KdTreeFLANN<pcl::PointXYZRGB> * kdtree)
+{
+
+    // transform query
+    pcl::PointCloud<pcl::PointXYZRGB> aligned;
+    homogeneousTransform(params, *query, aligned);
+
+
+    std::vector<double> distances(aligned.points.size());
+    int K = 1;
+    pcl::PointXYZRGB neighbor;
+    pcl::PointCloud<pcl::PointXYZRGB>::iterator it;
+    // iterate over transformed cloud
+    for (it = aligned.begin(); it < aligned.end(); it++)
+    {
+        pcl::PointXYZRGB searchPoint = *it;
+        std::vector<int> pointIdxNKNSearch(K);
+        std::vector<float> pointNKNSquaredDistance(K);
+        kdtree->nearestKSearch (searchPoint, K, pointIdxNKNSearch, pointNKNSquaredDistance);
+        neighbor = model->points[pointIdxNKNSearch[0]];
+        distances.push_back(sqrt(pointNKNSquaredDistance[0]));
+    }
+
+    double sum = std::accumulate(distances.begin(), distances.end(), 0.0);
+    double mean = sum / distances.size();
+
+    sum = 0.0;
+    for (std::vector<double>::iterator d = distances.begin(); d < distances.end(); d++)
+        sum += (*d - mean) * (*d - mean);
+    double var = sum / (distances.size()-1);
+
+    float cost = mean + varWeight * var;
+    //std::cout << "mean: " << mean << ", variance: " << var << std::endl;
+
+    return cost;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // simulated annealing routine
@@ -196,7 +251,7 @@ float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZR
     Eigen::VectorXf params_best(n);  // best parameter values found
     Eigen::VectorXf neighbor(n); // new candidate state
     float f_old, f_new, f_best;  // old, current and best value of the cost function
-    f_best = f_old = cost(params, model, query, kdtree);
+    f_best = f_old = cost2(params, model, query, kdtree);
     std::cout << "initial costs: " << f_old << std::endl;
     int it = 1;  //number of iterations
     float dE;
@@ -207,12 +262,12 @@ float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZR
         std::cout << "aktuelle Kosten: " << f_old << std::endl;
         f_before[(it-1) % (it_interval+1)] = f_old;
 
-        // draw new candidate state and compute corresponding value of the cost function
         for (int i = 0; i < sizeof(vary)/sizeof(vary[0]); i++)
         {
+            // draw new candidate state and compute corresponding value of the cost function
             sample_gaussian_single(params, neighbor, it, &sampler, vary[i]);
 
-            f_new = cost(neighbor, model, query, kdtree);
+            f_new = cost2(neighbor, model, query, kdtree);
             if (f_new < f_best)
             {
                 f_best = f_new;
@@ -229,7 +284,7 @@ float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZR
                 if (visualize)
                 {
                     pcl::PointCloud<pcl::PointXYZRGB> aligned;
-                    homogeneousTransform3(neighbor, *query, aligned);
+                    homogeneousTransform(neighbor, *query, aligned);
                     pcl::PointCloud<pcl::PointXYZRGB>::Ptr ref(new pcl::PointCloud<pcl::PointXYZRGB>);
                     pcl::copyPointCloud<pcl::PointXYZRGB>(aligned, *ref);
                     viewer->addPointCloud<pcl::PointXYZRGB> (ref, "aligned");
@@ -239,6 +294,7 @@ float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZR
                 }
             }
         }
+
 
         // update temperature (annealing) and iteration counter
         T *= beta1;
@@ -273,6 +329,23 @@ void sample_gaussian_single(const Eigen::VectorXf & params, Eigen::VectorXf & ne
     fact *=beta2;
     neighbor = params;
     neighbor[i] += fact * pRange[i][1] * (*sampler)();
+    //std::cout << neighbor << std::endl;
+}
+
+
+// generate new sample for simulated annealing
+// random number of components to be disturbed
+void sample_gaussian_randomComps(const Eigen::VectorXf & params, Eigen::VectorXf & neighbor, int it, generator * sampler)
+{
+    static double fact = 1;
+    fact *=beta2;
+    neighbor = params;
+    for (int i = 0; i < sizeof(vary)/sizeof(vary[0]); i++)
+    {
+        int mut = (rand() % 2);  // decide wether to change component or not
+        if (mut)
+            neighbor[vary[i]] += fact * pRange[vary[i]][1] * (*sampler)();;
+    }
     //std::cout << neighbor << std::endl;
 }
 
