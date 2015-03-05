@@ -28,9 +28,17 @@ TEST_F(VertexOpSegmentRectTest, MutableOp)
         img(i) = static_cast<float>(i);
     }
 
-    for(size_t i=0; i<img.total(); i++) {
+    float v = 0.f;
+    for(int r=0; r<img.rows; r++) {
 
-        EXPECT_FLOAT_EQ(1.f, to_.mutableOp(img, img == static_cast<float>(i))(0));
+        for(int c=0; c<img.cols; c++, v++) {
+
+            Mat1i mat_rect = to_.mutableOp(img, img == v);
+            EXPECT_EQ(c, mat_rect(0));
+            EXPECT_EQ(r, mat_rect(1));
+            EXPECT_EQ(c, mat_rect(2));
+            EXPECT_EQ(r, mat_rect(3));
+        }
     }
 }
 
