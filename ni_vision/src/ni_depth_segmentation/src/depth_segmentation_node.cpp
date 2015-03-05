@@ -51,7 +51,8 @@ public:
     DepthSegmentationNode(ros::NodeHandle &nh)
         : it_(nh),
           name_in_("/camera/depth_registered/points"),
-          name_out_("/ni/depth_segmentation/depth_segmentation")
+          name_out_map_color_("/ni/depth_segmentation/depth_segmentation/map_image_color"),
+          name_out_map_gray_("/ni/depth_segmentation/depth_segmentation/map_image_gray")
     {
         /**
          * The subscribe() call is how you tell ROS that you want to receive messages
@@ -153,11 +154,12 @@ public:
 
             LayerIONames io;
             io.Input(MapAreaFilter::KEY_INPUT_STIMULUS, "depth_seg_raw");
-            io.Output(MapAreaFilter::KEY_OUTPUT_RESPONSE, name_out_);
+            io.Output(MapAreaFilter::KEY_OUTPUT_RESPONSE, name_out_map_gray_);
             layers_.push_back(LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
         }
 
-        img_pub_ = it_.advertise(name_out_, 1);
+        img_pub_bgr_    = it_.advertise(name_out_map_color_, 1);
+        img_pub_gray_   = it_.advertise(name_out_map_gray_, 1);
     }
 
 protected:
@@ -182,7 +184,7 @@ protected:
             }
 
             // get calculated depth map
-            Mat1f img = sig_.MostRecentMat1f(name_out_);
+            Mat1f img = sig_.MostRecentMat1f(name_out_map_gray_);
 
 //            double min_val, max_val;
 //            minMaxIdx(sig_.MostRecentMat1f("depth_grad_y_smooth"), &min_val, &max_val);
@@ -198,22 +200,33 @@ protected:
 
             Mat img_color;
 
-            applyColorMap(ConvertTo8U(img),
-                              img_color,
-                              COLORMAP_HSV);
+            Mat1b img_gray = ConvertTo8U(img);
+
+            applyColorMap(img_gray,
+                          img_color,
+                          COLORMAP_HSV);
 
             img_color.setTo(Scalar(0), mask_not_assigned);
 
             imshow("img_color", img_color);
             waitKey(1);
 
-            // convert in preparation to publish depth map image
-            sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(
+            // convert in preparation to publish map image
+            // in color
+            sensor_msgs::ImagePtr img_msg_color = cv_bridge::CvImage(
                         std_msgs::Header(),
                         sensor_msgs::image_encodings::BGR8,
                         img_color).toImageMsg();
 
-            img_pub_.publish(img_msg);
+            img_pub_bgr_.publish(img_msg_color);
+
+            // in grayscale
+            sensor_msgs::ImagePtr img_msg_gray = cv_bridge::CvImage(
+                        std_msgs::Header(),
+                        sensor_msgs::image_encodings::MONO8,
+                        img_gray).toImageMsg();
+
+            img_pub_gray_.publish(img_msg_gray);
         }
         mtx_.unlock (); // release mutex
     }
@@ -222,16 +235,21 @@ protected:
     typedef std::vector<LayerShared > VecLayerShared;
 
     // members
+    // ROS topic members
     ros::Subscriber cloud_sub_;     ///< point cloud subscriber
 
     image_transport::ImageTransport it_;    ///< faciliatate image publishers and subscribers
-    image_transport::Publisher img_pub_;    ///< depth map image publisher
+    image_transport::Publisher img_pub_bgr_;    ///< segmentation map image publisher colored
+    image_transport::Publisher img_pub_gray_;    ///< segmentation map image publisher monochrome
 
     boost::mutex mtx_;                      ///< mutex object for thread safety
 
+    // IO/topic names
     std::string name_in_;   ///< Signal name and subscribing topic name
-    std::string name_out_;   ///< Signal name and publishing topic name
+    std::string name_out_map_color_;   ///< publishing topic name
+    std::string name_out_map_gray_;   ///< Signal name and publishing topic name
 
+    // processing members
     CloudXYZPtr cloud_;  ///< most recent point cloud
 
     VecLayerShared layers_; ///< layer pipeline (ordered list of layer instances)
