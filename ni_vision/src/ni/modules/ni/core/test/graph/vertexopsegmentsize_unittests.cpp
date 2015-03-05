@@ -1,4 +1,4 @@
-#include "ni/core/graph/VertexOpSegmentSize.h"
+#include "ni/core/graph/vertexopsegmentsize.h"
 
 #include "gtest/gtest.h"
 
