@@ -36,8 +36,7 @@ using namespace elm;
 namespace ni {
 
 /**
- * @brief The DepthMap node
- * @todo Is the mutex crucial?
+ * @brief Node for Depth Segmentation into surfaces
  */
 class DepthSegmentationNode
 {
