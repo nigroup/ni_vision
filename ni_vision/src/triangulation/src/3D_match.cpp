@@ -43,7 +43,7 @@ static const float pRange[n][2] =  { {0.025, 0.1},
 double varWeight = 0;   // weight of the variance in cost function
 double p1 = 0.01;          // maximum distance of neighbors which are considered a match in cost function
 double cWeight = 1;        // weight of RGB distance relative to XYZ distance in cost function
-float T0 =0.001;              // initial temperature
+float T0 =1;              // initial temperature
 double beta1 = 0.995;      // temperature decay in each iteration
 double beta2 = 0.998;      // variance decay (gaussian sampling of the next candidate state in simulated annealing)
 int max_it_noAccept = 100;  // stopping rule for simulated annealing: maximum number of iterations without acceptance of new state
@@ -251,7 +251,7 @@ float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZR
     Eigen::VectorXf params_best(n);  // best parameter values found
     Eigen::VectorXf neighbor(n); // new candidate state
     float f_old, f_new, f_best;  // old, current and best value of the cost function
-    f_best = f_old = cost2(params, model, query, kdtree);
+    f_best = f_old = cost(params, model, query, kdtree);
     std::cout << "initial costs: " << f_old << std::endl;
     int it = 1;  //number of iterations
     float dE;
@@ -267,7 +267,7 @@ float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZR
             // draw new candidate state and compute corresponding value of the cost function
             sample_gaussian_single(params, neighbor, it, &sampler, vary[i]);
 
-            f_new = cost2(neighbor, model, query, kdtree);
+            f_new = cost(neighbor, model, query, kdtree);
             if (f_new < f_best)
             {
                 f_best = f_new;

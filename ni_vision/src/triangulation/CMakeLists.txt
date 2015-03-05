@@ -186,6 +186,7 @@ target_link_libraries (3D_model_optimize ${PCL_LIBRARIES})
 target_link_libraries(3D_model_optimize ${OpenCV_LIBRARIES})
 target_link_libraries (3D_match ${PCL_LIBRARIES})
 target_link_libraries (3D_match_reduced ${PCL_LIBRARIES})
+target_link_libraries(3D_match_reduced ${OpenCV_LIBRARIES})
 
 
 
