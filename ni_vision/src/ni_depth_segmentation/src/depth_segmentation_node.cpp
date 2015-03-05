@@ -52,7 +52,7 @@ public:
     DepthSegmentationNode(ros::NodeHandle &nh)
         : it_(nh),
           name_in_("/camera/depth_registered/points"),
-          name_out_("/ni/seg_track/depth_segmentation")
+          name_out_("/ni/depth_segmentation/depth_segmentation")
     {
         /**
          * The subscribe() call is how you tell ROS that you want to receive messages
