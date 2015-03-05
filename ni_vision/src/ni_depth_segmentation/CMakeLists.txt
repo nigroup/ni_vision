@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(ni_seg_track)
+project(ni_depth_segmentation)
 
 # ----------------------------------------------------------------------------
 # Set global CMake variables
@@ -17,7 +17,6 @@ set(NI_LIBS ni_core ni_layers)
 # ----------------------------------------------------------------------------
 # ELM Layers describe the model pipeline
 # ----------------------------------------------------------------------------
-add_definitions(-D__WITH_PCL)
 include(../ni/cmake/DetectELM.cmake)
 
 ## Find catkin macros and libraries
@@ -131,7 +130,7 @@ set(REGEX_EXCLUDE_FROM_MODULE "(.*test.*)|(.*~.*)(.*node.*)")
 list_filterout(SRC_LIST ${REGEX_EXCLUDE_FROM_MODULE})
 list_filterout(HEADERS  ${REGEX_EXCLUDE_FROM_MODULE})
 
-add_library(ni_seg_track
+add_library(ni_depth_segmentation
   ${SRC_LIST}
   ${HEADERS}
 )
