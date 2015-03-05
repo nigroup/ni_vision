@@ -171,10 +171,10 @@ protected:
     {
         mtx_.lock ();
         {
-            sig_.Clear();
 
             cloud_.reset(new CloudXYZ(*msg)); // TODO: avoid copy
 
+            sig_.Clear();
             sig_.Append(name_in_, cloud_);
 
             for(size_t i=0; i<layers_.size(); i++) {
@@ -211,10 +211,13 @@ protected:
             imshow("img_color", img_color);
             waitKey(1);
 
-            // convert in preparation to publish map image
+            // convert to publish map image
+            std_msgs::Header header;
+            header.stamp.fromNSec(msg->header.stamp);
+
             // in color
             sensor_msgs::ImagePtr img_msg_color = cv_bridge::CvImage(
-                        std_msgs::Header(),
+                        header,
                         sensor_msgs::image_encodings::BGR8,
                         img_color).toImageMsg();
 
@@ -222,7 +225,7 @@ protected:
 
             // in grayscale
             sensor_msgs::ImagePtr img_msg_gray = cv_bridge::CvImage(
-                        std_msgs::Header(),
+                        header,
                         sensor_msgs::image_encodings::MONO8,
                         img_gray).toImageMsg();
 
