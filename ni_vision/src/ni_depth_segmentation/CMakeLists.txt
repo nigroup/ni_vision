@@ -153,12 +153,10 @@ list_filterout(HEADERS  ${REGEX_EXCLUDE_FROM_MODULE})
 set(NODE_NAME depth_map_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
-add_dependencies(${NODE_NAME} beginner_tutorials_generate_messages_cpp)
 
 set(NODE_NAME depth_segmentation_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
-add_dependencies(${NODE_NAME} beginner_tutorials_generate_messages_cpp)
 
 add_executable(talker_node src/talker_node.cpp)
 target_link_libraries(talker_node ${catkin_LIBRARIES})
