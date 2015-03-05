@@ -10,6 +10,8 @@
 #include "elm/core/signal.h"
 #include "elm/ts/layerattr_.h"
 
+#include "ni/core/graph/VertexOpSegmentSize.h"
+
 using namespace cv;
 using namespace elm;
 using namespace ni;
@@ -48,11 +50,6 @@ void PruneSmallSegments::Reset(const LayerConfig &config)
     Reconfigure(config);
 }
 
-cv::Mat1f sum_pixels2(const cv::Mat1f& img, const cv::Mat1b &mask)
-{
-    return cv::Mat1f(1, 1, static_cast<float>(cv::countNonZero(mask)));
-}
-
 cv::Mat1f mask_vertex2(const cv::Mat1f& img, const cv::Mat1b &mask)
 {
     Mat1b mask_inverted;
@@ -67,7 +64,7 @@ void PruneSmallSegments::Activate(const Signal &signal)
     GraphAttr seg_graph(map.clone(), map > 0.f);
 
     VecF seg_ids = seg_graph.VerticesIds();
-    Mat1f seg_sizes = elm::Reshape(seg_graph.applyVerticesToMap(sum_pixels2));
+    Mat1f seg_sizes = elm::Reshape(seg_graph.applyVerticesToMap(VertexOpSegmentSize::calcSize));
 
     // assign size to vector attributes
     for(size_t i=0; i<seg_sizes.total(); i++) {
