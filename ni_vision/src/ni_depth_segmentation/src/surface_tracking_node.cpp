@@ -55,6 +55,11 @@ public:
 
             delete img_sub_ptr_;
         }
+
+        if(img_sub_seg_ptr_ != NULL) {
+
+            delete img_sub_seg_ptr_;
+        }
     }
 
     /**
@@ -68,24 +73,26 @@ public:
         : it_(nh),
           name_in_cld_("/camera/depth_registered/points"),
           name_in_img_("/camera/rgb/image_color"),
-          name_in_seg_("/ni/depth_segmentation/depth_segmentation"),
+          name_in_seg_("/ni/depth_segmentation/depth_segmentation/map_image_gray"),
           name_out_("/ni/depth_segmentation/surfaces/image")
     {
 
         using namespace message_filters; // Subscriber, sync_policies
 
-        cloud_sub_ptr_ = new Subscriber<CloudXYZ>(nh, name_in_cld_, 1);
-        img_sub_ptr_ = new Subscriber<sensor_msgs::Image>(nh, name_in_img_, 1);
+        cloud_sub_ptr_  = new Subscriber<CloudXYZ>(nh, name_in_cld_, 30);
+        img_sub_ptr_    = new Subscriber<sensor_msgs::Image>(nh, name_in_img_, 30);
+        img_sub_seg_ptr_ = new Subscriber<sensor_msgs::Image>(nh, name_in_seg_, 30);
 
         // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-        int queue_size = 10;
+        int queue_size = 30;
         sync_ptr_ = new Synchronizer<MySyncPolicy>(MySyncPolicy(queue_size),
                                                    *cloud_sub_ptr_,
-                                                   *img_sub_ptr_);
+                                                   *img_sub_ptr_,
+                                                   *img_sub_seg_ptr_);
 
         sync_ptr_->registerCallback(
                     boost::bind(
-                        &SurfaceTrackingNode::callback, this, _1, _2)
+                        &SurfaceTrackingNode::callback, this, _1, _2, _3)
                     );
 
         { // 0
@@ -103,16 +110,48 @@ public:
 protected:
 
 
-    void callback(const CloudXYZ::ConstPtr& cld, const sensor_msgs::ImageConstPtr& img)
+    void callback(const CloudXYZ::ConstPtr& cld,
+                  const sensor_msgs::ImageConstPtr& img,
+                  const sensor_msgs::ImageConstPtr& img_seg)
     {
+        namespace img_enc=sensor_msgs::image_encodings;
         // Solve all of perception here...
+        ELM_COUT_VAR("here");
         mtx_.lock ();
         {
+            cloud_.reset(new CloudXYZ(*cld)); ///< @todo avoid copy
+
+            cv_bridge::CvImageConstPtr cv_img_ptr;
+            try {
+
+                cv_img_ptr = cv_bridge::toCvShare(img, img_enc::BGR8);
+                cv_img_ptr->image.convertTo(img_, CV_32FC3);
+            }
+            catch (cv_bridge::Exception& e) {
+
+                ROS_ERROR("cv_bridge exception for img message: %s", e.what());
+                return;
+            }
+
+            cv_bridge::CvImageConstPtr cv_img_seg_ptr;
+            try {
+
+                cv_img_seg_ptr = cv_bridge::toCvShare(img_seg, img_enc::BGR8);
+                img_seg_ = cv_img_seg_ptr->image;
+            }
+            catch (cv_bridge::Exception& e) {
+
+                ROS_ERROR("cv_bridge exception for img_seg message: %s", e.what());
+                return;
+            }
+
+            // External inputs from messages extracted...
+            // Now to processing...
+
             sig_.Clear();
-
-            cloud_.reset(new CloudXYZ(*cld)); // TODO: avoid copy
-
             sig_.Append(name_in_cld_, cloud_);
+            //sig_.Append(name_in_img_, img_);
+            sig_.Append(name_in_seg_, img_seg_);
 
             for(size_t i=0; i<layers_.size(); i++) {
 
@@ -120,9 +159,8 @@ protected:
                 layers_[i]->Response(sig_);
             }
 
-            // get calculated depth map
-
             //imshow("depth_map", ConvertTo8U(sig_.MostRecentMat1f("depth_map")));
+            imshow("seg", sig_.MostRecentMat1f(name_in_seg_));
 
             Mat1f img = Mat1f::zeros(50, 50);
 
@@ -153,23 +191,18 @@ protected:
 
     typedef LayerFactoryNI::LayerShared LayerShared;
     typedef std::vector<LayerShared > VecLayerShared;
-    typedef message_filters::sync_policies::ApproximateTime<CloudXYZ, sensor_msgs::Image> MySyncPolicy;
+
+    typedef sensor_msgs::Image msg_Img;
+    typedef message_filters::sync_policies::ApproximateTime<CloudXYZ, msg_Img, msg_Img> MySyncPolicy;
 
     // members
-    //MySyncPolicy policy_;
-    MySyncPolicy *policy_ptr_;
     message_filters::Synchronizer<MySyncPolicy> *sync_ptr_;
-    //message_filters::Synchronizer<MySyncPolicy> sync_;
 
-    message_filters::Subscriber<CloudXYZ > *cloud_sub_ptr_;     ///< point cloud subscriber
-    message_filters::Subscriber<sensor_msgs::Image > *img_sub_ptr_;
-
-    message_filters::Subscriber<CloudXYZ > cloud_sub_;     ///< point cloud subscriber
-    message_filters::Subscriber<sensor_msgs::Image > img_sub_;
+    message_filters::Subscriber<CloudXYZ > *cloud_sub_ptr_;         ///< synchronized point cloud subscriber
+    message_filters::Subscriber<sensor_msgs::Image > *img_sub_ptr_; ///< synchronized image subscriber (RGB)
+    message_filters::Subscriber<sensor_msgs::Image > *img_sub_seg_ptr_; ///< synchronized image subscriber (Segmentation map)
 
     image_transport::ImageTransport it_;    ///< faciliatate image publishers and subscribers
-    image_transport::Subscriber img_sub_seg_;   ///< segmentation map image subsriber
-    image_transport::Subscriber img_sub_img_;   ///< raw image subsriber
     image_transport::Publisher img_pub_;    ///< surface map image publisher
 
     boost::mutex mtx_;                      ///< mutex object for thread safety
@@ -177,12 +210,12 @@ protected:
     std::string name_in_cld_;    ///< Signal name and subscribing topic name
     std::string name_in_img_;    ///< Signal name and subscribing topic name
     std::string name_in_seg_;    ///< Signal name and subscribing topic name
-    std::string name_out_;      ///< Signal name and publishing topic name
+    std::string name_out_;       ///< Signal name and publishing topic name
 
     CloudXYZPtr cloud_;  ///< most recent point cloud
 
-    Mat1f img_seg_;
-    Mat1f img_;
+    cv::Mat1f img_seg_;
+    cv::Mat3f img_;
 
     VecLayerShared layers_; ///< layer pipeline (ordered list of layer instances)
 
