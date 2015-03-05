@@ -412,7 +412,7 @@ float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZR
             f_new = cost(neighbor, model, query, kdtree, model_normals);
 
             if (f_new < f_best)
-            {qqqqqqqqq
+            {
                 f_best = f_new;
                 params_best = neighbor;
             }
