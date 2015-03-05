@@ -10,7 +10,7 @@
 #include "elm/core/signal.h"
 #include "elm/ts/layerattr_.h"
 
-#include "ni/core/graph/VertexOpSegmentSize.h"
+#include "ni/core/graph/vertexopsegmentsize.h"
 
 using namespace cv;
 using namespace elm;

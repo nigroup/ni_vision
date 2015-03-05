@@ -1,5 +1,7 @@
 #include "ni/core/graph/vertexopsegmentsize.h"
 
+#include <opencv2/core/core.hpp>
+
 using namespace cv;
 using namespace elm;
 using namespace ni;

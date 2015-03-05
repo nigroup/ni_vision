@@ -11,7 +11,7 @@
 #include "elm/ts/layerattr_.h"
 
 #include "ni/core/surface.h"
-#include "ni/core/graph/VertexOpSegmentSize.h"
+#include "ni/core/graph/vertexopsegmentsize.h"
 
 using namespace std;
 using namespace cv;
