@@ -11,6 +11,7 @@
 #include "elm/ts/layerattr_.h"
 
 #include "ni/core/surface.h"
+#include "ni/core/graph/VertexOpSegmentSize.h"
 
 using namespace std;
 using namespace cv;
@@ -93,11 +94,6 @@ int MapAreaFilter::getNeighbors(float vtx_id, const GraphAttr &seg_graph, std::v
     return nb_neighbors;
 }
 
-cv::Mat1f sum_pixels(const cv::Mat1f& img, const cv::Mat1b &mask)
-{
-    return cv::Mat1f(1, 1, static_cast<float>(cv::countNonZero(mask)));
-}
-
 cv::Mat1f mask_vertex(const cv::Mat1f& img, const cv::Mat1b &mask)
 {
     Mat1b mask_inverted;
@@ -112,7 +108,8 @@ void MapAreaFilter::Activate(const Signal &signal)
     GraphAttr seg_graph(map.clone(), map > DEFAULT_LABEL_UNASSIGNED);
 
     VecF seg_ids = seg_graph.VerticesIds();
-    Mat1f seg_sizes = elm::Reshape(seg_graph.applyVerticesToMap(sum_pixels));
+    Mat1f seg_sizes = elm::Reshape(seg_graph.applyVerticesToMap(
+                                       VertexOpSegmentSize::calcSize));
 
     // assign size to vector attributes
     for(size_t i=0; i<seg_sizes.total(); i++) {
@@ -123,7 +120,6 @@ void MapAreaFilter::Activate(const Signal &signal)
     for(size_t i=0; i<seg_ids.size(); i++) {
 
         //ELM_COUT_VAR(elm::to_string(seg_graph.VerticesIds()));
-        //ELM_COUT_VAR(elm::Reshape(seg_graph.applyVerticesToMap(sum_pixels)));
 
         float cur_seg_id = seg_ids[i];
 
