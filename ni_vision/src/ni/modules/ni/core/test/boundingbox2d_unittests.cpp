@@ -2,14 +2,9 @@
 
 #include "gtest/gtest.h"
 
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-
 #include "elm/core/cv/mat_utils.h"
 
 using namespace cv;
-using namespace pcl;
-using namespace elm;
 using namespace ni;
 
 class BoundingBox2DTest : public ::testing::Test

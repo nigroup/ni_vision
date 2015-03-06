@@ -5,13 +5,11 @@
 
 #include <opencv2/core/core.hpp>
 
-#include "elm/core/pcl/typedefs_fwd.h"
-
 namespace ni {
 
 /**
  * @brief class for 2-dimensional bounding box
- * In image/pixel space increasing to the left and downwards
+ * Bascially methods ontop of OpenCV's Rect
  */
 class BoundingBox2D :
         public base_BoundingBox,
