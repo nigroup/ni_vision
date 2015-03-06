@@ -3,9 +3,9 @@
 
 #include "ni/core/base_boundingbox.h"
 
-#include "elm/core/pcl/typedefs_fwd.h"
-
 #include <opencv2/core/core.hpp>
+
+#include "elm/core/pcl/typedefs_fwd.h"
 
 namespace ni {
 
@@ -28,6 +28,9 @@ protected:
 
     // members
     cv::Mat1f cog_; ///< center of gravity
+
+    cv::Rect2f rect_xy_;    ///< bounding rectangle in xy plane
+    cv::Rect2f rect_yz_;    ///< bounding rectangle in yz plane
 };
 
 } // namespace ni
