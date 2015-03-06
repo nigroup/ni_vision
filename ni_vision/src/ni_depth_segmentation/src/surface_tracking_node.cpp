@@ -45,21 +45,6 @@ public:
 
             delete sync_ptr_;
         }
-
-        if(cloud_sub_ptr_ != NULL) {
-
-            delete cloud_sub_ptr_;
-        }
-
-        if(img_sub_ptr_ != NULL) {
-
-            delete img_sub_ptr_;
-        }
-
-        if(img_sub_seg_ptr_ != NULL) {
-
-            delete img_sub_seg_ptr_;
-        }
     }
 
     /**
@@ -67,28 +52,32 @@ public:
      *
      * Register subscriptions.
      *
-     * @param nh node handle
+     * @param nh node handle reference
      */
     SurfaceTrackingNode(ros::NodeHandle &nh)
         : it_(nh),
           name_in_cld_("/camera/depth_registered/points"),
           name_in_img_("/camera/rgb/image_color"),
           name_in_seg_("/ni/depth_segmentation/depth_segmentation/map_image_gray"),
-          name_out_("/ni/depth_segmentation/surfaces/image")
+          name_out_("/ni/depth_segmentation/surfaces/image"),
+#if USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
+          img_sub_(it_, name_in_img_, 1),
+          img_sub_seg_(it_, name_in_seg_, 1),
+#else // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
+          img_sub_(nh, name_in_img_, 1),
+          img_sub_seg_(nh, name_in_img_, 1),
+#endif // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
+          cloud_sub_(nh, name_in_cld_, 100)
     {
 
         using namespace message_filters; // Subscriber, sync_policies
 
-        cloud_sub_ptr_  = new Subscriber<CloudXYZ>(nh, name_in_cld_, 30);
-        img_sub_ptr_    = new Subscriber<sensor_msgs::Image>(nh, name_in_img_, 30);
-        img_sub_seg_ptr_ = new Subscriber<sensor_msgs::Image>(nh, name_in_seg_, 30);
-
         // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-        int queue_size = 30;
+        int queue_size = 100;
         sync_ptr_ = new Synchronizer<MySyncPolicy>(MySyncPolicy(queue_size),
-                                                   *cloud_sub_ptr_,
-                                                   *img_sub_ptr_,
-                                                   *img_sub_seg_ptr_);
+                                                   cloud_sub_,
+                                                   img_sub_,
+                                                   img_sub_seg_);
 
         sync_ptr_->registerCallback(
                     boost::bind(
@@ -137,7 +126,8 @@ protected:
             try {
 
                 cv_img_seg_ptr = cv_bridge::toCvShare(img_seg, img_enc::BGR8);
-                img_seg_ = cv_img_seg_ptr->image;
+                //img_seg_ = cv_img_seg_ptr->image;
+                cv_img_ptr->image.convertTo(img_, CV_32FC3);
             }
             catch (cv_bridge::Exception& e) {
 
@@ -160,7 +150,7 @@ protected:
             }
 
             //imshow("depth_map", ConvertTo8U(sig_.MostRecentMat1f("depth_map")));
-            imshow("seg", sig_.MostRecentMat1f(name_in_seg_));
+            //imshow("seg", sig_.MostRecentMat1f(name_in_seg_));
 
             Mat1f img = Mat1f::zeros(50, 50);
 
@@ -195,22 +185,29 @@ protected:
     typedef sensor_msgs::Image msg_Img;
     typedef message_filters::sync_policies::ApproximateTime<CloudXYZ, msg_Img, msg_Img> MySyncPolicy;
 
+#if USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
+    typedef image_transport::SubscriberFilter ImageSubscriber;
+#else // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
+    typedef message_filters::Subscriber< sensor_msgs::Image > ImageSubscriber;
+#endif // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
+
     // members
-    message_filters::Synchronizer<MySyncPolicy> *sync_ptr_;
-
-    message_filters::Subscriber<CloudXYZ > *cloud_sub_ptr_;         ///< synchronized point cloud subscriber
-    message_filters::Subscriber<sensor_msgs::Image > *img_sub_ptr_; ///< synchronized image subscriber (RGB)
-    message_filters::Subscriber<sensor_msgs::Image > *img_sub_seg_ptr_; ///< synchronized image subscriber (Segmentation map)
-
     image_transport::ImageTransport it_;    ///< faciliatate image publishers and subscribers
-    image_transport::Publisher img_pub_;    ///< surface map image publisher
-
-    boost::mutex mtx_;                      ///< mutex object for thread safety
 
     std::string name_in_cld_;    ///< Signal name and subscribing topic name
     std::string name_in_img_;    ///< Signal name and subscribing topic name
     std::string name_in_seg_;    ///< Signal name and subscribing topic name
     std::string name_out_;       ///< Signal name and publishing topic name
+
+    message_filters::Synchronizer<MySyncPolicy> *sync_ptr_;
+
+    ImageSubscriber img_sub_; ///< synchronized image subscriber (RGB)
+    ImageSubscriber img_sub_seg_; ///< synchronized image subscriber (Segmentation map)
+    message_filters::Subscriber<CloudXYZ > cloud_sub_;         ///< synchronized point cloud subscriber
+
+    image_transport::Publisher img_pub_;    ///< surface map image publisher
+
+    boost::mutex mtx_;                      ///< mutex object for thread safety
 
     CloudXYZPtr cloud_;  ///< most recent point cloud
 
