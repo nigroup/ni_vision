@@ -212,8 +212,9 @@ protected:
             waitKey(1);
 
             // convert to publish map image
+            // mimic timestamp of processed point cloud
             std_msgs::Header header;
-            header.stamp.fromNSec(msg->header.stamp);
+            header.stamp = ros::Time().fromNSec(msg->header.stamp*1e3);
 
             // in color
             sensor_msgs::ImagePtr img_msg_color = cv_bridge::CvImage(
