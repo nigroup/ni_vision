@@ -29,9 +29,16 @@
 #include "ni/layers/depthmap.h"
 #include "ni/layers/layerfactoryni.h"
 
+/** A post from ROS Answers suggested using image_transport::SubscriberFilter
+ *  source: http://answers.ros.org/question/9705/synchronizer-and-image_transportsubscriber/
+ *
+ *  @todo get rid of the #ifdef and choose one
+ */
+#define USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER 1
+
 using namespace cv;
 using namespace elm;
-#define USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER 1
+
 namespace ni {
 
 /**
@@ -54,6 +61,7 @@ public:
      * Register subscriptions.
      *
      * @param nh node handle reference
+     * @todo determine ideal queue size for subscribers and sync policy
      */
     SurfaceTrackingNode(ros::NodeHandle &nh)
         : it_(nh),
@@ -62,19 +70,19 @@ public:
           name_in_seg_("/ni/depth_segmentation/depth_segmentation/map_image_gray"),
           name_out_("/ni/depth_segmentation/surfaces/image"),
 #if USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          img_sub_(it_, name_in_img_, 10000),
-          img_sub_seg_(it_, name_in_seg_, 10000),
+          img_sub_(it_, name_in_img_, 10),
+          img_sub_seg_(it_, name_in_seg_, 10),
 #else // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          img_sub_(nh, name_in_img_, 10000),
-          img_sub_seg_(nh, name_in_seg_, 10000),
+          img_sub_(nh, name_in_img_, 10),
+          img_sub_seg_(nh, name_in_seg_, 10),
 #endif // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          cloud_sub_(nh, name_in_cld_, 10000)
+          cloud_sub_(nh, name_in_cld_, 10)
     {
 
         using namespace message_filters; // Subscriber, sync_policies
 
         // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-        int queue_size = 10000;
+        int queue_size = 10;
         sync_ptr_ = new Synchronizer<MySyncPolicy>(MySyncPolicy(queue_size),
                                                    cloud_sub_,
                                                    img_sub_,
@@ -105,10 +113,8 @@ protected:
                   const sensor_msgs::ImageConstPtr& img_seg)
     {
         namespace img_enc=sensor_msgs::image_encodings;
+
         // Solve all of perception here...
-        ELM_COUT_VAR("here");
-        ELM_COUT_VAR(cld->header.stamp);
-        ELM_COUT_VAR(img->header.stamp);
         mtx_.lock ();
         {
             cloud_.reset(new CloudXYZ(*cld)); ///< @todo avoid copy
