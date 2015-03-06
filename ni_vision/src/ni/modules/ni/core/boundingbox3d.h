@@ -10,7 +10,7 @@
 namespace ni {
 
 /**
- * @brief class for 2-dimensional bounding box
+ * @brief class for 3-dimensional bounding box
  */
 class BoundingBox3D :
         public base_BoundingBox
@@ -24,13 +24,15 @@ public:
 
     cv::Mat1f centralPoint() const;
 
+    float volume() const;
+
 protected:
 
     // members
     cv::Mat1f cog_; ///< center of gravity
 
-    cv::Rect2f rect_xy_;    ///< bounding rectangle in xy plane
-    cv::Rect2f rect_yz_;    ///< bounding rectangle in yz plane
+    cv::Mat1f box_xy_;    ///< bounding box in xy plane
+    cv::Mat1f box_yz_;    ///< bounding box in yz plane
 };
 
 } // namespace ni
