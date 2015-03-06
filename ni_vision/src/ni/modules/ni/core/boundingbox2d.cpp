@@ -27,5 +27,5 @@ float BoundingBox2D::diagonal() const
 
 Mat1f BoundingBox2D::centralPoint() const
 {
-    return (Point2Mat(tl())+Point2Mat(br())) / 2.f;
+    return (Point2Mat(tl()) + Point2Mat(br())) / 2.f;
 }
