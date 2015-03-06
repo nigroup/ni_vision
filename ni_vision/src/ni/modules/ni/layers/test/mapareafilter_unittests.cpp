@@ -200,7 +200,7 @@ TEST_F(MapAreaFilterTest, MapVariableAreas_all_large)
     EXPECT_MAT_EQ(in, map_filtered);
 }
 
-TEST_F(MapAreaFilterTest, MapVariableAreas_which_neighbor)
+TEST_F(MapAreaFilterTest, DISABLED_MapVariableAreas_which_neighbor)
 {
     // break into 4 by increasing top-right and bottom-left values
     // this way we avoid neighbors matching
