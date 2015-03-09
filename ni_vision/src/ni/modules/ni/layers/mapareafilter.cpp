@@ -72,6 +72,8 @@ void MapAreaFilter::Reconfigure(const LayerConfig &config)
 int MapAreaFilter::getNeighbors(float vtx_id, const GraphAttr &seg_graph, std::vector<Surface> &neighbors, VecF &neigh_sizes) const
 {
     VecF neigh_ids = seg_graph.getNeighbors(vtx_id);
+    //ELM_COUT_VAR(vtx_id<<" "<<elm::to_string(neigh_ids));
+
     int nb_neighbors = static_cast<int>(neigh_ids.size());
 
     // create list of neighbors
@@ -171,8 +173,8 @@ void MapAreaFilter::Activate(const Signal &signal)
                 // find largest neighbor that is actually large enough
 
                 Surface largest_neigh = neighbors_sorted[nb_neighbors-1];
-                if(largest_neigh.pixelCount() > tau_size_)
-                {
+                if(largest_neigh.pixelCount() > tau_size_) {
+
                     // merge current segment into larget neighbor
                     //ELM_COUT_VAR("contractEdges(" << cur_seg_id << "," << largest_neigh.id() << ")");
 
@@ -190,8 +192,10 @@ void MapAreaFilter::Activate(const Signal &signal)
                         }
                     }
                 }
-                }
-            } // large enough?
+
+                //ELM_COUT_VAR(seg_graph.MapImg());
+            }
+        } // large enough?
 
         catch(ExceptionKeyError &e) {
 
@@ -200,11 +204,5 @@ void MapAreaFilter::Activate(const Signal &signal)
         }
     } // each segment
 
-    // replace with getter to Graph's underlying map image
-    VecMat1f masked_maps = seg_graph.applyVerticesToMap(mask_vertex);
-    m_ = Mat1f::zeros(map.size());
-    for(size_t i=0; i<masked_maps.size(); i++) {
-
-        m_ += masked_maps[i];
-    }
+    m_ = seg_graph.MapImg();
 }
