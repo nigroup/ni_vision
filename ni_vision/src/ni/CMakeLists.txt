@@ -19,7 +19,6 @@ set(${ROOT_PROJECT}_MODULES "")
 # Include some CMake utilities
 # ----------------------------------------------------------------------------
 
-include(cmake/CompilerUtils.cmake)
 include(cmake/FileSystemUtils.cmake)
 include(cmake/ListUtils.cmake)
 include(cmake/MessageUtils.cmake)
