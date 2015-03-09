@@ -3,6 +3,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "elm/core/debug_utils.h"
 
+#include "elm/core/cv/deferredassign_.h"
 #include "elm/core/cv/mat_utils.h"
 #include "elm/core/exception.h"
 #include "elm/core/graph/graphmap.h"
@@ -114,6 +115,8 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
     Mat1b not_nan = elm::is_not_nan(g);
     cv::bitwise_and(not_nan, g < 100.f, not_nan);
 
+    DeferredAssign_<int> deferred_substitutions;
+
     for(int r=0; r<g.rows; r++) {
 
         for(int c=0; c<g.cols; c++) {
@@ -149,8 +152,9 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
                                 /* propagate new assignment to top left quadrant
                                  * relative to current pixel
                                  */
-                                Mat1i top = surface_labels.rowRange(0, r+1);
-                                top.setTo(surface_labels(r, c), top == surface_labels(r, c-1));
+                                surface_labels(r, c-1) = surface_labels(r, c);
+
+                                deferred_substitutions.push_back(surface_labels(r, c-1), surface_labels(r, c));
                             }
                         }
                         else {
@@ -169,6 +173,8 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
             } // not_nan
         } // column
     } // row
+
+    deferred_substitutions.assign(surface_labels);
 
     return surface_labels;
 }
