@@ -96,13 +96,6 @@ int MapAreaFilter::getNeighbors(float vtx_id, const GraphAttr &seg_graph, std::v
     return nb_neighbors;
 }
 
-cv::Mat1f mask_vertex(const cv::Mat1f& img, const cv::Mat1b &mask)
-{
-    Mat1b mask_inverted;
-    cv::bitwise_not(mask, mask_inverted);
-    return img.clone().setTo(0, mask_inverted);
-}
-
 void MapAreaFilter::Activate(const Signal &signal)
 {
     Mat1f map = signal.MostRecent(name_input_); // weighted gradient after thresholding
