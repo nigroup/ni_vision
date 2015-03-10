@@ -3,7 +3,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "elm/core/debug_utils.h"
 
-#include "elm/core/cv/deferredassign_.h"
+#include "elm/core/cv/lut.h"
 #include "elm/core/cv/mat_utils.h"
 #include "elm/core/exception.h"
 #include "elm/core/graph/graphmap.h"
@@ -73,11 +73,7 @@ void DepthSegmentation::Activate(const Signal &signal)
 {
     Mat1f g = signal.MostRecent(name_input_); // weighted gradient after thresholding
 
-
     m_ = group(g);
-
-
-
 }
 
 bool DepthSegmentation::comparePixels(float current, float neighbor) const
@@ -115,7 +111,15 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
     Mat1b not_nan = elm::is_not_nan(g);
     cv::bitwise_and(not_nan, g < 100.f, not_nan);
 
-    DeferredAssign_<int> deferred_substitutions;
+//    DeferredAssign_<int> deferred_substitutions;
+
+//    Mat1f diff_v = g.rowRange(1, g.rows) - g.rowRange(0, g.rows-1);
+//    vconcat(Mat1f::zeros(1, g.cols), diff_v, diff_v);
+
+//    Mat1f diff_h = g.colRange(1, g.cols) - g.colRange(0, g.cols-1);
+//    hconcat(Mat1f::zeros(1, g.rows), diff_h, diff_h);
+
+    elm::LUT lut(g.total()+1);
 
     for(int r=0; r<g.rows; r++) {
 
@@ -147,14 +151,15 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
                         if(is_matched) {
 
                             // left follows current unless they're already equivalent
-                            if(surface_labels(r, c-1) != surface_labels(r, c)) {
+                            int surface_label_cur = surface_labels(r, c);
+                            int surface_label_left = surface_labels(r, c-1);
+
+                            if(surface_label_cur != surface_label_left) {
 
                                 /* propagate new assignment to top left quadrant
                                  * relative to current pixel
                                  */
-                                surface_labels(r, c-1) = surface_labels(r, c);
-
-                                deferred_substitutions.push_back(surface_labels(r, c-1), surface_labels(r, c));
+                                surface_labels(r, c-1) = lut.update(surface_label_cur, surface_label_left);
                             }
                         }
                         else {
@@ -169,12 +174,13 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
                 if(!is_matched) {
 
                     surface_labels(r, c) = ++surface_count; // assign to new surface
+                    lut.insert(surface_count);
                 }
             } // not_nan
         } // column
     } // row
 
-    deferred_substitutions.assign(surface_labels);
+    lut.apply(surface_labels);
 
     return surface_labels;
 }
