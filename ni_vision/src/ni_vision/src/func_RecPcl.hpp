@@ -286,6 +286,58 @@ void chooseGbSegs(cv::Mat & HrImg, std::vector< std::vector<CvPoint> > & mnGSegm
 
 
 
+// histogram equalization
+void contrastEqualization(const cv::Mat & cvm_rgb_org, cv::Mat & RGBequal, int mode)
+{
+    if (mode == 0)
+        cvm_rgb_org.copyTo(RGBequal);
+    else if (mode == 1)  // use ycrcb color space
+    {
+        cv::Mat ycrcb;
+        cv::cvtColor(cvm_rgb_org,ycrcb,CV_BGR2YCrCb);
+        vector<cv::Mat> channels;
+        cv::split(ycrcb,channels);
+        cv::equalizeHist(channels[0], channels[0]);
+        cv::merge(channels,ycrcb);
+        cv::cvtColor(ycrcb,RGBequal,CV_YCrCb2BGR);
+    }
+    else if (mode == 2)  // use hsv color space
+    {
+        cv::Mat hsv;
+        cv::cvtColor(cvm_rgb_org,hsv,CV_BGR2HSV);
+        vector<cv::Mat> channels;
+        cv::split(hsv,channels);
+        cv::equalizeHist(channels[2], channels[2]);
+        cv::merge(channels,hsv);
+        cv::cvtColor(hsv,RGBequal,CV_HSV2BGR);
+    }
+    else if (mode == 3)   // use yuv color space
+    {
+        cv::Mat yuv;
+        cv::cvtColor(cvm_rgb_org,yuv,CV_BGR2YUV);
+        vector<cv::Mat> channels;
+        cv::split(yuv,channels);
+        cv::equalizeHist(channels[0], channels[0]);
+        cv::merge(channels,yuv);
+        cv::cvtColor(yuv,RGBequal,CV_YUV2BGR);
+    }
+    else if (mode == 4)  // unsharp mask
+    {
+        cv::Mat tmp;
+        cv::GaussianBlur(cvm_rgb_org, tmp, cv::Size(21,21), 21);
+        cv::addWeighted(cvm_rgb_org, 2.0, tmp, -1.0, 0, RGBequal);
+
+    }
+    cv::Mat tmp;
+    cv::bilateralFilter(RGBequal, tmp, 9,550,550);
+    tmp.copyTo(RGBequal);
+    cv::namedWindow("equalized", cv::WINDOW_NORMAL);
+    cv::imshow("equalized", RGBequal);
+}
+
+
+
+
 /* "smooth" high resolution image using graph based segmentation
  * in:
  * cvm_rgb_org: the original high resolution rgb image
@@ -306,6 +358,7 @@ void smoothHighRes(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, float ShareThre
     //double min, max;
     //cv::minMaxLoc(HrImg, &min, &max);
     //cv::threshold(HrImg, HrSmooth, 0.1 * max, 0, cv::THRESH_TOZERO);
+
 
     //graph-based segmentation
     std::vector< std::vector<CvPoint> > mnGSegmPts;
