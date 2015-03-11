@@ -50,7 +50,7 @@ void PruneSmallSegments::Reset(const LayerConfig &config)
     Reconfigure(config);
 }
 
-cv::Mat1f mask_vertex2(const cv::Mat1f& img, const cv::Mat1b &mask)
+cv::Mat1f mask_vertex2(const cv::Mat1i& img, const cv::Mat1b &mask)
 {
     Mat1b mask_inverted;
     cv::bitwise_not(mask, mask_inverted);
@@ -61,9 +61,9 @@ void PruneSmallSegments::Activate(const Signal &signal)
 {
     Mat1f map = signal.MostRecent(name_input_); // weighted gradient after thresholding
 
-    GraphAttr seg_graph(map.clone(), map > 0.f);
+    GraphAttr seg_graph(map.clone(), map > 0);
 
-    VecF seg_ids = seg_graph.VerticesIds();
+    VecI seg_ids = seg_graph.VerticesIds();
     Mat1f seg_sizes = elm::Reshape(seg_graph.applyVerticesToMap(VertexOpSegmentSize::calcSize));
 
     // assign size to vector attributes

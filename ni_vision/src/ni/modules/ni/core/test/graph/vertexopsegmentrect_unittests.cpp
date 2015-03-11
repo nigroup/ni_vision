@@ -22,10 +22,10 @@ protected:
 
 TEST_F(VertexOpSegmentRectTest, MutableOp_single_elements)
 {
-    Mat1f img(2, 2);
+    Mat1i img(2, 2);
     for(size_t i=0; i<img.total(); i++) {
 
-        img(i) = static_cast<float>(i);
+        img(i) = static_cast<int>(i);
     }
 
     float v = 0.f;
@@ -44,10 +44,10 @@ TEST_F(VertexOpSegmentRectTest, MutableOp_single_elements)
 
 TEST_F(VertexOpSegmentRectTest, CalcRect_single_elements)
 {
-    Mat1f img(2, 2);
+    Mat1i img(2, 2);
     for(size_t i=0; i<img.total(); i++) {
 
-        img(i) = static_cast<float>(i);
+        img(i) = static_cast<int>(i);
     }
 
     float v = 0.f;
@@ -104,35 +104,35 @@ TEST_F(VertexOpSegmentRectTest, MutableOp)
 {
     const int ROWS=3;
     const int COLS=3;
-    float data[ROWS*COLS] = {1.f, 1.0f, 2.2f,
-                             3.f, 1.0f, 2.2f,
-                             1.f, 11.f, 11.f};
-    Mat1f img = Mat1f(ROWS, COLS, data).clone();
+    int data[ROWS*COLS] = {1, 1, 2,
+                           3, 1, 2,
+                           1, 11, 11};
+    Mat1i img = Mat1i(ROWS, COLS, data).clone();
 
     Mat1i mat_rect, mat_rect_calc_rect;
 
-    mat_rect = VertexOpSegmentRect::calcRect(img, img == 1.0f);
+    mat_rect = VertexOpSegmentRect::calcRect(img, img == 1);
     EXPECT_EQ(0, mat_rect(0));
     EXPECT_EQ(0, mat_rect(1));
     EXPECT_EQ(1, mat_rect(2));
     EXPECT_EQ(2, mat_rect(3));
-    mat_rect_calc_rect = VertexOpSegmentRect::calcRect(img, img == 1.0f);
+    mat_rect_calc_rect = VertexOpSegmentRect::calcRect(img, img == 1);
     EXPECT_MAT_EQ(mat_rect, mat_rect_calc_rect);
 
-    mat_rect = VertexOpSegmentRect::calcRect(img, img == 2.2f);
+    mat_rect = VertexOpSegmentRect::calcRect(img, img == 2);
     EXPECT_EQ(2, mat_rect(0));
     EXPECT_EQ(0, mat_rect(1));
     EXPECT_EQ(2, mat_rect(2));
     EXPECT_EQ(1, mat_rect(3));
-    mat_rect_calc_rect = VertexOpSegmentRect::calcRect(img, img == 2.2f);
+    mat_rect_calc_rect = VertexOpSegmentRect::calcRect(img, img == 2);
     EXPECT_MAT_EQ(mat_rect, mat_rect_calc_rect);
 
-    mat_rect = VertexOpSegmentRect::calcRect(img, img == 3.f);
+    mat_rect = VertexOpSegmentRect::calcRect(img, img == 3);
     EXPECT_EQ(0, mat_rect(0));
     EXPECT_EQ(1, mat_rect(1));
     EXPECT_EQ(0, mat_rect(2));
     EXPECT_EQ(1, mat_rect(3));
-    mat_rect_calc_rect = VertexOpSegmentRect::calcRect(img, img == 3.f);
+    mat_rect_calc_rect = VertexOpSegmentRect::calcRect(img, img == 3);
     EXPECT_MAT_EQ(mat_rect, mat_rect_calc_rect);
 
     mat_rect = VertexOpSegmentRect::calcRect(img, img == 11.f);
@@ -140,7 +140,7 @@ TEST_F(VertexOpSegmentRectTest, MutableOp)
     EXPECT_EQ(2, mat_rect(1));
     EXPECT_EQ(2, mat_rect(2));
     EXPECT_EQ(2, mat_rect(3));
-    mat_rect_calc_rect = VertexOpSegmentRect::calcRect(img, img == 11.f);
+    mat_rect_calc_rect = VertexOpSegmentRect::calcRect(img, img == 11);
     EXPECT_MAT_EQ(mat_rect, mat_rect_calc_rect);
 }
 
