@@ -71,7 +71,7 @@ void MapAreaFilter::Reconfigure(const LayerConfig &config)
 
 int MapAreaFilter::getNeighbors(float vtx_id, const GraphAttr &seg_graph, std::vector<Surface> &neighbors, VecF &neigh_sizes) const
 {
-    VecF neigh_ids = seg_graph.getNeighbors(vtx_id);
+    VecI neigh_ids = seg_graph.getNeighbors(vtx_id);
     //ELM_COUT_VAR(vtx_id<<" "<<elm::to_string(neigh_ids));
 
     int nb_neighbors = static_cast<int>(neigh_ids.size());
@@ -96,15 +96,38 @@ int MapAreaFilter::getNeighbors(float vtx_id, const GraphAttr &seg_graph, std::v
     return nb_neighbors;
 }
 
+Mat1f MapAreaFilter::getSizes(const Mat1f &map, const VecI &seg_ids) const
+{
+    const int NB_SEGS = static_cast<int>(seg_ids.size());
+    Mat1f seg_sizes(1, NB_SEGS);
+
+    // assuming last id is larger than other
+    // multiply by 2 as a precaution for sufficient size
+    // id occurence in map -> segment size
+    VecI hist(seg_ids[NB_SEGS-1]*2, 0);
+    for(size_t i=0; i<map.total(); i++) {
+
+        hist[map(i)]++;
+    }
+
+    // reorder
+    for(size_t i=0; i<seg_ids.size(); i++) {
+
+        seg_sizes(i) = hist[seg_ids[i]];
+    }
+
+    return seg_sizes;
+}
+
 void MapAreaFilter::Activate(const Signal &signal)
 {
     Mat1f map = signal.MostRecent(name_input_); // weighted gradient after thresholding
 
     GraphAttr seg_graph(map.clone(), map > DEFAULT_LABEL_UNASSIGNED);
 
-    VecF seg_ids = seg_graph.VerticesIds();
-    Mat1f seg_sizes = elm::Reshape(seg_graph.applyVerticesToMap(
-                                       VertexOpSegmentSize::calcSize));
+    VecI seg_ids = seg_graph.VerticesIds();
+
+    Mat1f seg_sizes = getSizes(map, seg_ids);
 
     // assign size to vector attributes
     for(size_t i=0; i<seg_sizes.total(); i++) {
@@ -120,9 +143,11 @@ void MapAreaFilter::Activate(const Signal &signal)
 
         try {
 
-            float cur_seg_size = seg_graph.getAttributes(cur_seg_id)(0);
+            Mat1f cur_seg_size = seg_graph.getAttributes(cur_seg_id);
+            //float cur_seg_size = seg_graph.getAttributes(cur_seg_id)(0);
 
-            if(cur_seg_size <= tau_size_) {
+            //if(cur_seg_size <= tau_size_) {
+            if(cur_seg_size(0) <= tau_size_) {
 
                 // create list of neighbors
                 std::vector<Surface> neighbors;
@@ -148,6 +173,7 @@ void MapAreaFilter::Activate(const Signal &signal)
 
                 // merge small neighbors into current segment
                 bool too_large = false;
+                bool is_size_dirty = false; // dirty bit for current size modified.
                 for(int j=0; j<nb_neighbors && !too_large; j++) {
 
                     // access sorted list
@@ -157,10 +183,19 @@ void MapAreaFilter::Activate(const Signal &signal)
 
                         //ELM_COUT_VAR("contractEdges(" << neighbor.id() << "," << cur_seg_id << ")");
                         seg_graph.contractEdges(neighbor.id(), cur_seg_id);
-                        float new_cur_size = cur_seg_size + static_cast<float>(neighbor.pixelCount());
-                        seg_graph.addAttributes(cur_seg_id, Mat1f(1, 1, new_cur_size));
+
+                        //float new_cur_size = cur_seg_size + static_cast<float>(neighbor.pixelCount());
+                        //seg_graph.addAttributes(cur_seg_id, Mat1f(1, 1, new_cur_size));
+
+                        cur_seg_size += static_cast<float>(neighbor.pixelCount());
                         //ELM_COUT_VAR(elm::to_string(seg_graph.VerticesIds()));
+                        is_size_dirty = true;
                     }
+                }
+
+                if(is_size_dirty) {
+
+                    seg_graph.addAttributes(cur_seg_id, cur_seg_size);
                 }
 
                 // find largest neighbor that is actually large enough
@@ -172,18 +207,20 @@ void MapAreaFilter::Activate(const Signal &signal)
                     //ELM_COUT_VAR("contractEdges(" << cur_seg_id << "," << largest_neigh.id() << ")");
 
                     seg_graph.contractEdges(cur_seg_id, largest_neigh.id());
+                    Mat1f new_size = cur_seg_size + static_cast<float>(largest_neigh.pixelCount());
+                    seg_graph.addAttributes(largest_neigh.id(), new_size);
 
-                    bool found = false;
-                    for(size_t j=0; j<seg_sizes.total() && !found; j++) {
+//                    bool found = false;
+//                    for(size_t j=0; j<seg_sizes.total() && !found; j++) {
 
-                        if(seg_ids[j] == largest_neigh.id()) {
+//                        if(seg_ids[j] == largest_neigh.id()) {
 
-                            //seg_sizes(j) = static_cast<float>(largest_neigh.pixelCount());
-                            float new_size = cur_seg_size + static_cast<float>(largest_neigh.pixelCount());
-                            seg_graph.addAttributes(largest_neigh.id(), Mat1f(1, 1, new_size));
-                            found = true;
-                        }
-                    }
+//                            //seg_sizes(j) = static_cast<float>(largest_neigh.pixelCount());
+//                            float new_size = cur_seg_size + static_cast<float>(largest_neigh.pixelCount());
+//                            seg_graph.addAttributes(largest_neigh.id(), Mat1f(1, 1, new_size));
+//                            found = true;
+//                        }
+//                    }
                 }
 
                 //ELM_COUT_VAR(seg_graph.MapImg());

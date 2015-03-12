@@ -49,6 +49,14 @@ public:
 protected:
     int getNeighbors(float vtx_id, const elm::GraphAttr &seg_graph, std::vector<Surface> &neighbors, elm::VecF &neigh_sizes) const;
 
+    /**
+     * @brief get sizes of all segments from map
+     * @param map
+     * @param ids
+     * @return row vector of sizes, follows order in ids vector
+     */
+    cv::Mat1f getSizes(const cv::Mat1f &map, const elm::VecI &ids) const;
+
     // members
     int tau_size_;
 };
