@@ -7,14 +7,20 @@ Surface::Surface()
 {
 }
 
-int Surface::pixelCount()
+int Surface::pixelCount() const
 {
-    return static_cast<int>(pixel_indices_.size());
+    return pixel_count_;
+}
+
+void Surface::overwritePixelCount(int count)
+{
+    pixel_count_ = count;
 }
 
 void Surface::pixelIndices(const VecI &v)
 {
     pixel_indices_ = v;
+    pixel_count_ = static_cast<int>(pixel_indices_.size());
 }
 
 VecI Surface::pixelIndices() const
