@@ -156,10 +156,8 @@ Mat1i DepthSegmentation::group(const Mat1f &g) const
 
                             if(surface_label_cur != surface_label_left) {
 
-                                /* propagate new assignment to top left quadrant
-                                 * relative to current pixel
-                                 */
-                                surface_labels(r, c-1) = lut.update(surface_label_cur, surface_label_left);
+                                surface_labels(r, c-1) =
+                                        surface_labels(r, c) = lut.update(surface_label_cur, surface_label_left);
                             }
                         }
                         else {
