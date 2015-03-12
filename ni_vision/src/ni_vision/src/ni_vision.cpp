@@ -1108,9 +1108,9 @@ void updateImage() {
             std::vector<std::vector<CvPoint> > mnGSegmPts;
             if (nGSegmUseHr)
             {
-                cv::Mat equalized;
-                contrastEqualization(cvm_rgb_org, equalized, 1);
-                GbSegmentation(equalized, nGSegmSigma, nGSegmGrThrs, nGSegmMinSize, mnGSegmPts);
+                //cv::Mat equalized;
+                //contrastEqualization(cvm_rgb_org, equalized, 5);
+                GbSegmentation(cvm_rgb_org, nGSegmSigma, nGSegmGrThrs, nGSegmMinSize, mnGSegmPts);
                 int idx = 0;
                 std::vector<std::vector<int> > mnGSegmPtsIdx(mnGSegmPts.size(), std::vector<int>(10,0));
                 for (size_t i = 0; i < mnGSegmPts.size(); i++) {

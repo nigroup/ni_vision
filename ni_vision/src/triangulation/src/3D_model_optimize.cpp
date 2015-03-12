@@ -28,7 +28,7 @@ typedef boost::variate_generator<boost::mt19937, boost::normal_distribution<floa
 bool optimize = 1; // if false, test different combinations of parameters and visualize the cost function (for n==2)
 
 // information about the data set
-std::string setName = "../../Klorix";   // name of the folder
+std::string setName = "../../Dose_vonOben";   // name of the folder
 static const int numClouds = 8;  //number of point clouds
 static const double rotAng = 45.0 * 2.0 * M_PI / 360.0;  //angle of rotation (turn table) in radians
 
@@ -51,14 +51,14 @@ static const bool vary[n] = {1, 1, 1, 1, 0};  // specify which parameters should
 // initial values and step sizes
 static const float pRange[n][2] =  { {0.0, 0.01},
                                      {0.0, 0.01},
-                                     {0.0, 0.01},
-                                     {0.0, 0.01},
+                                     {0.0, 0.1},
+                                     {0.0, 0.1},
                                      {rotAng, 0.01} };
 
 
 // pairs of point clouds which are considered in the cost function
-static const int numPairs = 1;
-static const int pairs[numPairs][2] = { {0,1} };
+static const int numPairs = 8;
+static const int pairs[numPairs][2] = { {0,1}, {1,2}, {2,3}, {3,4}, {4,5}, {5,6}, {6,7}, {7,0} };
 
 // construct kd-trees for efficient nearest neighbor search
 pcl::KdTreeFLANN<pcl::PointXYZRGB> * kdtree[numPairs];
@@ -70,7 +70,8 @@ double cWeight = 1;        // weight of RGB distance relative to XYZ distance in
 float T0 = 1;              // initial temperature
 double beta1 = 0.995;      // temperature decay in each iteration
 double beta2 = 0.998;      // variance decay (gaussian sampling of the next candidate state in simulated annealing)
-int max_it_noAccept = 100;  // stopping rule for simulated annealing: maximum number of iterations without acceptance of new state
+int it_interval = 100;      // stopping rule for simulated annealing: the algorithm stopps if the relative change of the function value
+float min_change = 0.0001;    // within it_interval iterations is smaller than min_change
 
 
 
@@ -102,9 +103,7 @@ int main()
         kdtree[p] = new pcl::KdTreeFLANN<pcl::PointXYZRGB>;
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr ref(new pcl::PointCloud<pcl::PointXYZRGB>);
         pcl::copyPointCloud<pcl::PointXYZRGB>(clouds[pairs[p][0]], *ref);
-        std::cout << "setInputCloud..." << std::endl;
         kdtree[p]->setInputCloud (ref);
-        std::cout << "done" << std::endl;
     }
 
      // compute the mean of the reference point cloud
@@ -299,12 +298,14 @@ float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZR
     float f_old, f_new, f_best;  // old, current and best value of the cost function
     f_best = f_old = cost(params, clouds, centroid);
     int it = 1;  //number of iterations
-    int it_noAccept = 0;  //number of iterations without acceptance of new state
     float dE;
+    float f_before[it_interval+1];
 
     do
     {
         std::cout << "aktuelle Kosten: " << f_old << std::endl;
+        f_before[(it-1) % (it_interval+1)] = f_old;
+
 
         // draw new candidate state and compute corresponding value of the cost function
         sample_gaussian(params, neighbor, it, &sampler);
@@ -321,15 +322,12 @@ float simuatedAnnealing(Eigen::VectorXf & params, pcl::PointCloud<pcl::PointXYZR
         {
             params = neighbor;
             f_old = f_new;
-            it_noAccept = 0;
         }
-        else
-            it_noAccept ++;
 
         // update temperature (annealing) and iteration counter
         T *= beta1;
         it ++;
-    } while( it_noAccept < max_it_noAccept);
+    } while( it <= it_interval+1 || fabs(f_before[(it-2) % it_interval]-f_old)/fabs(f_before[(it-2) % it_interval]) > min_change);
 
     std::cout << "number of iterations in simulated annealing: " << it-1 << std::endl;
 
@@ -395,12 +393,6 @@ void rotate( const pcl::PointCloud<pcl::PointXYZRGB> *clouds, pcl::PointCloud<pc
     }
 
 }
-
-
-
-
-
-
 
 
 

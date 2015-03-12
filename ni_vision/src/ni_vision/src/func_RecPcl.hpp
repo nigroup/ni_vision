@@ -328,11 +328,24 @@ void contrastEqualization(const cv::Mat & cvm_rgb_org, cv::Mat & RGBequal, int m
         cv::addWeighted(cvm_rgb_org, 2.0, tmp, -1.0, 0, RGBequal);
 
     }
-    cv::Mat tmp;
-    cv::bilateralFilter(RGBequal, tmp, 9,550,550);
-    tmp.copyTo(RGBequal);
-    cv::namedWindow("equalized", cv::WINDOW_NORMAL);
-    cv::imshow("equalized", RGBequal);
+    else if (mode == 5)  // canny edge
+    {
+        cv::Mat src_gray, detected_edges, dst;
+        cv::cvtColor(cvm_rgb_org, src_gray, CV_BGR2GRAY);
+        cv::blur( src_gray, detected_edges, cv::Size(5,5) );
+        cv::Canny( detected_edges, detected_edges, 10.0, 20.0, 3);  // lowThreshold, maxThreshold, kernelSize
+        dst.create(cvm_rgb_org.size(), cvm_rgb_org.type());
+        dst = cv::Scalar::all(0);
+        cvm_rgb_org.copyTo(dst, detected_edges);
+        cv::namedWindow("edges",cv::WINDOW_NORMAL);
+        cv::imshow("edges", detected_edges);
+    }
+
+    //cv::Mat tmp;
+    //cv::bilateralFilter(RGBequal, tmp, 9,550,550);
+    //tmp.copyTo(RGBequal);
+    //cv::namedWindow("equalized", cv::WINDOW_NORMAL);
+    //cv::imshow("equalized", RGBequal);
 }
 
 
