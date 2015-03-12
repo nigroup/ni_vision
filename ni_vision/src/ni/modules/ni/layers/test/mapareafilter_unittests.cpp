@@ -233,6 +233,63 @@ TEST_F(MapAreaFilterTest, MapVariableAreas_no_neighbors)
     EXPECT_MAT_EQ(map_filtered_expected, map_filtered);
 }
 
+TEST_F(MapAreaFilterTest, MapVariableAreas_still_too_small)
+{
+    const int N = 20;
+    float data[N] = {1.f, 1.f, 0.f, 2.f, 3.f,
+                     1.f, 1.f, 0.f, 2.f, 4.f,
+                     1.f, 1.f, 0.f, 0.f, 0.f,
+                     1.f, 1.f, 1.f, 7.f, 5.f};
+    Mat1f in = Mat1f(4, 5, data).clone();
+
+    PTree p;
+    p.put(MapAreaFilter::PARAM_TAU_SIZE, 4);
+    config_.Params(p);
+
+    to_->Reconfigure(config_);
+
+    Signal sig;
+    sig.Append(NAME_IN_MAP, in);
+
+    to_->Activate(sig);
+    to_->Response(sig);
+
+    Mat1f map_filtered = sig.MostRecentMat1f(NAME_OUT_MAP);
+
+    EXPECT_MAT_DIMS_EQ(map_filtered, in.size());
+
+    Mat1f map_filtered_expected = in.clone();
+
+    /* We expect small segments merged into segment 1
+     * unassigned elements remain unassigned
+     * and
+     * island segments are now unassigned
+     *
+     * [1, 1, 0, x, x;
+     *  1, 1, 0, 0, x;
+     *  1, 1, 0, 0, 0;
+     *  1, 1, 1, 1, 1]
+     */
+
+    // We expect small segments merged into segment 1
+    map_filtered_expected.setTo(1.f, in == 5.f);
+    map_filtered_expected.setTo(1.f, in == 7.f);
+
+    // unassigned elements remain unassigned
+    // and
+    // island segments are now unassigned
+    EXPECT_EQ(0, countNonZero(map_filtered.rowRange(0, 3).colRange(2, 5)));
+
+    EXPECT_FLOAT_EQ(0.f, map_filtered(0, 4));
+    map_filtered_expected.setTo(0.f, in == 2.f);
+    map_filtered_expected.setTo(0.f, in == 3.f);
+    map_filtered_expected.setTo(0.f, in == 4.f);
+
+    EXPECT_MAT_EQ(map_filtered_expected, map_filtered);
+}
+
+
+
 TEST_F(MapAreaFilterTest, MapVariableAreas_all_large)
 {
     // break into 4 by increasing top-right and bottom-left values

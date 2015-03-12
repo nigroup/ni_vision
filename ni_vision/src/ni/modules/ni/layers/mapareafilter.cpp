@@ -86,7 +86,7 @@ int MapAreaFilter::getNeighbors(int vtx_id, const GraphAttr &seg_graph, std::vec
 
         Surface neighbor;
         neighbor.id(neigh_ids[j]);
-        neighbor.pixelIndices(VecI(static_cast<int>(neigh_size)));
+        neighbor.overwritePixelCount(static_cast<int>(neigh_size));
 
         neighbors[j] = neighbor;
 
@@ -143,9 +143,10 @@ void MapAreaFilter::Activate(const Signal &signal)
 
         try {
 
-            Mat1f cur_seg_size = seg_graph.getAttributes(cur_seg_id);
+            Mat1f cur_seg_size_attr = seg_graph.getAttributes(cur_seg_id);
+            float &cur_seg_size_ref = cur_seg_size_attr(0);
 
-            if(cur_seg_size(0) <= tau_size_) {
+            if(cur_seg_size_ref <= tau_size_) {
 
                 // create list of neighbors
                 std::vector<Surface> neighbors;
@@ -184,7 +185,7 @@ void MapAreaFilter::Activate(const Signal &signal)
                         //ELM_COUT_VAR("contractEdges(" << neighbor.id() << "," << cur_seg_id << ")");
                         seg_graph.contractEdges(neighbor.id(), cur_seg_id);
 
-                        cur_seg_size += static_cast<float>(neighbor.pixelCount());
+                        cur_seg_size_attr += static_cast<float>(neighbor.pixelCount());
                         //ELM_COUT_VAR(elm::to_string(seg_graph.VerticesIds()));
                         is_size_dirty = true;
                     }
@@ -196,7 +197,7 @@ void MapAreaFilter::Activate(const Signal &signal)
 
                 if(is_size_dirty) {
 
-                    seg_graph.addAttributes(cur_seg_id, cur_seg_size);
+                    seg_graph.addAttributes(cur_seg_id, cur_seg_size_attr);
                 }
 
                 // find largest neighbor that is actually large enough
@@ -208,8 +209,14 @@ void MapAreaFilter::Activate(const Signal &signal)
                     //ELM_COUT_VAR("contractEdges(" << cur_seg_id << "," << largest_neigh.id() << ")");
 
                     seg_graph.contractEdges(cur_seg_id, largest_neigh.id());
-                    Mat1f new_size = cur_seg_size + static_cast<float>(largest_neigh.pixelCount());
+                    Mat1f new_size = cur_seg_size_attr + static_cast<float>(largest_neigh.pixelCount());
                     seg_graph.addAttributes(largest_neigh.id(), new_size);
+                }
+                else if (cur_seg_size_ref <= tau_size_) {
+
+                    // discard if segment remains too small
+                    // after merging with largest neighbor
+                    seg_graph.removeVertex(cur_seg_id);
                 }
             }
         } // large enough?
