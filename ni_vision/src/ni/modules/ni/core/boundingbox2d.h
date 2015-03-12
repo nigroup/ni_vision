@@ -9,7 +9,7 @@ namespace ni {
 
 /**
  * @brief class for 2-dimensional bounding box
- * Bascially methods ontop of OpenCV's Rect
+ * Bascially methods on top of OpenCV's Rect
  */
 class BoundingBox2D :
         public base_BoundingBox,
