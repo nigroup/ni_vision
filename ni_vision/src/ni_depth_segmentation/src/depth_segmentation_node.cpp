@@ -51,8 +51,8 @@ public:
     DepthSegmentationNode(ros::NodeHandle &nh)
         : it_(nh),
           name_in_("/camera/depth_registered/points"),
-          name_out_map_color_("/ni/depth_segmentation/depth_segmentation/map_image_colorX"),
-          name_out_map_gray_("/ni/depth_segmentation/depth_segmentation/map_image_grayX")
+          name_out_map_color_("/ni/depth_segmentation/depth_segmentation/map_image_color"),
+          name_out_map_gray_("/ni/depth_segmentation/depth_segmentation/map_image_gray")
     {
         /**
          * The subscribe() call is how you tell ROS that you want to receive messages
