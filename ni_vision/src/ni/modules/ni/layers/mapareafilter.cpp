@@ -144,9 +144,7 @@ void MapAreaFilter::Activate(const Signal &signal)
         try {
 
             Mat1f cur_seg_size = seg_graph.getAttributes(cur_seg_id);
-            //float cur_seg_size = seg_graph.getAttributes(cur_seg_id)(0);
 
-            //if(cur_seg_size <= tau_size_) {
             if(cur_seg_size(0) <= tau_size_) {
 
                 // create list of neighbors
@@ -186,9 +184,6 @@ void MapAreaFilter::Activate(const Signal &signal)
                         //ELM_COUT_VAR("contractEdges(" << neighbor.id() << "," << cur_seg_id << ")");
                         seg_graph.contractEdges(neighbor.id(), cur_seg_id);
 
-                        //float new_cur_size = cur_seg_size + static_cast<float>(neighbor.pixelCount());
-                        //seg_graph.addAttributes(cur_seg_id, Mat1f(1, 1, new_cur_size));
-
                         cur_seg_size += static_cast<float>(neighbor.pixelCount());
                         //ELM_COUT_VAR(elm::to_string(seg_graph.VerticesIds()));
                         is_size_dirty = true;
@@ -215,21 +210,7 @@ void MapAreaFilter::Activate(const Signal &signal)
                     seg_graph.contractEdges(cur_seg_id, largest_neigh.id());
                     Mat1f new_size = cur_seg_size + static_cast<float>(largest_neigh.pixelCount());
                     seg_graph.addAttributes(largest_neigh.id(), new_size);
-
-//                    bool found = false;
-//                    for(size_t j=0; j<seg_sizes.total() && !found; j++) {
-
-//                        if(seg_ids[j] == largest_neigh.id()) {
-
-//                            //seg_sizes(j) = static_cast<float>(largest_neigh.pixelCount());
-//                            float new_size = cur_seg_size + static_cast<float>(largest_neigh.pixelCount());
-//                            seg_graph.addAttributes(largest_neigh.id(), Mat1f(1, 1, new_size));
-//                            found = true;
-//                        }
-//                    }
                 }
-
-                //ELM_COUT_VAR(seg_graph.MapImg());
             }
         } // large enough?
 
