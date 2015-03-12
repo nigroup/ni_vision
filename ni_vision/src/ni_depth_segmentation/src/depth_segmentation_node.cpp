@@ -113,7 +113,7 @@ public:
             LayerConfig cfg;
 
             PTree p;
-            p.put(DepthGradientRectify::PARAM_MAX_GRAD, 0.014f); // paper = 0.04
+            p.put(DepthGradientRectify::PARAM_MAX_GRAD, 0.017f); // paper = 0.04
             cfg.Params(p);
 
             LayerIONames io;
@@ -129,7 +129,7 @@ public:
             LayerConfig cfg;
 
             PTree params;
-            params.put(DepthSegmentation::PARAM_MAX_GRAD, 0.00125f); // paper = 0.003
+            params.put(DepthSegmentation::PARAM_MAX_GRAD, 0.0015f); // paper = 0.003
             cfg.Params(params);
 
             LayerIONames io;
