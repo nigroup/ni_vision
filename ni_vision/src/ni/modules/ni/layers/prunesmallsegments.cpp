@@ -50,9 +50,9 @@ void PruneSmallSegments::Reset(const LayerConfig &config)
     Reconfigure(config);
 }
 
-cv::Mat1f mask_vertex2(const cv::Mat1i& img, const cv::Mat1b &mask)
+cv::Mat1f mask_vertex2(const cv::Mat1i& img, const cv::Mat &mask)
 {
-    Mat1b mask_inverted;
+    Mat mask_inverted;
     cv::bitwise_not(mask, mask_inverted);
     return img.clone().setTo(0, mask_inverted);
 }

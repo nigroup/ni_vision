@@ -12,12 +12,12 @@ VertexOpSegmentRect::VertexOpSegmentRect()
 {
 }
 
-Mat1f VertexOpSegmentRect::mutableOp(const Mat1i &img, const Mat1b &mask)
+Mat1f VertexOpSegmentRect::mutableOp(const Mat1i &img, const Mat &mask)
 {
     return VertexOpSegmentRect::calcRect(img, mask);
 }
 
-Mat1f VertexOpSegmentRect::calcRect(const Mat1i &img, const Mat1b &mask)
+Mat1f VertexOpSegmentRect::calcRect(const Mat1i &img, const Mat &mask)
 {
     if(mask.empty()) {
 
