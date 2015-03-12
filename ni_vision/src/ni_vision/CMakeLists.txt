@@ -112,7 +112,15 @@ include_directories(${ni_tools_INCLUDE_DIRS})
 #add_library(func_operation src/func_operation.cpp)
 #target_link_libraries(func_operation ${OpenCV_LIBRARIES})
 
-add_executable(ni_vision src/ni_vision.cpp)
+file(GLOB_RECURSE SRC_LIST src/*.c*)
+file(GLOB_RECURSE HEADERS  src/*.h*)
+
+# Filter out test related sources
+set(REGEX_EXCLUDE_FROM_MODULE "(.*test.*)|(.*~.*)")
+list_filterout(SRC_LIST ${REGEX_EXCLUDE_FROM_MODULE})
+list_filterout(HEADERS  ${REGEX_EXCLUDE_FROM_MODULE})
+
+add_executable(ni_vision ${SRC_LIST} ${HEADERS})
 target_link_libraries(ni_vision ${catkin_LIBRARIES} siftfast terminal_tools ${OpenCV_LIBRARIES})
 
 ## Declare a cpp library
