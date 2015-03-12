@@ -77,7 +77,6 @@ public:
             LayerIONames io;
             io.Input(DepthMap::KEY_INPUT_STIMULUS, name_in_);
             io.Output(DepthMap::KEY_OUTPUT_RESPONSE, "depth_map");
-            //io.Output(DepthMap::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(LayerFactoryNI::CreateShared("DepthMap", cfg, io));
         }
         { // 1
@@ -92,7 +91,6 @@ public:
             io.Input(DepthGradient::KEY_INPUT_STIMULUS, "depth_map");
             io.Output(DepthGradient::KEY_OUTPUT_GRAD_X, "depth_grad_x");
             io.Output(DepthGradient::KEY_OUTPUT_GRAD_Y, "depth_grad_y");
-            //io.Output(DepthGradient::KEY_OUTPUT_GRAD_Y, name_out_);
             layers_.push_back(LayerFactoryNI::CreateShared("DepthGradient", cfg, io));
         }
         { // 2
@@ -107,7 +105,6 @@ public:
             LayerIONames io;
             io.Input(MedianBlur::KEY_INPUT_STIMULUS, "depth_grad_y");
             io.Output(MedianBlur::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth");
-            //io.Output(MedianBlur::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(LayerFactoryNI::CreateShared("MedianBlur", cfg, io));
         }
         { // 3
@@ -116,7 +113,7 @@ public:
             LayerConfig cfg;
 
             PTree p;
-            p.put(DepthGradientRectify::PARAM_MAX_GRAD, 0.014f); // paper = 0.04
+            p.put(DepthGradientRectify::PARAM_MAX_GRAD, 0.017f); // paper = 0.04
             cfg.Params(p);
 
             LayerIONames io;
@@ -124,7 +121,6 @@ public:
             io.Input(DepthGradientRectify::KEY_INPUT_GRAD_Y, "depth_grad_y");
             io.Input(DepthGradientRectify::KEY_INPUT_GRAD_SMOOTH, "depth_grad_y_smooth");
             io.Output(DepthGradientRectify::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth_r");
-            //io.Output(MedianBlur::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(LayerFactoryNI::CreateShared("DepthGradientRectify", cfg, io));
         }
         {
@@ -133,13 +129,12 @@ public:
             LayerConfig cfg;
 
             PTree params;
-            params.put(DepthSegmentation::PARAM_MAX_GRAD, 0.00125f); // paper = 0.003
+            params.put(DepthSegmentation::PARAM_MAX_GRAD, 0.0015f); // paper = 0.003
             cfg.Params(params);
 
             LayerIONames io;
             io.Input(DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth_r");
             io.Output(DepthSegmentation::KEY_OUTPUT_RESPONSE, "depth_seg_raw");
-            //io.Output(DepthSegmentation::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
         }
         {
@@ -149,7 +144,7 @@ public:
             LayerConfig cfg;
 
             PTree params;
-            params.put(MapAreaFilter::PARAM_TAU_SIZE, 200);
+            params.put(MapAreaFilter::PARAM_TAU_SIZE, 200); // @todo adapt this threshold to higher resolution input
             cfg.Params(params);
 
             LayerIONames io;
@@ -163,6 +158,12 @@ public:
     }
 
 protected:
+
+    int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p) {
+
+        return ((timeA_p->tv_sec * 1e9) + timeA_p->tv_nsec) - ((timeB_p->tv_sec * 1e9) + timeB_p->tv_nsec);
+    }
+
     /**
      * @brief Point cloud callback
      * @param msg point cloud message
@@ -171,6 +172,8 @@ protected:
     {
         mtx_.lock ();
         {
+            struct timespec t_total_start, t_total_end;
+            clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_start);
 
             cloud_.reset(new CloudXYZ(*msg)); // TODO: avoid copy
 
@@ -184,7 +187,9 @@ protected:
             }
 
             // get calculated depth map
+            //Mat1f img = sig_.MostRecentMat1f("depth_seg_raw");
             Mat1f img = sig_.MostRecentMat1f(name_out_map_gray_);
+            //Mat1f img(50, 50, 0.f);
 
 //            double min_val, max_val;
 //            minMaxIdx(sig_.MostRecentMat1f("depth_grad_y_smooth"), &min_val, &max_val);
@@ -208,8 +213,8 @@ protected:
 
             img_color.setTo(Scalar(0), mask_not_assigned);
 
-            imshow("img_color", img_color);
-            waitKey(1);
+            //imshow("img_color", img_color);
+            //waitKey(1);
 
             // convert to publish map image
             // mimic timestamp of processed point cloud
@@ -231,6 +236,10 @@ protected:
                         img_gray).toImageMsg();
 
             img_pub_gray_.publish(img_msg_gray);
+
+            clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);
+            double nTimeTotal = double(timespecDiff(&t_total_end, &t_total_start)/1e9);
+            ELM_COUT_VAR(1./nTimeTotal);
         }
         mtx_.unlock (); // release mutex
     }

@@ -34,6 +34,29 @@ TEST_F(SurfaceTest, pixelCount)
     }
 }
 
+TEST_F(SurfaceTest, pixelCount_overwrite)
+{
+    for(int i=1; i<10; i++) {
+
+        VecI indices;
+        for(int j=i; j>0; j--) {
+
+            indices.push_back(j);
+        }
+
+        Surface to;
+
+        to.overwritePixelCount((i+1)*10);
+        EXPECT_EQ((i+1)*10, to.pixelCount()) << "Pixel count mismatch.";
+
+        to.pixelIndices(indices);
+        EXPECT_EQ(i, to.pixelCount()) << "Pixel count mismatch.";
+
+        to.overwritePixelCount((i+1)*10);
+        EXPECT_EQ((i+1)*10, to.pixelCount()) << "Pixel count mismatch.";
+    }
+}
+
 TEST_F(SurfaceTest, lastSeenCount)
 {
     EXPECT_EQ(0, to_.lastSeenCount()) << "expecting initial count of zero.";

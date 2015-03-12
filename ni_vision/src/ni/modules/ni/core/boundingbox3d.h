@@ -3,14 +3,14 @@
 
 #include "ni/core/base_boundingbox.h"
 
-#include "elm/core/pcl/typedefs_fwd.h"
-
 #include <opencv2/core/core.hpp>
+
+#include "elm/core/pcl/typedefs_fwd.h"
 
 namespace ni {
 
 /**
- * @brief class for 2-dimensional bounding box
+ * @brief class for 3-dimensional bounding box
  */
 class BoundingBox3D :
         public base_BoundingBox
@@ -24,10 +24,15 @@ public:
 
     cv::Mat1f centralPoint() const;
 
+    float volume() const;
+
 protected:
 
     // members
     cv::Mat1f cog_; ///< center of gravity
+
+    cv::Mat1f box_xy_;    ///< bounding box in xy plane
+    cv::Mat1f box_yz_;    ///< bounding box in yz plane
 };
 
 } // namespace ni

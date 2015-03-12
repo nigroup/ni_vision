@@ -13,9 +13,9 @@ class VertexOpSegmentSize : public elm::base_GraphVertexOp
 public:
     VertexOpSegmentSize();
 
-    cv::Mat1f mutableOp(const cv::Mat1f& img, const cv::Mat1b &mask);
+    cv::Mat1f mutableOp(const cv::Mat1i& img, const cv::Mat &mask);
 
-    static cv::Mat1f calcSize(const cv::Mat1f& img, const cv::Mat1b &mask);
+    static cv::Mat1f calcSize(const cv::Mat1i& img, const cv::Mat &mask);
 
 protected:
     int size_;

@@ -12,12 +12,12 @@ VertexOpSegmentSize::VertexOpSegmentSize()
 {
 }
 
-Mat1f VertexOpSegmentSize::mutableOp(const Mat1f &img, const Mat1b &mask)
+Mat1f VertexOpSegmentSize::mutableOp(const Mat1i &img, const Mat &mask)
 {
     return VertexOpSegmentSize::calcSize(img, mask);
 }
 
-Mat1f VertexOpSegmentSize::calcSize(const Mat1f &img, const Mat1b &mask)
+Mat1f VertexOpSegmentSize::calcSize(const Mat1i &img, const Mat &mask)
 {
     return cv::Mat1f(1, 1, static_cast<float>(countNonZero(mask)));
 }

@@ -10,9 +10,9 @@ class VertexOpSegmentRect : public elm::base_GraphVertexOp
 public:
     VertexOpSegmentRect();
 
-    cv::Mat1f mutableOp(const cv::Mat1f& img, const cv::Mat1b &mask);
+    cv::Mat1f mutableOp(const cv::Mat1i& img, const cv::Mat &mask);
 
-    static cv::Mat1f calcRect(const cv::Mat1f& img, const cv::Mat1b &mask);
+    static cv::Mat1f calcRect(const cv::Mat1i& img, const cv::Mat &mask);
 };
 
 } // namespace ni

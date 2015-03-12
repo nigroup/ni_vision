@@ -61,6 +61,33 @@ TEST_F(BoundingBox3DTest, construct_from_point_cloud_empty)
 
 TEST_F(BoundingBox3DTest, diagonal)
 {
-    EXPECT_THROW(BoundingBox3D().diagonal(), ExceptionNotImpl) << "update when ready";
+    CloudXYZPtr cld(new CloudXYZ());
+    cld->push_back(PointXYZ(0.f, 0.f, 0.f));
+    cld->push_back(PointXYZ(1.f, 0.f, 0.f));
+    cld->push_back(PointXYZ(-1.f, 0.f, 0.f));
+    cld->push_back(PointXYZ(0.f, -2.f, 0.f));
+    cld->push_back(PointXYZ(0.f, 2.f, 0.f));
+    cld->push_back(PointXYZ(0.f, 0.f, -3.f));
+    cld->push_back(PointXYZ(0.f, 0.f, 3.f));
+
+    to_ = BoundingBox3D(cld);
+
+    EXPECT_FLOAT_EQ(sqrt(4+16+36), to_.diagonal());
+}
+
+TEST_F(BoundingBox3DTest, volume)
+{
+    CloudXYZPtr cld(new CloudXYZ());
+    cld->push_back(PointXYZ(0.f, 0.f, 0.f));
+    cld->push_back(PointXYZ(1.f, 0.f, 0.f));
+    cld->push_back(PointXYZ(-1.f, 0.f, 0.f));
+    cld->push_back(PointXYZ(0.f, -2.f, 0.f));
+    cld->push_back(PointXYZ(0.f, 2.f, 0.f));
+    cld->push_back(PointXYZ(0.f, 0.f, -3.f));
+    cld->push_back(PointXYZ(0.f, 0.f, 3.f));
+
+    to_ = BoundingBox3D(cld);
+
+    EXPECT_FLOAT_EQ(2*4*6, to_.volume());
 }
 

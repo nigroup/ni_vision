@@ -226,6 +226,13 @@ build_tests("run_${ROOT_PROJECT}_unittests" "*unittest*")
 
 status("")
 
+status("Build settings:")
+status("")
+status("    Build type:\t${CMAKE_BUILD_TYPE}")
+status("    C Flags:\t${CMAKE_C_FLAGS}")
+status("    C++ Flags:\t${CMAKE_CXX_FLAGS}")
+
+status("")
 status("Build:")
 set(MODULE_NAMES ${${ROOT_PROJECT}_MODULES})
 strip_lib_prefix(MODULE_NAMES ${MODULE_NAMES})
