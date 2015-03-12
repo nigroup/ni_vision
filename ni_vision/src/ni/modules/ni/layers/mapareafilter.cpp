@@ -69,7 +69,7 @@ void MapAreaFilter::Reconfigure(const LayerConfig &config)
     tau_size_ = p.get<int>(PARAM_TAU_SIZE, DEFAULT_TAU_SIZE);
 }
 
-int MapAreaFilter::getNeighbors(float vtx_id, const GraphAttr &seg_graph, std::vector<Surface> &neighbors, VecF &neigh_sizes) const
+int MapAreaFilter::getNeighbors(int vtx_id, const GraphAttr &seg_graph, std::vector<Surface> &neighbors, VecF &neigh_sizes) const
 {
     VecI neigh_ids = seg_graph.getNeighbors(vtx_id);
     //ELM_COUT_VAR(vtx_id<<" "<<elm::to_string(neigh_ids));
@@ -85,7 +85,7 @@ int MapAreaFilter::getNeighbors(float vtx_id, const GraphAttr &seg_graph, std::v
         float neigh_size = seg_graph.getAttributes(neigh_ids[j])(0);
 
         Surface neighbor;
-        neighbor.id(static_cast<int>(neigh_ids[j]));
+        neighbor.id(neigh_ids[j]);
         neighbor.pixelIndices(VecI(static_cast<int>(neigh_size)));
 
         neighbors[j] = neighbor;
@@ -139,7 +139,7 @@ void MapAreaFilter::Activate(const Signal &signal)
 
         //ELM_COUT_VAR(elm::to_string(seg_graph.VerticesIds()));
 
-        float cur_seg_id = seg_ids[i];
+        int cur_seg_id = seg_ids[i];
 
         try {
 
@@ -154,9 +154,11 @@ void MapAreaFilter::Activate(const Signal &signal)
                 VecF neigh_sizes; // keep a list of sizes for sorting
                 int nb_neighbors = getNeighbors(cur_seg_id, seg_graph, neighbors, neigh_sizes);
 
+                // too small and no neighbors -> discard
                 if(nb_neighbors < 1) {
 
-                    continue; // nothing to do
+                    seg_graph.removeVertex(cur_seg_id);
+                    continue;
                 }
                 //ELM_COUT_VAR(nb_neighbors);
 
@@ -190,6 +192,10 @@ void MapAreaFilter::Activate(const Signal &signal)
                         cur_seg_size += static_cast<float>(neighbor.pixelCount());
                         //ELM_COUT_VAR(elm::to_string(seg_graph.VerticesIds()));
                         is_size_dirty = true;
+                    }
+                    else {
+
+                        too_large = true;
                     }
                 }
 

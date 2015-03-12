@@ -86,6 +86,7 @@ TEST_F(MapAreaFilterTest, Map_constant)
     tau_values.push_back(0);
     tau_values.push_back(1);
     tau_values.push_back(in.rows*2);
+    tau_values.push_back(static_cast<int>(in.total())-1);
     tau_values.push_back(static_cast<int>(in.total()));
 
     for(size_t i=0; i<tau_values.size(); i++)
@@ -103,7 +104,14 @@ TEST_F(MapAreaFilterTest, Map_constant)
 
         Mat1f map_filtered = sig.MostRecentMat1f(NAME_OUT_MAP);
 
-        EXPECT_MAT_EQ(map_filtered, in);
+        if(tau_values[i] >= static_cast<int>(in.total())) {
+
+            EXPECT_MAT_EQ(map_filtered, Mat1f::zeros(in.size()));
+        }
+        else {
+
+            EXPECT_MAT_EQ(map_filtered, in);
+        }
     }
 }
 
@@ -166,6 +174,61 @@ TEST_F(MapAreaFilterTest, MapVariableAreas)
     map_filtered_expected.setTo(2.f, in == 4.f);
     map_filtered_expected.setTo(2.f, in == 5.f);
     map_filtered_expected.setTo(2.f, in == 7.f);
+
+    EXPECT_MAT_EQ(map_filtered_expected, map_filtered);
+}
+
+TEST_F(MapAreaFilterTest, MapVariableAreas_no_neighbors)
+{
+    const int N = 20;
+    float data[N] = {1.f, 1.f, 1.f, 0.f, 3.f,
+                     1.f, 1.f, 1.f, 0.f, 0.f,
+                     1.f, 1.f, 1.f, 2.f, 5.f,
+                     6.f, 6.f, 6.f, 7.f, 5.f};
+    Mat1f in = Mat1f(4, 5, data).clone();
+
+    PTree p;
+    p.put(MapAreaFilter::PARAM_TAU_SIZE, 2);
+    config_.Params(p);
+
+    to_->Reconfigure(config_);
+
+    Signal sig;
+    sig.Append(NAME_IN_MAP, in);
+
+    to_->Activate(sig);
+    to_->Response(sig);
+
+    Mat1f map_filtered = sig.MostRecentMat1f(NAME_OUT_MAP);
+
+    EXPECT_MAT_DIMS_EQ(map_filtered, in.size());
+
+    Mat1f map_filtered_expected = in.clone();
+
+    /* We expect small segments merged into segment 1
+     * segment 6 is as is
+     * unassigned elements are unassigned
+     * segment 3 (the island) is now unassigned
+     *
+     * [1, 1, 1, 0, x;
+     *  1, 1, 1, 0, 0;
+     *  1, 1, 1, 1, 1;
+     *  6, 6, 6, 1, 1]
+     */
+
+    // We expect small segments merged into segment 1
+    map_filtered_expected.setTo(1.f, in == 2.f);
+    map_filtered_expected.setTo(1.f, in == 5.f);
+    map_filtered_expected.setTo(1.f, in == 7.f);
+
+    // unassigned elements remain unassigned
+    EXPECT_FLOAT_EQ(0.f, map_filtered(0, 3));
+    EXPECT_FLOAT_EQ(0.f, map_filtered(1, 3));
+    EXPECT_FLOAT_EQ(0.f, map_filtered(1, 4));
+
+    // segment 3 (the island) is now unassigned
+    EXPECT_FLOAT_EQ(0.f, map_filtered(0, 4));
+    map_filtered_expected.setTo(0.f, in == 3.f);
 
     EXPECT_MAT_EQ(map_filtered_expected, map_filtered);
 }
