@@ -217,7 +217,7 @@ protected:
                 // attach indices to surface objects
                 for (int i=0; i<NB_SEGS; i++) {
 
-                    surfaces[i].pixelIndices(indicies[i]); // heavy copy?
+                    surfaces[i].pixelIndices(indicies[i+1]); // heavy copy?
                 }
             }
 
