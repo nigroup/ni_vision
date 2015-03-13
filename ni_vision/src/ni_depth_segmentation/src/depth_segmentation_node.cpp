@@ -113,7 +113,7 @@ public:
             LayerConfig cfg;
 
             PTree p;
-            p.put(DepthGradientRectify::PARAM_MAX_GRAD, 0.017f); // paper = 0.04
+            p.put(DepthGradientRectify::PARAM_MAX_GRAD, 0.02f); // paper = 0.04
             cfg.Params(p);
 
             LayerIONames io;
@@ -214,6 +214,7 @@ protected:
             img_color.setTo(Scalar(0), mask_not_assigned);
 
             //imshow("img_color", img_color);
+            //imshow("img_gray", img_gray);
             //waitKey(1);
 
             // convert to publish map image
