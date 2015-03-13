@@ -79,7 +79,7 @@ void DepthGradientRectify::Activate(const Signal &signal)
     grad_s.setTo(NAN_VALUE, mask_nan);
     grad_s.setTo(NAN_VALUE, cv::abs(grad_x) > max_);
     grad_s.setTo(NAN_VALUE, cv::abs(grad_y) > max_);
-    grad_s.setTo(NAN_VALUE, cv::abs(grad_s) > max_);
+    //grad_s.setTo(NAN_VALUE, cv::abs(grad_s) > max_);
 
     m_ = grad_s;
 }
