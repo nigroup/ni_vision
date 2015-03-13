@@ -116,7 +116,7 @@ file(GLOB_RECURSE SRC_LIST src/*.c*)
 file(GLOB_RECURSE HEADERS  src/*.h*)
 
 # Filter out test related sources
-set(REGEX_EXCLUDE_FROM_MODULE "(.*test.*)|(.*~.*)")
+set(REGEX_EXCLUDE_FROM_MODULE "(.*test.*)|(.*~.*)|(.*matrix.cpp)")
 list_filterout(SRC_LIST ${REGEX_EXCLUDE_FROM_MODULE})
 list_filterout(HEADERS  ${REGEX_EXCLUDE_FROM_MODULE})
 
