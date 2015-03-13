@@ -71,7 +71,7 @@ MunkresMatrix<T>::operator= (const MunkresMatrix<T> &other) {
         m_rows = 0;
         m_columns = 0;
     }
-    
+
     return *this;
 }
 
@@ -155,7 +155,7 @@ MunkresMatrix<T>::clear() {
 }
 
 /*export*/ template <class T>
-T 
+T
 MunkresMatrix<T>::trace() {
     assert( m_matrix != NULL );
 
