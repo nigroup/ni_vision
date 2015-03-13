@@ -164,7 +164,7 @@ protected:
 
             // quick and dirty ---
             vector<Surface > surfaces;
-            vector<BoundingBox2D> rects(NB_SEGS);
+            vector<BoundingBox2D> rects;
 
             // reorder segment ids to be [1, N]
             int NB_SEGS = 0;
@@ -245,7 +245,7 @@ protected:
                     r.width = static_cast<int>(max_x-min_x+1);
                     r.height = static_cast<int>(max_y-min_y+1);
 
-                    rects[i] = r;
+                    rects.push_back(r);
                 }
             }
 
