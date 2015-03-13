@@ -21,15 +21,6 @@
 #include <iostream>
 #include <cmath>
 
-
-void Munkres::aaaaa (int abc) {
-    printf("nnnnnnn %d\n", abc);
-}
-
-void hghg(int abc) {
-    printf("nnnnnnn %d\n", abc);
-}
-
 bool
 Munkres::find_uncovered_in_matrix(double item, int &row, int &col) {
   for ( row = 0 ; row < matrix.rows() ; row++ )

@@ -24,9 +24,6 @@
 #include <list>
 #include <utility>
 
-
-void hghg (int abc);
-
 class Munkres {
 public:
     void solve(MunkresMatrix<double> &m);
