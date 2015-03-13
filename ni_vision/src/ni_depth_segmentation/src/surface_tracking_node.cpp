@@ -21,11 +21,15 @@
 
 #include "elm/core/debug_utils.h"
 #include "elm/core/cv/mat_utils.h"
+#include "elm/core/graph/graphattr.h"
 #include "elm/core/inputname.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"            // Signal class: Stimulus -> layer activation -> response
 #include "elm/core/pcl/typedefs_fwd.h"  // point cloud typedef
 
+#include "ni/core/boundingbox2d.h"
+#include "ni/core/boundingbox3d.h"
+#include "ni/core/surface.h"
 #include "ni/layers/depthmap.h"
 #include "ni/layers/layerfactoryni.h"
 
@@ -70,19 +74,19 @@ public:
           name_in_seg_("/ni/depth_segmentation/depth_segmentation/map_image_gray"),
           name_out_("/ni/depth_segmentation/surfaces/image"),
 #if USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          img_sub_(it_, name_in_img_, 10),
-          img_sub_seg_(it_, name_in_seg_, 10),
+          img_sub_(it_, name_in_img_, 30),
+          img_sub_seg_(it_, name_in_seg_, 30),
 #else // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          img_sub_(nh, name_in_img_, 10),
-          img_sub_seg_(nh, name_in_seg_, 10),
+          img_sub_(nh, name_in_img_, 30),
+          img_sub_seg_(nh, name_in_seg_, 30),
 #endif // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          cloud_sub_(nh, name_in_cld_, 10)
+          cloud_sub_(nh, name_in_cld_, 30)
     {
 
         using namespace message_filters; // Subscriber, sync_policies
 
         // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-        int queue_size = 10;
+        int queue_size = 30;
         sync_ptr_ = new Synchronizer<MySyncPolicy>(MySyncPolicy(queue_size),
                                                    cloud_sub_,
                                                    img_sub_,
@@ -156,8 +160,98 @@ protected:
             }
 
             //imshow("depth_map", ConvertTo8U(sig_.MostRecentMat1f("depth_map")));
+            imshow("img_seg_", ConvertTo8U(img_seg_));
 
-            Mat1f img = sig_.MostRecentMat1f(name_in_seg_);
+            // quick and dirty ---
+            vector<Surface > surfaces;
+
+            // reorder segment ids to be [1, N]
+            int NB_SEGS = 0;
+            double min_val, max_val;
+            minMaxIdx(img_seg_, &min_val, &max_val);
+            {
+                const int UPPER_LIM = static_cast<int>(max_val)+1;
+                vector<int> hist(UPPER_LIM, 0);
+
+                for(size_t i=0; i<img_seg_.total(); i++) {
+
+                    int value = img_seg_(i);
+
+                    // dont bother counting zeros (a.k.a not assigned)
+                    if(value > 0) {
+
+                        hist[value]++;
+                    }
+                }
+
+                vector<int> id_lut(UPPER_LIM, 0);
+                for(int i=1; i<UPPER_LIM; i++) {
+
+                    if(hist[i] > 0) {
+
+                        Surface surface;
+
+                        surface.id(++NB_SEGS);
+                        surface.overwritePixelCount(hist[i]);
+
+                        surfaces.push_back(surface);
+
+                        id_lut[i] = NB_SEGS;
+                    }
+                }
+
+                // replace segment values with new surface ids
+                // and record indicies for later use
+                std::vector<VecI > indicies(NB_SEGS+1, VecI());
+
+                for(size_t i=0; i<img_seg_.total(); i++) {
+
+                    // replace
+                    int seg_id = id_lut[static_cast<int>(img_seg_(i))];
+                    img_seg_(i) = seg_id;
+
+                    // append index
+                    indicies[seg_id].push_back(i);
+                }
+
+                // attach indices to surface objects
+                for (int i=0; i<NB_SEGS; i++) {
+
+                    surfaces[i].pixelIndices(indicies[i]); // heavy copy?
+                }
+            }
+
+            // sub clouds
+            vector<CloudXYZPtr> sub_clouds(NB_SEGS);
+            {
+                for (int i=0; i<NB_SEGS; i++) {
+
+                    sub_clouds[i].reset(new CloudXYZ(*cld, surfaces[i].pixelIndices()));
+                }
+            }
+
+            // rect and cube
+            vector<BoundingBox3D> cubes(NB_SEGS);
+            {
+                for (int i=0; i<NB_SEGS; i++) {
+
+                    BoundingBox3D cube(sub_clouds[i]);
+                    cubes[i] = cube;
+                }
+            }
+
+            GraphAttr graph(img_seg_, img_seg_ > 0);
+            if(graph.num_vertices() != static_cast<size_t>(NB_SEGS)) {
+
+                std::stringstream s;
+                s << "No. of vertices != no. of segments. (";
+                s << graph.num_vertices() << ") != (" << NB_SEGS << ")";
+                ExceptionValueError(s.str());
+            }
+
+            // --- quick and dirty
+            //Mat1f img = sig_.MostRecentMat1f(name_in_seg_);
+            Mat1f img = img_seg_;
 
             img.setTo(0.f, isnan(img));
             Mat mask_not_assigned = img <= 0.f;
