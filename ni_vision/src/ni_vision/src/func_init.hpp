@@ -11,6 +11,7 @@
  * represent the button.
  */
 
+#include "surfprop.h"
 
 int64_t timespecDiff (struct timespec *timeA_p, struct timespec *timeB_p) {
   return ((timeA_p->tv_sec * 1000000000) + timeA_p->tv_nsec) - ((timeB_p->tv_sec * 1000000000) + timeB_p->tv_nsec);
@@ -76,19 +77,6 @@ int nSnapFormat = 0, nSnapFormat_default = 0;
 int flag_pcd = 0; // Flag for printing color distance
 
 std::string sDataDir;
-
-
-struct SurfProp {
-    std::vector<int> vnIdx, vnPtsCnt;
-    std::vector<std::vector<int> > mnPtsIdx;
-    std::vector<std::vector<int> > mnRect, mnRCenter;
-    std::vector<std::vector<float> > mnCubic, mnCCenter;
-    std::vector<float> vnLength;
-    std::vector<std::vector<float> > mnColorHist;
-    std::vector<int> vnMemCtr, vnStableCtr, vnLostCtr;
-    std::vector<int> vnFound;
-};
-
 
 /////// for User Interface /////////////////////////
 int nFont = CV_FONT_HERSHEY_SIMPLEX;
