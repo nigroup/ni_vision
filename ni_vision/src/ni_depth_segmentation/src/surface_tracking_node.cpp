@@ -164,6 +164,7 @@ protected:
 
             // quick and dirty ---
             vector<Surface > surfaces;
+            vector<BoundingBox2D> rects(NB_SEGS);
 
             // reorder segment ids to be [1, N]
             int NB_SEGS = 0;
@@ -215,9 +216,36 @@ protected:
                 }
 
                 // attach indices to surface objects
+                // and record 2-d bounding boxes around each surface
+
                 for (int i=0; i<NB_SEGS; i++) {
 
-                    surfaces[i].pixelIndices(indicies[i+1]); // heavy copy?
+                    VecI tmp = indicies[i+1];
+                    surfaces[i].pixelIndices(tmp); // heavy copy?
+
+                    BoundingBox2D r;
+
+                    Mat1i tmp_mat(tmp);
+                    Mat1i coords(tmp_mat.rows, 2); // col(0) := x, col(1) := y
+                    cv::divide(tmp_mat, img_seg_.cols, coords.col(1));
+                    Mat1i x = coords.col(0);
+
+                    // modulus operation for OpenCV Mat:
+                    for (int j=0; j<tmp_mat.rows; j++) {
+
+                        x(j) = tmp[j] % img_seg_.cols;
+                    }
+
+                    double min_x, max_x, min_y, max_y;
+                    cv::minMaxIdx(coords.col(0), &min_x, &max_x);
+                    cv::minMaxIdx(coords.col(1), &min_y, &max_y);
+
+                    r.x = static_cast<int>(min_x);
+                    r.y = static_cast<int>(min_x);
+                    r.width = static_cast<int>(max_x-min_x+1);
+                    r.height = static_cast<int>(max_y-min_y+1);
+
+                    rects[i] = r;
                 }
             }
 
@@ -230,7 +258,7 @@ protected:
                 }
             }
 
-            // rect and cube
+            // cubes
             vector<BoundingBox3D> cubes(NB_SEGS);
             {
                 for (int i=0; i<NB_SEGS; i++) {
