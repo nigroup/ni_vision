@@ -455,12 +455,18 @@ void updateImage() {
             struct timespec t_track_start, t_track_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_track_start); bTimeTrack = true;
 
             SurfProp stSurf;
-            stSurf.vnIdx.resize(nSurfCnt, 0); stSurf.vnPtsCnt = vnSurfPtsCnt; stSurf.mnPtsIdx = mnSurfPtsIdx;
-            stSurf.mnRect.assign(nSurfCnt, std::vector<int>(4,0)); stSurf.mnRCenter.assign(nSurfCnt, std::vector<int>(2,0));
-            stSurf.mnCubic.assign(nSurfCnt, std::vector<float>(6,0)); stSurf.mnCCenter.assign(nSurfCnt, std::vector<float>(3,0));
+            stSurf.vnIdx.resize(nSurfCnt, 0);
+            stSurf.vnPtsCnt = vnSurfPtsCnt;
+            stSurf.mnPtsIdx = mnSurfPtsIdx;
+            stSurf.mnRect.assign(nSurfCnt, std::vector<int>(4,0));
+            stSurf.mnRCenter.assign(nSurfCnt, std::vector<int>(2,0));
+            stSurf.mnCubic.assign(nSurfCnt, std::vector<float>(6,0));
+            stSurf.mnCCenter.assign(nSurfCnt, std::vector<float>(3,0));
             stSurf.vnLength.resize(nSurfCnt, 0);
             stSurf.mnColorHist.resize(nSurfCnt, std::vector<float> (nTrackHistoBin_max, 0));
-            stSurf.vnMemCtr.resize(nSurfCnt, 0); stSurf.vnStableCtr.resize(nSurfCnt, 0); stSurf.vnLostCtr.resize(nSurfCnt, 0);
+            stSurf.vnMemCtr.resize(nSurfCnt, 0);
+            stSurf.vnStableCtr.resize(nSurfCnt, 0);
+            stSurf.vnLostCtr.resize(nSurfCnt, 0);
 
             Tracking_Pre (nSegmCutSize, nDsWidth, nDsHeight, vnX, vnY, vnZ, cvm_rgb_ds, stTrack, stSurf, nSurfCnt);
             Tracking (nSurfCnt, nObjsNrLimit, stTrack, nTrackHistoBin_tmp, stSurf, stMems, nMemsCnt, vnMemsValidIdx, mnMemsRelPose, vbFlagTask[stTID.nRes1], nCtrFrame_tmp);
