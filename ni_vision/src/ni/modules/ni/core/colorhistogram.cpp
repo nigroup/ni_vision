@@ -2,6 +2,8 @@
 
 #include <opencv2/core/core.hpp>
 
+#include "elm/core/debug_utils.h"
+
 using namespace std;
 using namespace cv;
 using namespace elm;
@@ -9,9 +11,8 @@ using namespace ni;
 
 void ni::computeColorHist(const Mat &src, const VecI &indices, int nb_bins, Mat1f &dst)
 {
-    dst = Mat1f::zeros(1, 3*nb_bins);
-
     int nb_bins_sq = nb_bins*nb_bins;
+    dst = Mat1f::zeros(1, nb_bins_sq*nb_bins);
 
     // numerator has to be slightly greater than 1, otherwise there is a problem if a channel is equal to 255
     float bin_width = 1.0001f/static_cast<float>(nb_bins);
