@@ -138,4 +138,89 @@ TEST_F(ColorHistogramTest, Color_8u)
     EXPECT_MAT_EQ(hist, expected_hist);
 }
 
+TEST_F(ColorHistogramTest, HistogramSum)
+{
+    Mat in = Mat(2, 3, CV_8UC3);
+    in = Scalar(0, 0, 0);
+
+    {
+        Vec3b v;
+        v.all(0);
+        v[1] = v[2] = 255; // yellow
+        in.at<Vec3b>(0) = v;
+    }
+    {
+        Vec3b v;
+        v.all(0);
+        v[0] = v[2] = 255; // purple
+        in.at<Vec3b>(1) = v;
+    }
+    {
+        Vec3b v;
+        v.all(0);
+        v[0] = v[1] = v[2] = 128; // gray
+        in.at<Vec3b>(2) = v;
+    }
+
+    Mat1f hist;
+
+    VecI indices = Mat_ToVec_<int>(ARange_<int>(0, static_cast<int>(in.total()), 1));
+
+    computeColorHist(in, indices, 8, hist);
+
+    EXPECT_FLOAT_EQ(1.f, cv::sum(hist)[0]);
+}
+
+TEST_F(ColorHistogramTest, HistogramSum_no_indices)
+{
+    Mat in = Mat(2, 3, CV_8UC3);
+    in = Scalar(0, 0, 0);
+
+    {
+        Vec3b v;
+        v.all(0);
+        v[1] = v[2] = 255; // yellow
+        in.at<Vec3b>(0) = v;
+    }
+    {
+        Vec3b v;
+        v.all(0);
+        v[0] = v[2] = 255; // purple
+        in.at<Vec3b>(1) = v;
+    }
+    {
+        Vec3b v;
+        v.all(0);
+        v[0] = v[1] = v[2] = 128; // gray
+        in.at<Vec3b>(2) = v;
+    }
+
+    Mat1f hist;
+    computeColorHist(in, VecI(), 8, hist);
+
+    EXPECT_FLOAT_EQ(0.f, cv::sum(hist)[0]);
+}
+
+TEST_F(ColorHistogramTest, Dims)
+{
+    for(int bins=4; bins<=16; bins++) {
+
+        for(int r=1; r<11; r++) {
+
+            for(int c=1; c<11; c++) {
+
+                Mat in = Mat(2, 3, CV_8UC3);
+                in = Scalar(0, 0, 0);
+
+                VecI indices = Mat_ToVec_<int>(ARange_<int>(0, static_cast<int>(in.total()), 1));
+
+                Mat1f hist;
+                computeColorHist(in, indices, bins, hist);
+
+                EXPECT_MAT_DIMS_EQ(hist, cv::Size2i(bins*bins*bins, 1));
+            }
+        }
+    }
+}
+
 } // annonymous namespace for tests

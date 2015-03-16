@@ -41,5 +41,8 @@ void ni::computeColorHist(const Mat &src, const VecI &indices, int nb_bins, Mat1
         dst(bin_r*nb_bins_sq + bin_g*nb_bins + bin_b)++;
     }
 
-    dst /= static_cast<float>(indices.size()); // normalizing
+    if (!indices.empty()) {
+
+        dst /= static_cast<float>(indices.size()); // normalize
+    }
 }
