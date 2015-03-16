@@ -21,10 +21,10 @@ void ni::computeColorHist(const Mat &src, const VecI &indices, int nb_bins, Mat1
 
     for(size_t i=0; i<indices.size(); i++) {
 
-        int pixel = indices[i]*3;
-        float _b = static_cast<float>(data_ptr[pixel]);
-        float _g = static_cast<float>(data_ptr[pixel+1]);
-        float _r = static_cast<float>(data_ptr[pixel+2]);
+        int pixel_idx = indices[i]*3;
+        float _b = static_cast<float>(data_ptr[pixel_idx]);
+        float _g = static_cast<float>(data_ptr[pixel_idx+1]);
+        float _r = static_cast<float>(data_ptr[pixel_idx+2]);
 
         // all gray intensities into a single bin
         if(_b == _g && _g == _r) {
