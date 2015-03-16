@@ -7,7 +7,7 @@ using namespace cv;
 using namespace elm;
 using namespace ni;
 
-void ni::computeColorHist(const Mat1f &src, const VecI &indices, int nb_bins, Mat1f &dst)
+void ni::computeColorHist(const Mat &src, const VecI &indices, int nb_bins, Mat1f &dst)
 {
     dst = Mat1f::zeros(1, 3*nb_bins);
 
@@ -16,17 +16,17 @@ void ni::computeColorHist(const Mat1f &src, const VecI &indices, int nb_bins, Ma
     // numerator has to be slightly greater than 1, otherwise there is a problem if a channel is equal to 255
     float bin_width = 1.0001f/static_cast<float>(nb_bins);
 
-    float* data_ptr = reinterpret_cast<float*>(src.data);
+    uchar* data_ptr = src.data;
 
     for(size_t i=0; i<indices.size(); i++) {
 
         int pixel = i*3;
-        float _b = data_ptr[pixel];
-        float _g = data_ptr[pixel+1];
-        float _r = data_ptr[pixel+2];
+        float _b = static_cast<float>(data_ptr[pixel]);
+        float _g = static_cast<float>(data_ptr[pixel+1]);
+        float _r = static_cast<float>(data_ptr[pixel+2]);
 
         float sum = _b + _g + _r;
-        if(sum != 0) {
+        if(sum != 0.f) {
 
             _b /= sum;
             _g /= sum;

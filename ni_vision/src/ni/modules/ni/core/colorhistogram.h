@@ -22,7 +22,7 @@ namespace ni {
  *
  * @todo use OpenCV's calcHist(), keep everything in bgr color order
  */
-void computeColorHist(const cv::Mat1f &src, const ni::VecI &indices, int nb_bins, cv::Mat1f &dst);
+void computeColorHist(const cv::Mat &src, const ni::VecI &indices, int nb_bins, cv::Mat1f &dst);
 
 } // namespace ni
 
