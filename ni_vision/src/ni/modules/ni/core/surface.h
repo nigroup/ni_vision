@@ -1,6 +1,8 @@
 #ifndef _NI_CORE_SURFACE_H_
 #define _NI_CORE_SURFACE_H_
 
+#include <opencv2/core/core.hpp>
+
 #include "ni/core/stl/typedefs.h"
 
 namespace ni {
@@ -67,6 +69,18 @@ public:
     int id() const;
 
     /**
+     * @brief get color histogram
+     * @return color histogram (row matrix)
+     */
+    cv::Mat1f colorHistogram() const;
+
+    /**
+     * @brief set color histogram
+     * @param hist new color histogram
+     */
+    void colorHistogram(const cv::Mat1f &hist);
+
+    /**
      * @brief Default Constructor
      */
     Surface();
@@ -78,6 +92,7 @@ protected:
     int id_;                ///< surface identifier
     int last_seen_count_;   ///< count for no. of frames since last tracked
     int pixel_count_;       ///< cache for pixel count
+    cv::Mat1f color_hist_;  ///< color histogram
 
 };
 

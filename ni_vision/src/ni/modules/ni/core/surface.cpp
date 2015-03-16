@@ -1,6 +1,7 @@
 #include "ni/core/surface.h"
 
 using namespace std;
+using namespace cv;
 using namespace ni;
 
 Surface::Surface()
@@ -52,4 +53,14 @@ void Surface::id(int new_id)
 int Surface::id() const
 {
     return id_;
+}
+
+void Surface::colorHistogram(const Mat1f &hist)
+{
+    this->color_hist_ = hist;
+}
+
+Mat1f Surface::colorHistogram() const
+{
+    return color_hist_;
 }

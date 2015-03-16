@@ -1,6 +1,6 @@
 #include "ni/core/surface.h"
 
-#include "gtest/gtest.h"
+#include "elm/ts/mat_assertions.h"
 
 using namespace std;
 using namespace ni;
@@ -81,6 +81,15 @@ TEST_F(SurfaceTest, Id)
 
         to_.id(i);
         EXPECT_EQ(i, to_.id());
+    }
+}
+
+TEST_F(SurfaceTest, ColorHistogram)
+{
+    for(int i=2; i<=11; i++) {
+
+        to_.colorHistogram(cv::Mat1f(1, i, 1.f));
+        EXPECT_MAT_DIMS_EQ(to_.colorHistogram(), cv::Mat1f(1, i, 1.f));
     }
 }
 
