@@ -22,14 +22,14 @@ void ni::computeColorHist(const Mat &src, const VecI &indices, int nb_bins, Mat1
     for(size_t i=0; i<indices.size(); i++) {
 
         int pixel_idx = indices[i]*3;
-        float _b = static_cast<float>(data_ptr[pixel_idx]);
-        float _g = static_cast<float>(data_ptr[pixel_idx+1]);
-        float _r = static_cast<float>(data_ptr[pixel_idx+2]);
+        uchar _b = data_ptr[pixel_idx];
+        uchar _g = data_ptr[pixel_idx+1];
+        uchar _r = data_ptr[pixel_idx+2];
 
         // all gray intensities into a single bin
         if(_b == _g && _g == _r) {
 
-            _b = _g = _r = 255.f/3.f;
+            _b = _g = _r = 255/3;
         }
 
         // perform binning
@@ -46,3 +46,4 @@ void ni::computeColorHist(const Mat &src, const VecI &indices, int nb_bins, Mat1
         dst /= static_cast<float>(indices.size()); // normalize
     }
 }
+
