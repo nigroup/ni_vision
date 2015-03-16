@@ -2,7 +2,7 @@
 #define _NI_CORE_COLORHISTOGRAM_H_
 
 #include "elm/core/cv/typedefs_fwd.h"
-#include "elm/core/stl/typedefs.h"
+#include "ni/core/stl/typedefs.h"
 
 namespace ni {
 
@@ -22,7 +22,7 @@ namespace ni {
  *
  * @todo use OpenCV's calcHist(), keep everything in bgr color order
  */
-void computeColorHist(const cv::Mat1f &src, const elm::VecF &indices, int nb_bins, cv::Mat1f &dst);
+void computeColorHist(const cv::Mat1f &src, const ni::VecI &indices, int nb_bins, cv::Mat1f &dst);
 
 } // namespace ni
 

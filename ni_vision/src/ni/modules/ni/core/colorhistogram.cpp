@@ -7,7 +7,7 @@ using namespace cv;
 using namespace elm;
 using namespace ni;
 
-void ni::computeColorHist(const Mat1f &src, const VecF &indices, int nb_bins, Mat1f &dst)
+void ni::computeColorHist(const Mat1f &src, const VecI &indices, int nb_bins, Mat1f &dst)
 {
     dst = Mat1f::zeros(1, 3*nb_bins);
 
