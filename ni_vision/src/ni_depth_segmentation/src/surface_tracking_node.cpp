@@ -27,6 +27,8 @@
 #include "elm/core/signal.h"            // Signal class: Stimulus -> layer activation -> response
 #include "elm/core/pcl/typedefs_fwd.h"  // point cloud typedef
 
+#include "ni/core/color_utils.h"
+#include "ni/core/colorhistogram.h"
 #include "ni/core/boundingbox2d.h"
 #include "ni/core/boundingbox3d.h"
 #include "ni/core/surface.h"
@@ -126,7 +128,9 @@ protected:
             try {
                 cv_bridge::CvImageConstPtr cv_img_ptr;
                 cv_img_ptr = cv_bridge::toCvShare(img, img_enc::BGR8);
-                cv_img_ptr->image.convertTo(img_, CV_32FC3);
+
+                ni::normalizeColors(cv_img_ptr->image, img_normalized_colors_);
+                img_normalized_colors_.convertTo(img_normalized_colors_8bit_, CV_8UC3, 255.f);
             }
             catch (cv_bridge::Exception& e) {
 
@@ -217,6 +221,7 @@ protected:
 
                 // attach indices to surface objects
                 // and record 2-d bounding boxes around each surface
+                // and compute color histogram for each surface
 
                 for (int i=0; i<NB_SEGS; i++) {
 
@@ -246,6 +251,12 @@ protected:
                     r.height = static_cast<int>(max_y-min_y+1);
 
                     rects.push_back(r);
+
+                    // color histogram
+                    Mat1f hist;
+                    ni::computeColorHist(img_normalized_colors_8bit_, tmp, 8, hist);
+
+                    surfaces[i].colorHistogram(hist);
                 }
             }
 
@@ -339,7 +350,8 @@ protected:
     CloudXYZPtr cloud_;  ///< most recent point cloud
 
     cv::Mat1f img_seg_;
-    cv::Mat3f img_;
+    cv::Mat3f img_normalized_colors_;
+    cv::Mat img_normalized_colors_8bit_;
 
     VecLayerShared layers_; ///< layer pipeline (ordered list of layer instances)
 
