@@ -15,6 +15,8 @@ namespace ni {
  * of pixel which have a certain value. Later on this vector is then normalized
  * such that the sum over all entries is 1.
  *
+ * Bins all gray pixels into the same bin, regardless of intensity
+ *
  * @param src continuous bgr color image
  * @param indices subset of pixels to process
  * @param nb_bins no. of histogram bins per color channel

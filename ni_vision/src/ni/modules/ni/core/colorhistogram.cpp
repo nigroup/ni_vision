@@ -15,26 +15,21 @@ void ni::computeColorHist(const Mat &src, const VecI &indices, int nb_bins, Mat1
     dst = Mat1f::zeros(1, nb_bins_sq*nb_bins);
 
     // numerator has to be slightly greater than 1, otherwise there is a problem if a channel is equal to 255
-    float bin_width = 1.0001f/static_cast<float>(nb_bins);
+    float bin_width = 255.0001f/static_cast<float>(nb_bins);
 
     uchar* data_ptr = src.data;
 
     for(size_t i=0; i<indices.size(); i++) {
 
-        int pixel = i*3;
+        int pixel = indices[i]*3;
         float _b = static_cast<float>(data_ptr[pixel]);
         float _g = static_cast<float>(data_ptr[pixel+1]);
         float _r = static_cast<float>(data_ptr[pixel+2]);
 
-        float sum = _b + _g + _r;
-        if(sum != 0.f) {
+        // all gray intensities into a single bin
+        if(_b == _g && _g == _r) {
 
-            _b /= sum;
-            _g /= sum;
-            _r /= sum;
-        }
-        else {
-            _b = _g = _r = 1.f/3.f; // why so for black pixels?
+            _b = _g = _r = 255.f/3.f;
         }
 
         // perform binning
