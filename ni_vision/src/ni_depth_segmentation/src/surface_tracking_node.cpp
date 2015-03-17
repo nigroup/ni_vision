@@ -28,9 +28,6 @@
 #include "elm/core/pcl/typedefs_fwd.h"  // point cloud typedef
 
 #include "ni/core/color_utils.h"
-#include "ni/core/colorhistogram.h"
-#include "ni/core/boundingbox2d.h"
-#include "ni/core/boundingbox3d.h"
 #include "ni/core/surface.h"
 #include "ni/layers/depthmap.h"
 #include "ni/layers/layerfactoryni.h"
@@ -154,7 +151,7 @@ protected:
 
             sig_.Clear();
             sig_.Append(name_in_cld_, cloud_);
-            //sig_.Append(name_in_img_, img_);
+            //sig_.Append(name_in_img_, img_normalized_colors_8bit_);
             sig_.Append(name_in_seg_, img_seg_);
 
             for(size_t i=0; i<layers_.size(); i++) {
@@ -166,129 +163,6 @@ protected:
             //imshow("depth_map", ConvertTo8U(sig_.MostRecentMat1f("depth_map")));
             imshow("img_seg_", ConvertTo8U(img_seg_));
 
-            // quick and dirty ---
-            vector<Surface > surfaces;
-            vector<BoundingBox2D> rects;
-
-            // reorder segment ids to be [1, N]
-            int NB_SEGS = 0;
-            double min_val, max_val;
-            minMaxIdx(img_seg_, &min_val, &max_val);
-            {
-                const int UPPER_LIM = static_cast<int>(max_val)+1;
-                vector<int> hist(UPPER_LIM, 0);
-
-                for(size_t i=0; i<img_seg_.total(); i++) {
-
-                    int value = img_seg_(i);
-
-                    // dont bother counting zeros (a.k.a not assigned)
-                    if(value > 0) {
-
-                        hist[value]++;
-                    }
-                }
-
-                vector<int> id_lut(UPPER_LIM, 0);
-                for(int i=1; i<UPPER_LIM; i++) {
-
-                    if(hist[i] > 0) {
-
-                        Surface surface;
-
-                        surface.id(++NB_SEGS);
-                        surface.overwritePixelCount(hist[i]);
-
-                        surfaces.push_back(surface);
-
-                        id_lut[i] = NB_SEGS;
-                    }
-                }
-
-                // replace segment values with new surface ids
-                // and record indicies for later use
-                std::vector<VecI > indicies(NB_SEGS+1, VecI());
-
-                for(size_t i=0; i<img_seg_.total(); i++) {
-
-                    // replace
-                    int seg_id = id_lut[static_cast<int>(img_seg_(i))];
-                    img_seg_(i) = seg_id;
-
-                    // append index
-                    indicies[seg_id].push_back(i);
-                }
-
-                // attach indices to surface objects
-                // and record 2-d bounding boxes around each surface
-                // and compute color histogram for each surface
-
-                for (int i=0; i<NB_SEGS; i++) {
-
-                    VecI tmp = indicies[i+1];
-                    surfaces[i].pixelIndices(tmp); // heavy copy?
-
-                    BoundingBox2D r;
-
-                    Mat1i tmp_mat(tmp);
-                    Mat1i coords(tmp_mat.rows, 2); // col(0) := x, col(1) := y
-                    cv::divide(tmp_mat, img_seg_.cols, coords.col(1));
-                    Mat1i x = coords.col(0);
-
-                    // modulus operation for OpenCV Mat:
-                    for (int j=0; j<tmp_mat.rows; j++) {
-
-                        x(j) = tmp[j] % img_seg_.cols;
-                    }
-
-                    double min_x, max_x, min_y, max_y;
-                    cv::minMaxIdx(coords.col(0), &min_x, &max_x);
-                    cv::minMaxIdx(coords.col(1), &min_y, &max_y);
-
-                    r.x = static_cast<int>(min_x);
-                    r.y = static_cast<int>(min_x);
-                    r.width = static_cast<int>(max_x-min_x+1);
-                    r.height = static_cast<int>(max_y-min_y+1);
-
-                    rects.push_back(r);
-
-                    // color histogram
-                    Mat1f hist;
-                    ni::computeColorHist(img_normalized_colors_8bit_, tmp, 8, hist);
-
-                    surfaces[i].colorHistogram(hist);
-                }
-            }
-
-            // sub clouds
-            vector<CloudXYZPtr> sub_clouds(NB_SEGS);
-            {
-                for (int i=0; i<NB_SEGS; i++) {
-
-                    sub_clouds[i].reset(new CloudXYZ(*cld, surfaces[i].pixelIndices()));
-                }
-            }
-
-            // cubes
-            vector<BoundingBox3D> cubes(NB_SEGS);
-            {
-                for (int i=0; i<NB_SEGS; i++) {
-
-                    BoundingBox3D cube(sub_clouds[i]);
-                    cubes[i] = cube;
-                }
-            }
-
-            GraphAttr graph(img_seg_, img_seg_ > 0);
-            if(graph.num_vertices() != static_cast<size_t>(NB_SEGS)) {
-
-                std::stringstream s;
-                s << "No. of vertices != no. of segments. (";
-                s << graph.num_vertices() << ") != (" << NB_SEGS << ")";
-                ExceptionValueError(s.str());
-            }
-
-            // --- quick and dirty
             //Mat1f img = sig_.MostRecentMat1f(name_in_seg_);
             Mat1f img = img_seg_;
 

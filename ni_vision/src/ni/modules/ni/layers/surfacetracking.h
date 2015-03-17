@@ -53,7 +53,10 @@ public:
     void Activate(const elm::Signal &signal);
 
 protected:
-    void extractFeatures(const elm::CloudXYZPtr &cloud, const cv::Mat &bgr, const cv::Mat &map);
+    void extractFeatures(const elm::CloudXYZPtr &cloud,
+                         const cv::Mat &bgr,
+                         const cv::Mat1f &map,
+                         std::vector<Surface> &surfaces);
 
     void computeFeatureDistance(const std::vector<ni::Surface> &surfaces, const std::vector<ni::Surface> &mem) const;
 
@@ -72,6 +75,9 @@ protected:
     cv::Mat1f dist_pos_;    ///< distance matrix for position
     cv::Mat1f dist_size_;   ///< distance matrix for size
     cv::Mat1f dist_;        ///< weighted sum of feature distance matrices
+
+    std::vector<ni::Surface> obsereved_;
+    std::vector<ni::Surface> tracked_;
 };
 
 } // namespace ni
