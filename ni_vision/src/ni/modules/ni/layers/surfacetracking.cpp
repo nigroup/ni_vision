@@ -33,6 +33,8 @@ const string SurfaceTracking::KEY_INPUT_MAP         = "map";
 #include <boost/assign/list_of.hpp>
 template <>
 elm::MapIONames LayerAttr_<SurfaceTracking>::io_pairs = boost::assign::map_list_of
+        ELM_ADD_INPUT_PAIR(SurfaceTracking::KEY_INPUT_BGR_IMAGE)
+        ELM_ADD_INPUT_PAIR(SurfaceTracking::KEY_INPUT_CLOUD)
         ELM_ADD_INPUT_PAIR(SurfaceTracking::KEY_INPUT_MAP)
         ELM_ADD_OUTPUT_PAIR(detail::BASE_MATOUTPUT_LAYER__KEY_OUTPUT_RESPONSE)
         ;
