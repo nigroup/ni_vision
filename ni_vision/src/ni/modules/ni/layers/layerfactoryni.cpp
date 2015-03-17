@@ -28,6 +28,7 @@
 #include "ni/layers/depthmap.h"
 #include "ni/layers/depthsegmentation.h"
 #include "ni/layers/prunesmallsegments.h"
+#include "ni/layers/surfacetracking.h"
 
 using boost::assign::map_list_of;
 using namespace elm;
@@ -60,6 +61,7 @@ LayerRegistry g_layerRegistry = map_list_of
         LAYER_REGISTRY_PAIR( SaliencyItti )
         LAYER_REGISTRY_PAIR( SoftMaxPopulationCode )
         LAYER_REGISTRY_PAIR( SinkhornBalancing )
+        LAYER_REGISTRY_PAIR( SurfaceTracking )
         LAYER_REGISTRY_PAIR( Triangulation )
         LAYER_REGISTRY_PAIR( WeightedSum )
         ; ///< <-- add new layer to registry here
