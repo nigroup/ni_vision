@@ -91,12 +91,23 @@ protected:
 
         to_.reset(new SurfaceTracking(config_));
         to_->IONames(io);
+
+        // Signal
+        sig_.Clear();
+
+        Mat3f tmp;
+        bgr_.convertTo(tmp, CV_32FC3, 1.f/255.f);
+
+        sig_.Append(NAME_IN_BGR, static_cast<Mat1f>(tmp));
+        sig_.Append(NAME_IN_MAP, map_);
+        sig_.Append(NAME_IN_POINTS, cloud_);
     }
 
     // members
     std::shared_ptr<elm::base_Layer > to_;  ///< test object
 
     LayerConfig config_;
+    Signal sig_;
 
     CloudXYZPtr cloud_;
     Mat1f map_;
@@ -129,6 +140,123 @@ TEST_F(SurfaceTrackingTest, ColorImageAsMat1f)
             EXPECT_FLOAT_EQ(green, color_floats(r, col_offset+1))   << "at (" << r << "," << c << ")";
             EXPECT_FLOAT_EQ(red, color_floats(r, col_offset+2))     << "at (" << r << "," << c << ")";
         }
+    }
+}
+
+TEST_F(SurfaceTrackingTest, Response_exists)
+{
+    ASSERT_FALSE(sig_.Exists(NAME_OUT_MAP_TRACKED));
+    to_->Activate(sig_);
+    to_->Response(sig_);
+    EXPECT_TRUE(sig_.Exists(NAME_OUT_MAP_TRACKED));
+}
+
+TEST_F(SurfaceTrackingTest, Response_dims)
+{
+    to_->Activate(sig_);
+    to_->Response(sig_);
+    EXPECT_MAT_DIMS_EQ(sig_.MostRecentMat1f(NAME_OUT_MAP_TRACKED), map_);
+}
+
+class SurfaceTrackingProtected : public SurfaceTracking
+{
+public:
+    SurfaceTrackingProtected()
+        : SurfaceTracking()
+    {}
+
+    SurfaceTrackingProtected(const LayerConfig &cfg)
+        : SurfaceTracking(cfg)
+    {
+        Reset(cfg);
+    }
+
+    vector<Surface> getObserved() const
+    {
+        return obsereved_;
+    }
+};
+
+class SurfaceTrackingProtectedTest : public SurfaceTrackingTest
+{
+protected:
+    virtual void SetUp()
+    {
+        SurfaceTrackingTest::SetUp();
+
+        LayerIONames io;
+        io.Input(SurfaceTracking::KEY_INPUT_BGR_IMAGE,  NAME_IN_BGR);
+        io.Input(SurfaceTracking::KEY_INPUT_CLOUD,      NAME_IN_POINTS);
+        io.Input(SurfaceTracking::KEY_INPUT_MAP,        NAME_IN_MAP);
+        io.Output(SurfaceTracking::KEY_OUTPUT_RESPONSE, NAME_OUT_MAP_TRACKED);
+
+        top_.Reset(config_);
+        top_.IONames(io);
+
+        top_.Activate(sig_);
+        top_.Response(sig_);
+    }
+
+    // members
+    SurfaceTrackingProtected top_; ///< test object with access to protected methods
+};
+
+TEST_F(SurfaceTrackingProtectedTest, Observed_how_many)
+{
+    vector<Surface> obs = top_.getObserved();
+
+    EXPECT_SIZE(4, obs) << "Unexpected number of surfaces.";
+}
+
+TEST_F(SurfaceTrackingProtectedTest, Observed_ids)
+{
+    vector<Surface> obs = top_.getObserved();
+
+    // Ids
+    VecI ids(obs.size());
+    for (size_t i=0; i<obs.size(); i++) {
+
+        ids[i] = obs[i].id();
+    }
+
+    EXPECT_EQ("1, 2, 3, 4", elm::to_string(ids)) << "Unexpected surface ids";
+}
+
+TEST_F(SurfaceTrackingProtectedTest, Observed_pixelInfo)
+{
+    vector<Surface> obs = top_.getObserved();
+
+    /*
+     * float data[ROWS*COLS] = {1.f, 1.f, 2.f, 3.f,
+                                1.f, 1.f, 2.f, 3.f,
+                                0.f, 1.f, 2.f, 5.f};
+     */
+    EXPECT_SIZE(5, obs[0].pixelIndices());
+    EXPECT_SIZE(3, obs[1].pixelIndices());
+    EXPECT_SIZE(2, obs[2].pixelIndices());
+    EXPECT_SIZE(1, obs[3].pixelIndices());
+
+    EXPECT_EQ("0, 1, 4, 5, 9",  elm::to_string(obs[0].pixelIndices()));
+    EXPECT_EQ("2, 6, 10",       elm::to_string(obs[1].pixelIndices()));
+    EXPECT_EQ("3, 7",           elm::to_string(obs[2].pixelIndices()));
+    EXPECT_EQ("11",             elm::to_string(obs[3].pixelIndices()));
+
+    // pixel count
+    EXPECT_EQ(5, obs[0].pixelCount());
+    EXPECT_EQ(3, obs[1].pixelCount());
+    EXPECT_EQ(2, obs[2].pixelCount());
+    EXPECT_EQ(1, obs[3].pixelCount());
+}
+
+TEST_F(SurfaceTrackingProtectedTest, Observed_histogram_dims)
+{
+    vector<Surface> obs = top_.getObserved();
+
+    int bins = config_.Params().get<int>(SurfaceTracking::PARAM_HIST_BINS);
+
+    for (size_t i=0; i<obs.size(); i++) {
+
+        EXPECT_MAT_DIMS_EQ(obs[i].colorHistogram(), cv::Size2i(bins*bins*bins, 1));
     }
 }
 

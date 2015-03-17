@@ -93,4 +93,31 @@ TEST_F(SurfaceTest, ColorHistogram)
     }
 }
 
+TEST_F(SurfaceTest, Diagonal)
+{
+    float d = 0.f;
+    while(d < 11.f) {
+
+        to_.diagonal(d);
+        EXPECT_FLOAT_EQ(d, to_.diagonal());
+
+        d += 0.1f;
+    }
+}
+
+TEST_F(SurfaceTest, CubeCenter)
+{
+    float x = -11.2f;
+    while(x++ < 11.f) {
+
+        cv::Matx13f c;
+        c(0) = -x;
+        c(1) = x;
+        c(2) = x*x;
+        to_.cubeCenter(c);
+
+        EXPECT_MAT_EQ(static_cast<cv::Mat1f>(c), static_cast<cv::Mat1f>(to_.cubeCenter()));
+    }
+}
+
 } // annonymous namespace for unit tests

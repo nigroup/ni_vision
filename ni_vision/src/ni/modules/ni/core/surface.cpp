@@ -64,3 +64,28 @@ Mat1f Surface::colorHistogram() const
 {
     return color_hist_;
 }
+
+void Surface::diagonal(float d)
+{
+    diagonal_ = d;
+}
+
+float Surface::diagonal() const
+{
+    return diagonal_;
+}
+
+void Surface::cubeCenter(const cv::Matx13f& c)
+{
+    cube_center_ = c;
+}
+
+cv::Matx13f Surface::cubeCenter() const
+{
+    return cube_center_;
+}
+
+float Surface::distance(const Surface &s) const
+{
+    return static_cast<float>(cv::norm(cube_center_-s.cubeCenter(), cv::NORM_L2));
+}

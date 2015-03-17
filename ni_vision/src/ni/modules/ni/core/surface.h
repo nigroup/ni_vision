@@ -80,6 +80,16 @@ public:
      */
     void colorHistogram(const cv::Mat1f &hist);
 
+    void diagonal(float d);
+
+    float diagonal() const;
+
+    void cubeCenter(const cv::Matx13f& c);
+
+    cv::Matx13f cubeCenter() const;
+
+    float distance(const Surface &s) const;
+
     /**
      * @brief Default Constructor
      */
@@ -94,6 +104,8 @@ protected:
     int pixel_count_;       ///< cache for pixel count
     cv::Mat1f color_hist_;  ///< color histogram
 
+    float diagonal_;         ///< diagonal length in 3d point cloud coorindate system [meters]
+    cv::Matx13f cube_center_;   ///< vector to center of cube surrounding surface
 };
 
 } // namespace ni
