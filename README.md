@@ -40,7 +40,7 @@ For CMake >= 2.8.9:
 
 For earlier versions of CMake:
 
-* cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_FLAGS="-fPIC" -DGTEST_ROOT=~/src/gtest-1.7.0 ~/src/elm
+* cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_FLAGS="-fPIC" -DGTEST_ROOT=~/src/gtest-1.7.0 -DOpenCV_DIR=/opt/ros/hydro/share/OpenCV/OpenCVConfig.cmake ~/src/elm
 
 * make -j2
 
