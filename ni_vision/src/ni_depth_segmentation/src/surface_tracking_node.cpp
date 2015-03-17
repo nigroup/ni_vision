@@ -151,7 +151,7 @@ protected:
 
             sig_.Clear();
             sig_.Append(name_in_cld_, cloud_);
-            //sig_.Append(name_in_img_, img_normalized_colors_8bit_);
+            sig_.Append(name_in_img_, img_normalized_colors_);
             sig_.Append(name_in_seg_, img_seg_);
 
             for(size_t i=0; i<layers_.size(); i++) {
