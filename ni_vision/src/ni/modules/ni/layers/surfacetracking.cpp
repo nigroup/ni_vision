@@ -26,7 +26,9 @@ const string SurfaceTracking::PARAM_MAX_COLOR       = "max_color";
 const string SurfaceTracking::PARAM_MAX_POS         = "max_pos";
 const string SurfaceTracking::PARAM_MAX_SIZE        = "max_size";
 
-const string KEY_INPUT_MAP  = "observed";
+const string SurfaceTracking::KEY_INPUT_BGR_IMAGE   = "bgr";
+const string SurfaceTracking::KEY_INPUT_CLOUD       = "points";
+const string SurfaceTracking::KEY_INPUT_MAP         = "map";
 
 #include <boost/assign/list_of.hpp>
 template <>
