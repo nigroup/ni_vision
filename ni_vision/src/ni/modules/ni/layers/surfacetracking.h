@@ -32,8 +32,8 @@ public:
     static const std::string PARAM_MAX_SIZE;
 
     // remaining I/O keys
-    static const std::string KEY_INPUT_CLOUD;
     static const std::string KEY_INPUT_BGR_IMAGE;
+    static const std::string KEY_INPUT_CLOUD;
     static const std::string KEY_INPUT_MAP;
 
     virtual ~SurfaceTracking();
@@ -61,6 +61,10 @@ protected:
     void computeFeatureDistance(const std::vector<ni::Surface> &surfaces, const std::vector<ni::Surface> &mem) const;
 
     // members
+    std::string input_name_bgr_;
+    std::string input_name_cloud_;
+    std::string input_name_map_;
+
     int nb_bins_;           ///< no. of bins in color histogram
 
     float weight_color_;    ///< weight for distance between color histograms features h

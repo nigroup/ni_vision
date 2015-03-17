@@ -53,6 +53,11 @@ SurfaceTracking::SurfaceTracking(const LayerConfig &config)
     Reset(config);
 }
 
+void SurfaceTracking::Clear()
+{
+    dist_ = Mat1f();
+}
+
 void SurfaceTracking::Reset(const LayerConfig &config)
 {
     Reconfigure(config);
@@ -70,6 +75,13 @@ void SurfaceTracking::Reconfigure(const LayerConfig &config)
     max_color_  = p.get<float>(PARAM_MAX_COLOR);
     max_pos_    = p.get<float>(PARAM_MAX_POS);
     max_size_   = p.get<float>(PARAM_MAX_SIZE);
+}
+
+void SurfaceTracking::InputNames(const LayerInputNames &io)
+{
+    input_name_bgr_     = io.Input(KEY_INPUT_BGR_IMAGE);
+    input_name_cloud_   = io.Input(KEY_INPUT_CLOUD);
+    input_name_map_     = io.Input(KEY_INPUT_MAP);
 }
 
 void SurfaceTracking::Activate(const Signal &signal)
