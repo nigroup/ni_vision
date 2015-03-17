@@ -88,9 +88,12 @@ void SurfaceTracking::InputNames(const LayerInputNames &io)
 
 void SurfaceTracking::Activate(const Signal &signal)
 {
-    Mat1b bgr           = signal.MostRecent(input_name_bgr_).get<Mat1f>();
+    Mat1f color         = signal.MostRecent(input_name_bgr_).get<Mat1f>();
     CloudXYZPtr cloud   = signal.MostRecent(input_name_cloud_).get<CloudXYZPtr>();
     Mat1f map           = signal.MostRecent(input_name_map_).get<Mat1f>();
+
+    Mat bgr;
+    color.convertTo(bgr, CV_8UC3, 255.f);
 
     obsereved_.clear();
     extractFeatures(cloud, bgr, map, obsereved_);
@@ -101,7 +104,7 @@ void SurfaceTracking::extractFeatures(
         const Mat &bgr,
         const Mat1f &map,
         vector<Surface> &surfaces)
-{
+{    
     surfaces.clear();
     vector<BoundingBox2D> rects;
 
