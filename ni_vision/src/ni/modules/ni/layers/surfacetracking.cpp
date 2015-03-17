@@ -86,7 +86,12 @@ void SurfaceTracking::InputNames(const LayerInputNames &io)
 
 void SurfaceTracking::Activate(const Signal &signal)
 {
+    Mat1b bgr           = signal.MostRecent(input_name_bgr_).get<Mat1f>();
+    CloudXYZPtr cloud   = signal.MostRecent(input_name_cloud_).get<CloudXYZPtr>();
+    Mat1f map           = signal.MostRecent(input_name_map_).get<Mat1f>();
 
+    obsereved_.clear();
+    extractFeatures(cloud, bgr, map, obsereved_);
 }
 
 void SurfaceTracking::extractFeatures(
