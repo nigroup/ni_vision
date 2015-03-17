@@ -97,6 +97,8 @@ void SurfaceTracking::Activate(const Signal &signal)
 
     obsereved_.clear();
     extractFeatures(cloud, bgr, map, obsereved_);
+
+    m_ = map; // until layer produces actual output
 }
 
 void SurfaceTracking::extractFeatures(

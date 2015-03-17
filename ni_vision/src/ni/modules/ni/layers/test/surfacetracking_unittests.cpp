@@ -22,6 +22,7 @@ ELM_INSTANTIATE_LAYER_TYPED_TEST_CASE_P(SurfaceTracking);
 const std::string NAME_IN_BGR       = "bgr";
 const std::string NAME_IN_POINTS    = "points";
 const std::string NAME_IN_MAP       = "map";
+const std::string NAME_OUT_MAP_TRACKED = "map_tracked";
 
 class SurfaceTrackingTest : public ::testing::Test
 {
@@ -69,10 +70,33 @@ protected:
                 bgr_.at<Vec3b>(r, c) = bgr_pixel;
             }
         }
+
+        // layer initialization
+        PTree params;
+        params.put(SurfaceTracking::PARAM_HIST_BINS, 4);
+        params.put(SurfaceTracking::PARAM_MAX_COLOR, 4.f);
+        params.put(SurfaceTracking::PARAM_MAX_POS,  4.f);
+        params.put(SurfaceTracking::PARAM_MAX_SIZE, 4.f);
+        params.put(SurfaceTracking::PARAM_WEIGHT_COLOR, 4.f);
+        params.put(SurfaceTracking::PARAM_WEIGHT_POS,   4.f);
+        params.put(SurfaceTracking::PARAM_WEIGHT_SIZE,  4.f);
+
+        config_.Params(params);
+
+        LayerIONames io;
+        io.Input(SurfaceTracking::KEY_INPUT_BGR_IMAGE,  NAME_IN_BGR);
+        io.Input(SurfaceTracking::KEY_INPUT_CLOUD,      NAME_IN_POINTS);
+        io.Input(SurfaceTracking::KEY_INPUT_MAP,        NAME_IN_MAP);
+        io.Output(SurfaceTracking::KEY_OUTPUT_RESPONSE, NAME_OUT_MAP_TRACKED);
+
+        to_.reset(new SurfaceTracking(config_));
+        to_->IONames(io);
     }
 
     // members
     std::shared_ptr<elm::base_Layer > to_;  ///< test object
+
+    LayerConfig config_;
 
     CloudXYZPtr cloud_;
     Mat1f map_;
