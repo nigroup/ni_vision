@@ -127,7 +127,7 @@ protected:
                 cv_img_ptr = cv_bridge::toCvShare(img, img_enc::BGR8);
 
                 ni::normalizeColors(cv_img_ptr->image, img_normalized_colors_);
-                img_normalized_colors_.convertTo(img_normalized_colors_8bit_, CV_8UC3, 255.f);
+                //img_normalized_colors_.convertTo(img_normalized_colors_8bit_, CV_8UC3, 255.f);
             }
             catch (cv_bridge::Exception& e) {
 
@@ -151,7 +151,7 @@ protected:
 
             sig_.Clear();
             sig_.Append(name_in_cld_, cloud_);
-            sig_.Append(name_in_img_, img_normalized_colors_);
+            sig_.Append(name_in_img_, static_cast<Mat1f>(img_normalized_colors_));
             sig_.Append(name_in_seg_, img_seg_);
 
             for(size_t i=0; i<layers_.size(); i++) {
