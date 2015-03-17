@@ -194,7 +194,7 @@ void SurfaceTracking::extractFeatures(
 
             // color histogram
             Mat1f hist;
-            computeColorHist(bgr, tmp, 8, hist);
+            computeColorHist(bgr, tmp, nb_bins_, hist);
 
             surfaces[i].colorHistogram(hist);
         }
