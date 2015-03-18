@@ -30,6 +30,8 @@ const string SurfaceTracking::KEY_INPUT_BGR_IMAGE   = "bgr";
 const string SurfaceTracking::KEY_INPUT_CLOUD       = "points";
 const string SurfaceTracking::KEY_INPUT_MAP         = "map";
 
+const float SurfaceTracking::DISTANCE_HUGE = 100.f;
+
 #include <boost/assign/list_of.hpp>
 template <>
 elm::MapIONames LayerAttr_<SurfaceTracking>::io_pairs = boost::assign::map_list_of
@@ -97,6 +99,15 @@ void SurfaceTracking::Activate(const Signal &signal)
 
     obsereved_.clear();
     extractFeatures(cloud, bgr, map, obsereved_);
+
+    if(memory_.size() > 0) {
+
+        computeFeatureDistance(obsereved_, memory_);
+    }
+    else {
+
+        memory_ = obsereved_;
+    }
 
     m_ = map; // until layer produces actual output
 }
@@ -220,5 +231,42 @@ void SurfaceTracking::extractFeatures(
     }
 }
 
+void SurfaceTracking::computeFeatureDistance(const vector<Surface> &surfaces,
+                                             const vector<Surface> &mem)
+{
+    int nb_surfaces = static_cast<int>(surfaces.size());
+    int nb_mem = static_cast<int>(mem.size());
+
+    const int DIM = max(nb_surfaces, nb_mem);
+
+    dist_color_ = Mat1f(DIM, DIM, DISTANCE_HUGE);
+    dist_pos_   = Mat1f(DIM, DIM, DISTANCE_HUGE);
+    dist_size_  = Mat1f(DIM, DIM, DISTANCE_HUGE);
+    dist_       = Mat1f(DIM, DIM, DISTANCE_HUGE);
+
+    // todo vectorize
+    for (int i=0; i<nb_surfaces; i++) {
+
+        for (int j=0; j<nb_mem; j++) {
+
+            float dc = cv::sum(abs(surfaces[i].colorHistogram()-mem[j].colorHistogram()))[0];
+
+            float dp = surfaces[i].distance(mem[j]);
+
+            float diag_i = surfaces[i].diagonal();
+            float diag_j = mem[j].diagonal();
+            float ds = fabs(diag_i - diag_j) / max(diag_i, diag_j);
+
+            dist_color_(i, j) = dc;
+            dist_pos_(i, j) = dp;
+            dist_size_(i, j) = ds;
+
+            if (dc < max_color_ && dp < max_pos_ && ds < max_size_) {
+
+                dist_(i, j) = weight_color_ * dc + weight_pos_ * dp + weight_size_ * ds;
+            }
+        } // j'th surface in STM
+    } // i'th newly observed surface
+}
 
 

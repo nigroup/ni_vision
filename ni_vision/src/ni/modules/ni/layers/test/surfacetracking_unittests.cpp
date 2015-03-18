@@ -175,6 +175,11 @@ public:
     {
         return obsereved_;
     }
+
+    cv::Mat1f distance() const
+    {
+        return dist_;
+    }
 };
 
 class SurfaceTrackingProtectedTest : public SurfaceTrackingTest
@@ -258,6 +263,18 @@ TEST_F(SurfaceTrackingProtectedTest, Observed_histogram_dims)
 
         EXPECT_MAT_DIMS_EQ(obs[i].colorHistogram(), cv::Size2i(bins*bins*bins, 1));
     }
+}
+
+TEST_F(SurfaceTrackingProtectedTest, Distance_dims)
+{
+    vector<Surface> obs = top_.getObserved();
+    top_.Activate(sig_);
+
+    const int N = static_cast<int>(obs.size());
+
+    ASSERT_GT(N, 0);
+
+    EXPECT_MAT_EQ(Mat1f(N, N, SurfaceTracking::DISTANCE_HUGE), top_.distance());
 }
 
 } // annonymous namespace for testing

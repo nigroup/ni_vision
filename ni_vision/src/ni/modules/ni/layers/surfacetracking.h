@@ -36,6 +36,8 @@ public:
     static const std::string KEY_INPUT_CLOUD;
     static const std::string KEY_INPUT_MAP;
 
+    static const float DISTANCE_HUGE;
+
     virtual ~SurfaceTracking();
 
     SurfaceTracking();
@@ -58,7 +60,8 @@ protected:
                          const cv::Mat1f &map,
                          std::vector<Surface> &surfaces);
 
-    void computeFeatureDistance(const std::vector<ni::Surface> &surfaces, const std::vector<ni::Surface> &mem) const;
+    void computeFeatureDistance(const std::vector<ni::Surface> &surfaces,
+                                const std::vector<ni::Surface> &mem);
 
     // members
     std::string input_name_bgr_;
@@ -81,7 +84,7 @@ protected:
     cv::Mat1f dist_;        ///< weighted sum of feature distance matrices
 
     std::vector<ni::Surface> obsereved_;
-    std::vector<ni::Surface> tracked_;
+    std::vector<ni::Surface> memory_;
 };
 
 } // namespace ni
