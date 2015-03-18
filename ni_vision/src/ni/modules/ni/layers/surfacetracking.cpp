@@ -269,11 +269,15 @@ void SurfaceTracking::computeFeatureDistance(const vector<Surface> &surfaces,
     } // i'th newly observed surface
 }
 
-/* Pre-Processing of the optimization of the tracking: elemination of the unique elements in Munkres-matrix
- */
-void SurfaceTracking::Tracking_OptPre (int nMemsCnt, int nSurfCnt, int huge, int nObjsNrLimit,
-                      std::vector<std::vector<float> > &mnDistTmp, std::vector<int> &vnSurfCandCnt, std::vector<int> &vnSegCandMin, std::vector<int> &vnMemsCandCnt, std::vector<int> &vnMemCandMin, std::vector<int> &vnMatchedSeg) {
-
+void SurfaceTracking::Tracking_OptPre(int nMemsCnt, int nSurfCnt,
+                                      int huge, int nObjsNrLimit,
+                                      vector<VecF > &mnDistTmp,
+                                      VecI &vnSurfCandCnt,
+                                      VecI &vnSegCandMin,
+                                      VecI &vnMemsCandCnt,
+                                      VecI &vnMemCandMin,
+                                      VecI &vnMatchedSeg) const
+{
     float offset = 0.01;
     for (int i = 0; i < nSurfCnt; i++) {
         float j_min = huge;
@@ -313,9 +317,18 @@ void SurfaceTracking::Tracking_OptPre (int nMemsCnt, int nSurfCnt, int huge, int
     }
 }
 
-/* Sub-function of the pre-processing of the optimization of the tracking: elemination of the unique elements in Munkres-matrix
- */
-void SurfaceTracking::Tracking_OptPreFunc(int seg, int j_min, int nMemsCnt, int nObjsNrLimit, float nTrackDist, float huge, std::vector<int> &vnSurfCandCnt, std::vector<int> &vnMemsCandCnt, std::vector<int> &vnMemCandMin, std::vector<int> &vnMatchedSeg, std::vector<std::vector<float> > &mnDistTmp) {
+void SurfaceTracking::Tracking_OptPreFunc(int seg,
+                                          int j_min,
+                                          int nMemsCnt,
+                                          int nObjsNrLimit,
+                                          float nTrackDist,
+                                          float huge,
+                                          VecI &vnSurfCandCnt,
+                                          VecI &vnMemsCandCnt,
+                                          VecI &vnMemCandMin,
+                                          VecI &vnMatchedSeg,
+                                          vector<VecF > &mnDistTmp) const
+{
     for (int j = 0; j < nMemsCnt; j++) {
         if (j == j_min) continue;                       //
         if (mnDistTmp[seg][j] > nTrackDist) continue;   //

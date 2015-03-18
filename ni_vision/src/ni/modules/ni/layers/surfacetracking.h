@@ -63,6 +63,65 @@ protected:
     void computeFeatureDistance(const std::vector<ni::Surface> &surfaces,
                                 const std::vector<ni::Surface> &mem);
 
+    /**
+     * @brief Pre-Processing of the optimization of the tracking
+     * Elimination of the unique elements in Munkres-matrix
+     *
+     * Pre-Processing for optimization step.
+     * Elemination of rows and columns that have a unique minimum match
+     *
+     * @param[in] nMemsCnt  no. of surfaces tracked in STM
+     * @param[in] nSurfCnt  no. of surfaces newly observed
+     * @param[in] huge numeric sentinal for huge distance
+     * @param[in] nObjsNrLimit upper limit of surfaces to track
+     * @param mnDistTmp deistance matrix modified in-place
+     * @param[out] vnSurfCandCnt no. of match candidates for observed surface
+     * @param[out] vnSegCandMin indices of match candidates for observed surfaces
+     * @param[out] vnMemsCandCnt no. of match candidates for tracked surfaces stored in STM
+     * @param[out] vnMemCandMin indices of match candidates for tracked surfaces stored in STM
+     * @param[out] vnMatchedSeg match matrix
+     */
+    void Tracking_OptPre(int nMemsCnt, int nSurfCnt,
+                         int huge, int nObjsNrLimit,
+                         std::vector<elm::VecF > &mnDistTmp,
+                         VecI &vnSurfCandCnt,
+                         VecI &vnSegCandMin,
+                         VecI &vnMemsCandCnt,
+                         VecI &vnMemCandMin,
+                         VecI &vnMatchedSeg) const;
+
+    /**
+     * @brief SurfaceTracking::Tracking_OptPreFunc
+     *
+     * Sub-function of the pre-processing of the optimization of the tracking.
+     * Elimination of the unique elements in Munkres-matrix
+     *
+     * Called recursively but rarely.
+     *
+     * @param[in] seg segment index
+     * @param[in] j_min
+     * @param[in] nMemsCnt
+     * @param[in] nObjsNrLimit upper limit of surfaces to track
+     * @param[in] nTrackDist
+     * @param[in] huge numeric sentinal for huge distance
+     * @param vnSurfCandCnt no. of match candidates for observed surface
+     * @param vnMemsCandCnt no. of match candidates for tracked surfaces stored in STM
+     * @param vnMemCandMin indices of match candidates for tracked surfaces stored in STM
+     * @param vnMatchedSeg match matrix
+     * @param mnDistTmp mnDistTmp deistance matrix modified in-place
+     */
+    void SurfaceTracking::Tracking_OptPreFunc(int seg,
+                                              int j_min,
+                                              int nMemsCnt,
+                                              int nObjsNrLimit,
+                                              float nTrackDist,
+                                              float huge,
+                                              VecI &vnSurfCandCnt,
+                                              VecI &vnMemsCandCnt,
+                                              VecI &vnMemCandMin,
+                                              VecI &vnMatchedSeg,
+                                              std::vector<elm::VecF > &mnDistTmp) const;
+
     // members
     std::string input_name_bgr_;
     std::string input_name_cloud_;
