@@ -1100,7 +1100,7 @@ void updateImage() {
 
                 int gsegm_sigma = int(nGSegmSigma*10);
                 cvCreateTrackbar(vsTrackbarName[17].data(), vsWndName[stTID.nGSegm].data(), &gsegm_sigma, 10, TrackbarHandler_GSegmSigma);
-                cvCreateTrackbar(vsTrackbarName[18].data(), vsWndName[stTID.nGSegm].data(), &nGSegmGrThrs, 20000, TrackbarHandler_none);
+                cvCreateTrackbar(vsTrackbarName[18].data(), vsWndName[stTID.nGSegm].data(), &nGSegmGrThrs, 50000, TrackbarHandler_none);
                 cvCreateTrackbar(vsTrackbarName[19].data(), vsWndName[stTID.nGSegm].data(), &nGSegmMinSize, 10000, TrackbarHandler_none);
                 cvCreateTrackbar(vsTrackbarName[16].data(), vsWndName[stTID.nGSegm].data(), &nGSegmUseHr, 1, TrackbarHandler_none);
             }
@@ -1488,7 +1488,7 @@ void updateImage() {
             if (bPointRgb && Registration(size_org, nImgScale, nDsWidth,
                              nNoSnap, nDelay, float(nBbWidth) / 100, float(nBbHeight) / 100, float(nBbDepth) / 100,
                              float(nRGBThresh) / 100, float(nShareThresh) / 100,
-                             nGSegmSigma, nGSegmGrThrs, nGSegmMinSize))
+                             nGSegmSigma, nGSegmGrThrs, nGSegmMinSize, nGSegmUseHr))
             vbFlagTask[stTID.nRecPcl] = false; //unclick button when recording is completed
         }
 

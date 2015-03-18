@@ -11,6 +11,20 @@
 extern sensor_msgs::PointCloud2ConstPtr cloud_;
 extern boost::mutex m;
 extern cv::Mat cvm_image_camera;
+extern int nDsSize;
+extern int nDsWidth;
+extern int nDsHeight;
+
+// convert Pcl RGB representation to gray-scale value
+float PclRGBToGray(float num)
+{
+    uint32_t RGB32;
+    memcpy(&RGB32, &num, sizeof(num));
+    uint8_t R = (RGB32 >> 16) & 0x0000ff;
+    uint8_t G = (RGB32 >> 8) & 0x0000ff;
+    uint8_t B = RGB32 & 0x0000ff;
+    return (0.299 * R + 0.587 * G + 0.114 * B) / 255;   // it's done that way in OpenCV
+}
 
 
 
@@ -168,13 +182,13 @@ void RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud, float width, float 
     //find range of the rgb values
     double min, max;
     it = cloud_thresh.points.begin();
-    min = max = it->rgb;
+    min = max = PclRGBToGray(it->rgb);
     for (it = cloud_thresh.points.begin(); it < cloud_thresh.points.end(); it++)
     {
-        if(it->rgb > max)
-            max = it->rgb;
-        else if(it->rgb < min)
-            min = it->rgb;
+        if(PclRGBToGray(it->rgb) > max)
+            max = PclRGBToGray(it->rgb);
+        else if(PclRGBToGray(it->rgb) < min)
+            min = PclRGBToGray(it->rgb);
     }
 
     //define bounding box
@@ -187,7 +201,7 @@ void RecPcl(const pcl::PointCloud<pcl::PointXYZRGB> & cloud, float width, float 
     double threshold = cThreshRel * max;
     for (it = cloud_thresh.points.begin(); it < cloud_thresh.points.end(); it++)
     {
-        if(it->rgb < threshold || it->x < box[0].x || it->x > box[1].x || it->y < box[0].y || it->y > box[1].y || it->z < box[0].z || it->z > box[1].z)
+        if(PclRGBToGray(it->rgb) < threshold || it->x < box[0].x || it->x > box[1].x || it->y < box[0].y || it->y > box[1].y || it->z < box[0].z || it->z > box[1].z)
             it->x = nan;
     }
 
@@ -246,7 +260,7 @@ void HR_from_Pcl(int size, const std::vector<int> & index,
  * fits: fits[i] is true if segment i is chosen, false if not
  * binTemp: binary template after morphological operations were applied
  */
-void chooseGbSegs(cv::Mat & HrImg, std::vector< std::vector<CvPoint> > & mnGSegmPts, float ShareThresh,
+void chooseGbSegs(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, std::vector< std::vector<CvPoint> > & mnGSegmPts, float ShareThresh,
                   vector<bool> & fits)
 {
     //number of segments
@@ -263,21 +277,43 @@ void chooseGbSegs(cv::Mat & HrImg, std::vector< std::vector<CvPoint> > & mnGSegm
     cv::cvtColor(HrImg, binary, CV_RGB2GRAY);
     cv::threshold(binary, binary, 0, 255, cv::THRESH_BINARY);
 
+
     //choose surfaces
+    float distMax = 5.0;
+    float intensityMin = 0.2;
+
+    cv::Mat org_gray;
+    cvtColor(cvm_rgb_org, org_gray, CV_BGR2GRAY);
+    cv::Mat dst, labels;
+    cv::distanceTransform(binary, dst, labels, CV_DIST_L1, 3);
+    std::vector <float> minDist(Segnum);
+    std::vector <float> avgIntensity(Segnum);
     std::vector <int> share(Segnum);
     for (int seg = 0; seg < Segnum; seg++)
+    {
         share[seg] = 0;
+        minDist[seg] = distMax;
+    }
 
     for(int i=0; i<HrImg.rows; i++)
         for(int j=0; j<HrImg.cols; j++)
+        {
             if(binary.at<uchar>(i,j) != 0)
             {
                 int seg = cvm_gbsegm.at<int>(i,j);
                 share[seg] ++;
             }
 
+            if (dst.at<float>(i,j) < minDist[cvm_gbsegm.at<int>(i,j)])
+                minDist[cvm_gbsegm.at<int>(i,j)] = dst.at<float>(i,j);
+
+            avgIntensity[cvm_gbsegm.at<int>(i,j)] += org_gray.at<float>(i,j);
+        }
+
     for (int seg = 0; seg < Segnum; seg++)
         if (float(share[seg]) / mnGSegmPts[seg].size() > ShareThresh)
+            fits[seg] = true;
+        else if ( minDist[seg] < distMax && ( avgIntensity[seg] / mnGSegmPts[seg].size() ) > intensityMin )
             fits[seg] = true;
         else
             fits[seg] = false;
@@ -364,8 +400,8 @@ void contrastEqualization(const cv::Mat & cvm_rgb_org, cv::Mat & RGBequal, int m
  * binTemp: binary template after morphological operations were applied
  * HrSmooth: final result, "smooth" high resolution RGB image
  */
-void smoothHighRes(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, float ShareThresh, double GSegmSigma, int GSegmGrThrs,
-                   int GSegmMinSize, cv::Mat & binTemp, cv::Mat & HrSmooth, std::string fnRGB = "", std::string fnGray = "")
+void smoothHighRes(const cv::Mat & cvm_rgb_org, const cv::Mat & cvm_rgb_ds, cv::Mat & HrImg, float ShareThresh, double GSegmSigma, int GSegmGrThrs,
+                   int GSegmMinSize, int nGSegmUseHr, cv::Mat & binTemp, cv::Mat & HrSmooth, std::string fnRGB = "", std::string fnGray = "")
 {
     //use all values in HrImg that are "not black" (a threshold is applied)
     //double min, max;
@@ -375,12 +411,46 @@ void smoothHighRes(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, float ShareThre
 
     //graph-based segmentation
     std::vector< std::vector<CvPoint> > mnGSegmPts;
-    GbSegmentation(cvm_rgb_org, GSegmSigma, GSegmGrThrs, GSegmMinSize, mnGSegmPts);
+    if (nGSegmUseHr)
+        GbSegmentation(cvm_rgb_org, GSegmSigma, GSegmGrThrs, GSegmMinSize, mnGSegmPts);
+    else
+    {
+        int nImgScale = cvm_image_camera.size().width / nDsWidth;
+        std::vector< std::vector<CvPoint> > mnGSegmPts_lr;
+        GbSegmentation(cvm_rgb_ds, GSegmSigma, GSegmGrThrs, GSegmMinSize, mnGSegmPts_lr);
+
+        for (int seg = 0; seg < mnGSegmPts_lr.size(); seg++)
+        {
+            std::vector<CvPoint> this_seg;
+            for (int i = 0; i < mnGSegmPts_lr[seg].size(); i++)
+            {
+                int xx, yy;
+                xx = mnGSegmPts_lr[seg][i].y; yy = mnGSegmPts_lr[seg][i].x;
+                xx = xx*nImgScale; yy = yy*nImgScale;
+                for (int mm = 0; mm < nImgScale; mm++) {
+                    if (yy-mm < 0) continue;
+                    for (int nn = 0; nn < nImgScale; nn++) {
+                        if (xx-nn < 0) continue;
+                        int idx = (yy-mm) * nDsWidth*nImgScale + xx-nn;
+
+                        int xx_new, yy_new;
+                        GetPixelPos(idx, cvm_image_camera.size().width, xx_new, yy_new);
+                        CvPoint point;
+                        point.y = xx_new; point.x = yy_new;
+                        this_seg.push_back(point);
+                    }
+                }
+            }
+            mnGSegmPts.push_back(std::vector<CvPoint>(this_seg));
+        }
+    }
+
+
 
     //find the right surfaces
     //cv::Mat HrSmooth = cv::Mat::zeros(HrImg.rows, HrImg.cols, HrImg.type());
     vector<bool> fits(mnGSegmPts.size());
-    chooseGbSegs(HrImg, mnGSegmPts, ShareThresh, fits);
+    chooseGbSegs(cvm_rgb_org, HrImg, mnGSegmPts, ShareThresh, fits);
 
     //combine surfaces to high resolution image
     for(int seg = 0; seg < fits.size(); seg++)
@@ -445,7 +515,7 @@ bool compareTimeSpec( struct timespec a, struct timespec b )
  */
 bool Registration( cv::Size size_org, int nImgScale, int nDsWidth,
                    int maxnum, int delayS, float width, float height, float depth, float cThreshRel, float ShareThresh,
-                   double GSegmSigma, int GSegmGrThrs, int GSegmMinSize)
+                   double GSegmSigma, int GSegmGrThrs, int GSegmMinSize, int nGSegmUseHr)
 {
     //window to display results
     cv::namedWindow("Object Registration", cv::WINDOW_NORMAL);
@@ -481,6 +551,17 @@ bool Registration( cv::Size size_org, int nImgScale, int nDsWidth,
 
         //grab RGB image
         cvm_image_camera.copyTo(cvm_rgb_org);
+        // generate downsampled image
+        cv::Size size_ds = cv::Size(nDsWidth, nDsHeight);
+        cv::Mat cvm_rgb_ds(size_ds, CV_8UC3);
+        cvm_rgb_ds = cv::Scalar(0, 0, 0);
+        for(size_t i = 0; i < nDsSize; i++)
+        {
+            int xx, yy;
+            GetPixelPos(i, nDsWidth, xx, yy);
+            cvm_rgb_ds.at<cv::Vec3b>(yy, xx) = cvm_rgb_org.at<cv::Vec3b>(yy*nImgScale, xx*nImgScale);
+        }
+
 
         //filenames
         string ext = static_cast<ostringstream*>( &(ostringstream() << (count + 1)))->str();
@@ -511,7 +592,7 @@ bool Registration( cv::Size size_org, int nImgScale, int nDsWidth,
         //smooth high resolution image from point cloud
         cv::Mat binTemp = results(cv::Rect(0,cvm_rgb_org.rows,cvm_rgb_org.cols, cvm_rgb_org.rows));
         cv::Mat final = results(cv::Rect(cvm_rgb_org.cols,cvm_rgb_org.rows,cvm_rgb_org.cols, cvm_rgb_org.rows));
-        smoothHighRes(cvm_rgb_org, HrPcl, ShareThresh, GSegmSigma, GSegmGrThrs, GSegmMinSize, binTemp, final, sSmoothPcl_fn, sbinTemp_fn);
+        smoothHighRes(cvm_rgb_org, cvm_rgb_ds, HrPcl, ShareThresh, GSegmSigma, GSegmGrThrs, GSegmMinSize, nGSegmUseHr, binTemp, final, sSmoothPcl_fn, sbinTemp_fn);
 
         //draw the results
         cv::imshow("Object Registration", results);
