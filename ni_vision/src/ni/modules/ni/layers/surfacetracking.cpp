@@ -105,6 +105,37 @@ void SurfaceTracking::Activate(const Signal &signal)
     if(memory_.size() > 0) {
 
         computeFeatureDistance(obsereved_, memory_);
+
+        // Elemination of rows and columns that have a unique minimum match
+        int nb_mem = static_cast<int>(memory_.size());
+        int nb_surfaces = static_cast<int>(obsereved_.size());
+
+        vector<VecF> distTmp(dist_.rows, VecF(dist_.cols));
+        for(int r=0; r<dist_.rows; r++) {
+
+            for(int c=0; c<dist_.cols; c++) {
+
+                distTmp[r][c] = dist_(r, c);
+            }
+        }
+
+        int nObjsNrLimit = 1000;
+
+        VecI surfCandCount(nb_surfaces, 0);
+        VecI segCandMin(nb_surfaces, nObjsNrLimit);
+        VecI memCandCount(nb_mem, 0);
+        VecI memCandMin(nb_mem, nObjsNrLimit);
+        VecI matchedSeg(nb_surfaces, nObjsNrLimit*2);
+
+        Tracking_OptPre(nb_mem, nb_surfaces,
+                        nObjsNrLimit, distTmp,
+                        surfCandCount,
+                        segCandMin,
+                        memCandCount,
+                        memCandMin,
+                        matchedSeg);
+
+        VecI vnMatchedMem(nb_mem, nObjsNrLimit*2);
     }
     else {
 
@@ -288,7 +319,7 @@ void SurfaceTracking::Tracking_OptPre(int nMemsCnt, int nSurfCnt,
 
             if (mnDistTmp[i][j] >= max_dist_) {
 
-                mnDistTmp[i][j] = huge;
+                mnDistTmp[i][j] = DISTANCE_HUGE;
             }
             else {
                 vnSurfCandCnt[i]++;
@@ -310,7 +341,7 @@ void SurfaceTracking::Tracking_OptPre(int nMemsCnt, int nSurfCnt,
 
     for (int j=0; j < nMemsCnt; j++) {
 
-        float i_min = huge;
+        float i_min = DISTANCE_HUGE;
         for (int i=0; i < nSurfCnt; i++) {
 
             if (mnDistTmp[i][j] >= max_dist_) {
