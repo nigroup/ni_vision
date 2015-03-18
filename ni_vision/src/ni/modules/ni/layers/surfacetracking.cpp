@@ -143,10 +143,14 @@ void SurfaceTracking::Activate(const Signal &signal)
         /* Main Optimization */
         std::vector<int> idx_seg;
         int cnt_nn = 0;
-        for (int i = 0; i < nSurfCnt; i++) {
+        for (int i=0; i < nSurfCnt; i++) {
+
             if (vnMatchedSeg[i] > nObjsNrLimit) {
-                for (int j = 0; j < nMemsCnt; j++) {
+
+                for (int j=0; j < nMemsCnt; j++) {
+
                     if (mnDistTmp[i][j] < max_dist_) {
+
                         vnMatchedMem[j] = 0;
                     }
                 }
@@ -155,55 +159,76 @@ void SurfaceTracking::Activate(const Signal &signal)
             }
         }
 
-        if (cnt_nn) {
+        if (cnt_nn > 0) {
+
             std::vector<int> idx_mem;
             cnt_nn = 0;
-            for (int j = 0; j < nMemsCnt; j++) {
+            for (int j=0; j < nMemsCnt; j++) {
+
                 if (!vnMatchedMem[j]) {
+
                     idx_mem.resize(cnt_nn + 1);
                     idx_mem[cnt_nn++] = j;
                 }
             }
 
-
             int munkres_huge = 100;
-            int nDimMunkres = max((int)idx_seg.size(), (int)idx_mem.size());
+            int nDimMunkres = max(static_cast<int>(idx_seg.size()),
+                                  static_cast<int>(idx_mem.size()));
             MunkresMatrix<double> m_MunkresIn(nDimMunkres, nDimMunkres);
             MunkresMatrix<double> m_MunkresOut(nDimMunkres, nDimMunkres);
 
-            for (size_t i = 0; i < idx_seg.size(); i++) {
-                for (size_t j = 0; j < idx_mem.size(); j++)
-                    m_MunkresIn(i,j) = mnDistTmp[idx_seg[i]][idx_mem[j]];
+            for (size_t i=0; i < idx_seg.size(); i++) {
+
+                for (size_t j=0; j < idx_mem.size(); j++) {
+
+                    m_MunkresIn(i, j) = mnDistTmp[idx_seg[i]][idx_mem[j]];
+                }
             }
 
             if (idx_mem.size() > idx_seg.size()) {
-                for (int i = (int)idx_seg.size(); i < nDimMunkres; i++) {
-                    for (int j = 0; j < nDimMunkres; j++) m_MunkresIn(i,j) = rand()% 10 + munkres_huge;
+
+                for (int i=(int)idx_seg.size(); i < nDimMunkres; i++) {
+
+                    for (int j=0; j < nDimMunkres; j++) {
+
+                        m_MunkresIn(i, j) = static_cast<double>(rand() % 10 + munkres_huge);
+                    }
                 }
             }
             if (idx_mem.size() < idx_seg.size()) {
-                for (int j = (int)idx_mem.size(); j < nDimMunkres; j++) {
-                    for (int i = 0; i < nDimMunkres; i++) m_MunkresIn(i,j) = rand()% 10 + munkres_huge;
-                }
 
+                for (int j=(int)idx_mem.size(); j < nDimMunkres; j++) {
+
+                    for (int i=0; i < nDimMunkres; i++) {
+
+                        m_MunkresIn(i,j) = static_cast<double>(rand()% 10 + munkres_huge);
+                    }
+                }
             }
 
-            m_MunkresOut = m_MunkresIn;
+            m_MunkresOut = m_MunkresIn; // for in-place substitution
 
             Munkres m;
             m.solve(m_MunkresOut);
 
+            // Specifying the output matrix
+            for (size_t i=0; i < idx_seg.size(); i++) {
 
+                for (size_t j=0; j < idx_mem.size(); j++) {
 
-            //////* Specifying the output matrix *//////////////////
-            for (size_t i = 0; i < idx_seg.size(); i++) {
-                for (size_t j = 0; j < idx_mem.size(); j++) {
-                    if (m_MunkresOut(i,j) == 0) vnMatchedSeg[idx_seg[i]] = idx_mem[j];
-                    else mnDistTmp[idx_seg[i]][idx_mem[j]] = DISTANCE_HUGE;
+                    if (m_MunkresOut(i,j) == 0) {
+
+                        vnMatchedSeg[idx_seg[i]] = idx_mem[j];
+                    }
+                    else {
+                        mnDistTmp[idx_seg[i]][idx_mem[j]] = DISTANCE_HUGE;
+                    }
                 }
             }
         }
         // End of the optimization
+
 
     }
     else {
