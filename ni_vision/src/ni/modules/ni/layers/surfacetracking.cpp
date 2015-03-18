@@ -229,6 +229,141 @@ void SurfaceTracking::Activate(const Signal &signal)
         }
         // End of the optimization
 
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////**                                                              **////////////////////////////////
+        /////////////////////////**                        Postprocessing                        **////////////////////////////////
+        /////////////////////////**                                                              **////////////////////////////////
+        /////////////////////////------------------------------------------------------------------////////////////////////////////
+
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+        /////////////**         Short-Term-Memory             **///////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+        //** Update properties of matched segments in the Short-Term-Memory **//
+        std::vector<bool> objs_old_flag(nMemsCnt, false);
+        SurfProp stMemsOld = stMems;
+        for (int i = 0; i < nSurfCnt; i++) {
+
+            //** Assign matched segments to the Short-Term-Memory **//
+            int cand = 0, j_tmp = -1;
+            if (vnMatchedSeg[i] < nObjsNrLimit) {
+                cand = 1;
+                j_tmp = vnMatchedSeg[i];
+            }
+
+            if (cand) {
+                if (j_tmp < 0) {printf("Tracking Error\n"); continue;}
+
+                objs_old_flag[j_tmp] = true;
+                stMems.vnPtsCnt[j_tmp] = stSurf.vnPtsCnt[i];
+                stMems.mnPtsIdx[j_tmp] = stSurf.mnPtsIdx[i];
+                stMems.mnRect[j_tmp] = stSurf.mnRect[i];
+                stMems.mnRCenter[j_tmp] = stSurf.mnRCenter[i];
+                stMems.mnCubic[j_tmp] = stSurf.mnCubic[i];
+                stMems.mnCCenter[j_tmp] = stSurf.mnCCenter[i];
+                stMems.mnColorHist[j_tmp] = stSurf.mnColorHist[i];
+                stMems.vnLength[j_tmp] = stSurf.vnLength[i];
+            }
+            else objs_new_no[cnt_new++] = i;
+        }
+
+
+
+
+        //** Filter stable objects from the Short-Term-Memory **//
+        for (int memc = 0; memc < nMemsCnt; memc++) {
+            if (objs_old_flag[memc]) {
+                stMems.vnMemCtr[memc]++;
+                if (stMems.vnMemCtr[memc] < stTrack.CntMem - stTrack.CntStable + 2) stMems.vnMemCtr[memc] = stTrack.CntMem - stTrack.CntStable + 1;
+                if (stMems.vnMemCtr[memc] > 100*stTrack.CntMem) stMems.vnMemCtr[memc] = 100*stTrack.CntMem;
+                if (stMems.vnStableCtr[memc] < 0) stMems.vnStableCtr[memc] = 1; else stMems.vnStableCtr[memc]++;
+                if (stMems.vnStableCtr[memc] > 100*(stTrack.CntStable+1)) stMems.vnStableCtr[memc] = 100*stTrack.CntStable;
+                stMems.vnLostCtr[memc] = 0;
+            }
+            else {
+                if (cnt_new) {
+                    for (int trc = 0; trc < cnt_new; trc++) {
+                    }
+                }
+
+                stMems.vnMemCtr[memc]--;
+                stMems.vnLostCtr[memc]++;
+                if (stMems.vnMemCtr[memc] >= stTrack.CntMem) stMems.vnMemCtr[memc] = stTrack.CntMem;
+                if (stMems.vnStableCtr[memc] > 0) stMems.vnStableCtr[memc] = 0; else stMems.vnStableCtr[memc]--;
+                if (stMems.vnStableCtr[memc] < -100*(stTrack.CntStable+1)) stMems.vnStableCtr[memc] = -100*stTrack.CntStable;
+                if (stMems.vnLostCtr[memc] > 100*(stTrack.CntLost+1)) stMems.vnLostCtr[memc] = 100*stTrack.CntLost;
+            }
+        }
+
+        //** Restack stable objects in the Short-Term-Memory **//
+        int cnt_tmp = 0;
+        for (int i = 0; i < nMemsCnt; i++) {
+            if (stMems.vnMemCtr[i] < 0) continue;
+            stMems.vnIdx[cnt_tmp] = stMems.vnIdx[i];
+            stMems.vnPtsCnt[cnt_tmp] = stMems.vnPtsCnt[i];
+            stMems.mnPtsIdx[cnt_tmp] = stMems.mnPtsIdx[i];
+            stMems.mnRect[cnt_tmp] = stMems.mnRect[i];
+            stMems.mnRCenter[cnt_tmp] = stMems.mnRCenter[i];
+            stMems.mnCubic[cnt_tmp] = stMems.mnCubic[i];
+            stMems.mnCCenter[cnt_tmp] = stMems.mnCCenter[i];
+            stMems.mnColorHist[cnt_tmp] = stMems.mnColorHist[i];
+            stMems.vnLength[cnt_tmp] = stMems.vnLength[i];
+            stMems.vnStableCtr[cnt_tmp] = stMems.vnStableCtr[i];
+            stMems.vnLostCtr[cnt_tmp] = stMems.vnLostCtr[i];
+            stMems.vnMemCtr[cnt_tmp] = stMems.vnMemCtr[i];
+            stMems.vnFound[cnt_tmp] = stMems.vnFound[i];
+            cnt_tmp++;
+        }
+        cnt_old = cnt_tmp;
+
+
+        //** Reusing unused surface indeces to the new appearing surfaces **//
+        std::vector<int> mems_idx(cnt_old, 0);
+        std::vector<int> mems_idx_new(cnt_new, 0);
+        for (int i = 0; i < cnt_old; i++) mems_idx[i] = stMems.vnIdx[i];
+        std::sort(mems_idx.begin(), mems_idx.end());
+        int cnt_tmp_tmp = 0;
+        if (cnt_old > 2 && cnt_new) {
+            if (mems_idx[2] > mems_idx[1]) {
+                for (int i = 2; i < cnt_old; i++) {
+                    int diff = mems_idx[i] - mems_idx[i-1];
+                    if (diff > 1) {
+                        for (int j = 0; j < diff-1; j++) {
+                            mems_idx_new[cnt_tmp_tmp++] = mems_idx[i-1] + j+1;
+                            if (cnt_tmp_tmp >= cnt_new) break;
+                        }
+                    }
+                    if (cnt_tmp_tmp >= cnt_new) break;
+                }
+                if (cnt_tmp_tmp < cnt_new)
+                    for (int i = 0; i < cnt_new - cnt_tmp_tmp; i++) mems_idx_new[cnt_tmp_tmp + i] = mems_idx[cnt_old-1] + i+1;
+            }
+            else printf("eeeeeeeeeeee \n");
+        }
+        else for (int i = 0; i < cnt_new; i++) mems_idx_new[i] = i;
+
+
+
+        //** Pushing new objects (unmatched segments) on the Short-Term-Memory **//
+        for (int i = 0; i < cnt_new; i++) {
+            stMems.vnIdx[cnt_old + i] = mems_idx_new[i];
+            stMems.vnPtsCnt[cnt_old + i] = stSurf.vnPtsCnt[objs_new_no[i]];
+            stMems.mnPtsIdx[cnt_old + i] = stSurf.mnPtsIdx[objs_new_no[i]];
+            stMems.mnRect[cnt_old + i] = stSurf.mnRect[objs_new_no[i]];
+            stMems.mnRCenter[cnt_old + i] = stSurf.mnRCenter[objs_new_no[i]];
+            stMems.mnCubic[cnt_old + i] = stSurf.mnCubic[objs_new_no[i]];
+            stMems.mnCCenter[cnt_old + i] = stSurf.mnCCenter[objs_new_no[i]];
+            stMems.mnColorHist[cnt_old + i] = stSurf.mnColorHist[objs_new_no[i]];
+            stMems.vnLength[cnt_old + i] = stSurf.vnLength[objs_new_no[i]];
+            stMems.vnStableCtr[cnt_old + i] = stSurf.vnStableCtr[objs_new_no[i]];
+            stMems.vnLostCtr[cnt_old + i] = stSurf.vnLostCtr[objs_new_no[i]];
+            stMems.vnMemCtr[cnt_old + i] = stSurf.vnMemCtr[objs_new_no[i]];
+        }
+        nMemsCnt = cnt_old + cnt_new;
+
+        if (nMemsCnt >= nObjsNrLimit) printf("Object queue exceeds object no. limit %d\n", nObjsNrLimit);
+
 
     }
     else {
