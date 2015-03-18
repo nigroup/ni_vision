@@ -83,7 +83,7 @@ protected:
      * @param[out] vnMatchedSeg match matrix
      */
     void Tracking_OptPre(int nMemsCnt, int nSurfCnt,
-                         int huge, int nObjsNrLimit,
+                         int nObjsNrLimit,
                          std::vector<elm::VecF > &mnDistTmp,
                          VecI &vnSurfCandCnt,
                          VecI &vnSegCandMin,

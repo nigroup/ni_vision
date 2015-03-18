@@ -272,7 +272,7 @@ void SurfaceTracking::computeFeatureDistance(const vector<Surface> &surfaces,
 }
 
 void SurfaceTracking::Tracking_OptPre(int nMemsCnt, int nSurfCnt,
-                                      int huge, int nObjsNrLimit,
+                                      int nObjsNrLimit,
                                       vector<VecF > &mnDistTmp,
                                       VecI &vnSurfCandCnt,
                                       VecI &vnSegCandMin,
@@ -283,7 +283,7 @@ void SurfaceTracking::Tracking_OptPre(int nMemsCnt, int nSurfCnt,
     float offset = 0.01;
     for (int i = 0; i < nSurfCnt; i++) {
 
-        float j_min = huge;
+        float j_min = DISTANCE_HUGE;
         for (int j = 0; j < nMemsCnt; j++) {
 
             if (mnDistTmp[i][j] >= max_dist_) {
