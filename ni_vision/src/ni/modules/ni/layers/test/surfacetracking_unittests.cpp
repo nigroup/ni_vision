@@ -77,6 +77,7 @@ protected:
         params.put(SurfaceTracking::PARAM_MAX_COLOR, 4.f);
         params.put(SurfaceTracking::PARAM_MAX_POS,  4.f);
         params.put(SurfaceTracking::PARAM_MAX_SIZE, 4.f);
+        params.put(SurfaceTracking::PARAM_MAX_DIST, 1.6f);
         params.put(SurfaceTracking::PARAM_WEIGHT_COLOR, 4.f);
         params.put(SurfaceTracking::PARAM_WEIGHT_POS,   4.f);
         params.put(SurfaceTracking::PARAM_WEIGHT_SIZE,  4.f);

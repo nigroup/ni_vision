@@ -27,9 +27,10 @@ public:
     static const std::string PARAM_WEIGHT_COLOR;
     static const std::string PARAM_WEIGHT_POS;
     static const std::string PARAM_WEIGHT_SIZE;
-    static const std::string PARAM_MAX_COLOR;
-    static const std::string PARAM_MAX_POS;
-    static const std::string PARAM_MAX_SIZE;
+    static const std::string PARAM_MAX_COLOR;       ///< upper threshold for similarly colored surfaces
+    static const std::string PARAM_MAX_POS;         ///< upper threshold for similarly positioned surfaces
+    static const std::string PARAM_MAX_SIZE;        ///< upper threshold for similarly sized surfaces
+    static const std::string PARAM_MAX_DIST;        ///< upper threshold for total feature distance
 
     // remaining I/O keys
     static const std::string KEY_INPUT_BGR_IMAGE;
@@ -110,17 +111,15 @@ protected:
      * @param vnMatchedSeg match matrix
      * @param mnDistTmp mnDistTmp deistance matrix modified in-place
      */
-    void SurfaceTracking::Tracking_OptPreFunc(int seg,
-                                              int j_min,
-                                              int nMemsCnt,
-                                              int nObjsNrLimit,
-                                              float nTrackDist,
-                                              float huge,
-                                              VecI &vnSurfCandCnt,
-                                              VecI &vnMemsCandCnt,
-                                              VecI &vnMemCandMin,
-                                              VecI &vnMatchedSeg,
-                                              std::vector<elm::VecF > &mnDistTmp) const;
+    void Tracking_OptPreFunc(int seg,
+                             int j_min,
+                             int nMemsCnt,
+                             int nObjsNrLimit,
+                             VecI &vnSurfCandCnt,
+                             VecI &vnMemsCandCnt,
+                             VecI &vnMemCandMin,
+                             VecI &vnMatchedSeg,
+                             std::vector<elm::VecF > &mnDistTmp) const;
 
     // members
     std::string input_name_bgr_;
@@ -136,6 +135,7 @@ protected:
     float max_color_;       ///< upper threshold for similarly colored surfaces
     float max_pos_;         ///< upper threshold for similarly positioned surfaces
     float max_size_;        ///< upper threshold for similarly sized surfaces
+    float max_dist_;        ///< upper threshold for total feature distance
 
     cv::Mat1f dist_color_;  ///< distance matrix for color features
     cv::Mat1f dist_pos_;    ///< distance matrix for position

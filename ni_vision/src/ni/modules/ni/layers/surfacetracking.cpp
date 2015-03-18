@@ -25,6 +25,7 @@ const string SurfaceTracking::PARAM_WEIGHT_SIZE     = "weight_size";
 const string SurfaceTracking::PARAM_MAX_COLOR       = "max_color";
 const string SurfaceTracking::PARAM_MAX_POS         = "max_pos";
 const string SurfaceTracking::PARAM_MAX_SIZE        = "max_size";
+const string SurfaceTracking::PARAM_MAX_DIST        = "max_dist";
 
 const string SurfaceTracking::KEY_INPUT_BGR_IMAGE   = "bgr";
 const string SurfaceTracking::KEY_INPUT_CLOUD       = "points";
@@ -79,6 +80,7 @@ void SurfaceTracking::Reconfigure(const LayerConfig &config)
     max_color_  = p.get<float>(PARAM_MAX_COLOR);
     max_pos_    = p.get<float>(PARAM_MAX_POS);
     max_size_   = p.get<float>(PARAM_MAX_SIZE);
+    max_dist_   = p.get<float>(PARAM_MAX_DIST);
 }
 
 void SurfaceTracking::InputNames(const LayerInputNames &io)
@@ -280,37 +282,78 @@ void SurfaceTracking::Tracking_OptPre(int nMemsCnt, int nSurfCnt,
 {
     float offset = 0.01;
     for (int i = 0; i < nSurfCnt; i++) {
+
         float j_min = huge;
         for (int j = 0; j < nMemsCnt; j++) {
-            if (mnDistTmp[i][j] >= stTrack.Dist) {mnDistTmp[i][j] = huge; continue;}
-            vnSurfCandCnt[i]++;
 
-            if (mnDistTmp[i][j] > j_min) continue;
-            if (mnDistTmp[i][j] == j_min) mnDistTmp[i][j] += offset;
-            else {j_min = mnDistTmp[i][j]; vnSegCandMin[i] = j;}
+            if (mnDistTmp[i][j] >= max_dist_) {
+
+                mnDistTmp[i][j] = huge;
+            }
+            else {
+                vnSurfCandCnt[i]++;
+
+                if (mnDistTmp[i][j] > j_min) {
+                    continue;
+                }
+                if (mnDistTmp[i][j] == j_min) {
+
+                    mnDistTmp[i][j] += offset;
+                }
+                else {
+                    j_min = mnDistTmp[i][j];
+                    vnSegCandMin[i] = j;
+                }
+            }
         }
     }
 
-    for (int j = 0; j < nMemsCnt; j++) {
+    for (int j=0; j < nMemsCnt; j++) {
+
         float i_min = huge;
-        for (int i = 0; i < nSurfCnt; i++) {
-            if (mnDistTmp[i][j] >= stTrack.Dist) continue;
+        for (int i=0; i < nSurfCnt; i++) {
+
+            if (mnDistTmp[i][j] >= max_dist_) {
+                continue;
+            }
             vnMemsCandCnt[j]++;
 
-            if (mnDistTmp[i][j] > i_min) continue;
-            if (mnDistTmp[i][j] == i_min) mnDistTmp[i][j] += offset;
-            else {i_min = mnDistTmp[i][j]; vnMemCandMin[j] = i;}
+            if (mnDistTmp[i][j] > i_min) {
+                continue;
+            }
+            if (mnDistTmp[i][j] == i_min) {
+
+                mnDistTmp[i][j] += offset;
+            }
+            else {
+                i_min = mnDistTmp[i][j];
+                vnMemCandMin[j] = i;
+            }
         }
     }
 
-    for (int i = 0; i < nSurfCnt; i++) {
+    for (int i=0; i < nSurfCnt; i++) {
         if (vnSurfCandCnt[i]) {
-            //// if no other initial elements in the column
+
+            // if no other initial elements in the column
             if (vnMemsCandCnt[vnSegCandMin[i]] < 2) {
-                if (vnMatchedSeg[i] < nObjsNrLimit) printf("Error, the segment %d is already matched %d\n", i, vnSegCandMin[i]);
+
+                if (vnMatchedSeg[i] < nObjsNrLimit) {
+
+                    printf("Error, the segment %d is already matched %d\n",
+                           i, vnSegCandMin[i]);
+                }
                 vnMatchedSeg[i] = vnSegCandMin[i];
 
-                if (vnSurfCandCnt[i] > 1) Tracking_OptPreFunc (i, vnSegCandMin[i], nMemsCnt, nObjsNrLimit, stTrack.Dist, huge, vnSurfCandCnt, vnMemsCandCnt, vnMemCandMin, vnMatchedSeg, mnDistTmp);
+                if (vnSurfCandCnt[i] > 1) Tracking_OptPreFunc(i,
+                                                              vnSegCandMin[i],
+                                                              nMemsCnt,
+                                                              nObjsNrLimit,
+                                                              vnSurfCandCnt,
+                                                              vnMemsCandCnt,
+                                                              vnMemCandMin,
+                                                              vnMatchedSeg,
+                                                              mnDistTmp);
             }
         }
         else vnMatchedSeg[i] = nObjsNrLimit;
@@ -321,29 +364,41 @@ void SurfaceTracking::Tracking_OptPreFunc(int seg,
                                           int j_min,
                                           int nMemsCnt,
                                           int nObjsNrLimit,
-                                          float nTrackDist,
-                                          float huge,
                                           VecI &vnSurfCandCnt,
                                           VecI &vnMemsCandCnt,
                                           VecI &vnMemCandMin,
                                           VecI &vnMatchedSeg,
                                           vector<VecF > &mnDistTmp) const
 {
-    for (int j = 0; j < nMemsCnt; j++) {
-        if (j == j_min) continue;                       //
-        if (mnDistTmp[seg][j] > nTrackDist) continue;   //
+    for (int j=0; j < nMemsCnt; j++) {
 
-        mnDistTmp[seg][j] = huge;
-        vnMemsCandCnt[j]--;
-        vnSurfCandCnt[seg]--;
-        if (!vnMemsCandCnt[j]) vnMemCandMin[j] = nObjsNrLimit;
+        if (j != j_min && mnDistTmp[seg][j] <= max_dist_) {
 
-        //// if there is only one candidate in the colum left
-        if (vnMemsCandCnt[j] != 1) continue;
-        for (int i = 0; i < seg; i++) {
-            if (mnDistTmp[i][j] > nTrackDist) continue;
-            vnMatchedSeg[i] = j;
-            if (vnSurfCandCnt[i] > 1) Tracking_OptPreFunc (i, j, nMemsCnt, nObjsNrLimit, nTrackDist, huge, vnSurfCandCnt, vnMemsCandCnt, vnMemCandMin, vnMatchedSeg, mnDistTmp);
+            mnDistTmp[seg][j] = DISTANCE_HUGE;
+            vnMemsCandCnt[j]--;
+            vnSurfCandCnt[seg]--;
+            if (!vnMemsCandCnt[j]) vnMemCandMin[j] = nObjsNrLimit;
+
+            //// if there is only one candidate in the colum left
+            if (vnMemsCandCnt[j] == 1) {
+
+                for (int i=0; i < seg; i++) {
+
+                    if (mnDistTmp[i][j] <= max_dist_) {
+
+                        vnMatchedSeg[i] = j;
+                        if (vnSurfCandCnt[i] > 1) {
+                            Tracking_OptPreFunc(i, j,
+                                                nMemsCnt, nObjsNrLimit,
+                                                vnSurfCandCnt,
+                                                vnMemsCandCnt,
+                                                vnMemCandMin,
+                                                vnMatchedSeg,
+                                                mnDistTmp);
+                        }
+                    }
+                }
+            }
         }
     }
 }
