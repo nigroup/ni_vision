@@ -229,31 +229,29 @@ void SurfaceTracking::Activate(const Signal &signal)
         }
         // End of the optimization
 
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /////////////////////////**                                                              **////////////////////////////////
-        /////////////////////////**                        Postprocessing                        **////////////////////////////////
-        /////////////////////////**                                                              **////////////////////////////////
-        /////////////////////////------------------------------------------------------------------////////////////////////////////
+        // Postprocessing...
 
+        // Short-Term-Memory (STM)...
 
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
-        /////////////**         Short-Term-Memory             **///////////////////////////////////////////
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-        //** Update properties of matched segments in the Short-Term-Memory **//
+        // Update properties of matched segments in the Short-Term-Memory
         std::vector<bool> objs_old_flag(nMemsCnt, false);
         SurfProp stMemsOld = stMems;
-        for (int i = 0; i < nSurfCnt; i++) {
+        for (int i=0; i < nSurfCnt; i++) {
 
             //** Assign matched segments to the Short-Term-Memory **//
             int cand = 0, j_tmp = -1;
             if (vnMatchedSeg[i] < nObjsNrLimit) {
+
                 cand = 1;
                 j_tmp = vnMatchedSeg[i];
             }
 
             if (cand) {
-                if (j_tmp < 0) {printf("Tracking Error\n"); continue;}
+
+                if (j_tmp < 0) {
+                    printf("Tracking Error\n");
+                    continue;
+                }
 
                 objs_old_flag[j_tmp] = true;
                 stMems.vnPtsCnt[j_tmp] = stSurf.vnPtsCnt[i];
@@ -265,15 +263,16 @@ void SurfaceTracking::Activate(const Signal &signal)
                 stMems.mnColorHist[j_tmp] = stSurf.mnColorHist[i];
                 stMems.vnLength[j_tmp] = stSurf.vnLength[i];
             }
-            else objs_new_no[cnt_new++] = i;
+            else {
+                objs_new_no[cnt_new++] = i;
+            }
         }
 
+        // Filter stable objects from the Short-Term-Memory
+        for (int memc=0; memc < nMemsCnt; memc++) {
 
-
-
-        //** Filter stable objects from the Short-Term-Memory **//
-        for (int memc = 0; memc < nMemsCnt; memc++) {
             if (objs_old_flag[memc]) {
+
                 stMems.vnMemCtr[memc]++;
                 if (stMems.vnMemCtr[memc] < stTrack.CntMem - stTrack.CntStable + 2) stMems.vnMemCtr[memc] = stTrack.CntMem - stTrack.CntStable + 1;
                 if (stMems.vnMemCtr[memc] > 100*stTrack.CntMem) stMems.vnMemCtr[memc] = 100*stTrack.CntMem;
@@ -283,23 +282,44 @@ void SurfaceTracking::Activate(const Signal &signal)
             }
             else {
                 if (cnt_new) {
-                    for (int trc = 0; trc < cnt_new; trc++) {
+                    for (int trc=0; trc < cnt_new; trc++) {
                     }
                 }
 
                 stMems.vnMemCtr[memc]--;
                 stMems.vnLostCtr[memc]++;
-                if (stMems.vnMemCtr[memc] >= stTrack.CntMem) stMems.vnMemCtr[memc] = stTrack.CntMem;
-                if (stMems.vnStableCtr[memc] > 0) stMems.vnStableCtr[memc] = 0; else stMems.vnStableCtr[memc]--;
-                if (stMems.vnStableCtr[memc] < -100*(stTrack.CntStable+1)) stMems.vnStableCtr[memc] = -100*stTrack.CntStable;
-                if (stMems.vnLostCtr[memc] > 100*(stTrack.CntLost+1)) stMems.vnLostCtr[memc] = 100*stTrack.CntLost;
+                if (stMems.vnMemCtr[memc] >= stTrack.CntMem) {
+
+                    stMems.vnMemCtr[memc] = stTrack.CntMem;
+                }
+
+                if (stMems.vnStableCtr[memc] > 0) {
+                    stMems.vnStableCtr[memc] = 0;
+                }
+                else {
+                    stMems.vnStableCtr[memc]--;
+                }
+
+                if (stMems.vnStableCtr[memc] < -100*(stTrack.CntStable+1)) {
+
+                    stMems.vnStableCtr[memc] = -100*stTrack.CntStable;
+                }
+
+                if (stMems.vnLostCtr[memc] > 100*(stTrack.CntLost+1)) {
+
+                    stMems.vnLostCtr[memc] = 100*stTrack.CntLost;
+                }
             }
         }
 
         //** Restack stable objects in the Short-Term-Memory **//
         int cnt_tmp = 0;
-        for (int i = 0; i < nMemsCnt; i++) {
-            if (stMems.vnMemCtr[i] < 0) continue;
+        for (int i=0; i < nMemsCnt; i++) {
+
+            if (stMems.vnMemCtr[i] < 0) {
+
+                continue;
+            }
             stMems.vnIdx[cnt_tmp] = stMems.vnIdx[i];
             stMems.vnPtsCnt[cnt_tmp] = stMems.vnPtsCnt[i];
             stMems.mnPtsIdx[cnt_tmp] = stMems.mnPtsIdx[i];
@@ -317,36 +337,62 @@ void SurfaceTracking::Activate(const Signal &signal)
         }
         cnt_old = cnt_tmp;
 
-
         //** Reusing unused surface indeces to the new appearing surfaces **//
         std::vector<int> mems_idx(cnt_old, 0);
         std::vector<int> mems_idx_new(cnt_new, 0);
-        for (int i = 0; i < cnt_old; i++) mems_idx[i] = stMems.vnIdx[i];
+
+        for (int i=0; i < cnt_old; i++) {
+
+            mems_idx[i] = stMems.vnIdx[i];
+        }
+
         std::sort(mems_idx.begin(), mems_idx.end());
+
         int cnt_tmp_tmp = 0;
         if (cnt_old > 2 && cnt_new) {
+
             if (mems_idx[2] > mems_idx[1]) {
-                for (int i = 2; i < cnt_old; i++) {
+
+                for (int i=2; i < cnt_old; i++) {
+
                     int diff = mems_idx[i] - mems_idx[i-1];
                     if (diff > 1) {
-                        for (int j = 0; j < diff-1; j++) {
+
+                        for (int j=0; j < diff-1; j++) {
+
                             mems_idx_new[cnt_tmp_tmp++] = mems_idx[i-1] + j+1;
-                            if (cnt_tmp_tmp >= cnt_new) break;
+                            if (cnt_tmp_tmp >= cnt_new) {
+
+                                break;
+                            }
                         }
                     }
-                    if (cnt_tmp_tmp >= cnt_new) break;
+                    if (cnt_tmp_tmp >= cnt_new) {
+                        break;
+                    }
                 }
-                if (cnt_tmp_tmp < cnt_new)
-                    for (int i = 0; i < cnt_new - cnt_tmp_tmp; i++) mems_idx_new[cnt_tmp_tmp + i] = mems_idx[cnt_old-1] + i+1;
+                if (cnt_tmp_tmp < cnt_new) {
+
+                    for (int i=0; i < cnt_new - cnt_tmp_tmp; i++) {
+
+                        mems_idx_new[cnt_tmp_tmp + i] = mems_idx[cnt_old-1] + i+1;
+                    }
+                }
             }
-            else printf("eeeeeeeeeeee \n");
+            else {
+                printf("eeeeeeeeeeee \n");
+            }
         }
-        else for (int i = 0; i < cnt_new; i++) mems_idx_new[i] = i;
+        else {
+            for (int i=0; i < cnt_new; i++) {
 
+                mems_idx_new[i] = i;
+            }
+        }
 
+        // Pushing new objects (unmatched segments) on the Short-Term-Memory
+        for (int i=0; i < cnt_new; i++) {
 
-        //** Pushing new objects (unmatched segments) on the Short-Term-Memory **//
-        for (int i = 0; i < cnt_new; i++) {
             stMems.vnIdx[cnt_old + i] = mems_idx_new[i];
             stMems.vnPtsCnt[cnt_old + i] = stSurf.vnPtsCnt[objs_new_no[i]];
             stMems.mnPtsIdx[cnt_old + i] = stSurf.mnPtsIdx[objs_new_no[i]];
@@ -362,9 +408,10 @@ void SurfaceTracking::Activate(const Signal &signal)
         }
         nMemsCnt = cnt_old + cnt_new;
 
-        if (nMemsCnt >= nObjsNrLimit) printf("Object queue exceeds object no. limit %d\n", nObjsNrLimit);
+        if (nMemsCnt >= nObjsNrLimit) {
 
-
+            printf("Object queue exceeds object no. limit %d\n", nObjsNrLimit);
+        }
     }
     else {
 
