@@ -13,6 +13,8 @@
 #include "ni/core/boundingbox3d.h"
 #include "ni/core/colorhistogram.h"
 
+#include "ni/3rdparty/munkres/munkres.hpp"
+
 using namespace std;
 using namespace cv;
 using namespace elm;
@@ -107,35 +109,102 @@ void SurfaceTracking::Activate(const Signal &signal)
         computeFeatureDistance(obsereved_, memory_);
 
         // Elemination of rows and columns that have a unique minimum match
-        int nb_mem = static_cast<int>(memory_.size());
-        int nb_surfaces = static_cast<int>(obsereved_.size());
+        int nMemsCnt = static_cast<int>(memory_.size());
+        int nSurfCnt = static_cast<int>(obsereved_.size());
 
-        vector<VecF> distTmp(dist_.rows, VecF(dist_.cols));
+        vector<VecF> mnDistTmp(dist_.rows, VecF(dist_.cols));
         for(int r=0; r<dist_.rows; r++) {
 
             for(int c=0; c<dist_.cols; c++) {
 
-                distTmp[r][c] = dist_(r, c);
+                mnDistTmp[r][c] = dist_(r, c);
             }
         }
 
         int nObjsNrLimit = 1000;
 
-        VecI surfCandCount(nb_surfaces, 0);
-        VecI segCandMin(nb_surfaces, nObjsNrLimit);
-        VecI memCandCount(nb_mem, 0);
-        VecI memCandMin(nb_mem, nObjsNrLimit);
-        VecI matchedSeg(nb_surfaces, nObjsNrLimit*2);
+        VecI surfCandCount(nSurfCnt, 0);
+        VecI segCandMin(nSurfCnt, nObjsNrLimit);
+        VecI memCandCount(nMemsCnt, 0);
+        VecI memCandMin(nMemsCnt, nObjsNrLimit);
+        VecI vnMatchedSeg(nSurfCnt, nObjsNrLimit*2);
 
-        Tracking_OptPre(nb_mem, nb_surfaces,
-                        nObjsNrLimit, distTmp,
+        Tracking_OptPre(nMemsCnt, nSurfCnt,
+                        nObjsNrLimit,
+                        mnDistTmp,
                         surfCandCount,
                         segCandMin,
                         memCandCount,
                         memCandMin,
-                        matchedSeg);
+                        vnMatchedSeg);
 
-        VecI vnMatchedMem(nb_mem, nObjsNrLimit*2);
+        VecI vnMatchedMem(nMemsCnt, nObjsNrLimit*2);
+
+        /* Main Optimization */
+        std::vector<int> idx_seg;
+        int cnt_nn = 0;
+        for (int i = 0; i < nSurfCnt; i++) {
+            if (vnMatchedSeg[i] > nObjsNrLimit) {
+                for (int j = 0; j < nMemsCnt; j++) {
+                    if (mnDistTmp[i][j] < max_dist_) {
+                        vnMatchedMem[j] = 0;
+                    }
+                }
+                idx_seg.resize(cnt_nn + 1);
+                idx_seg[cnt_nn++] = i;
+            }
+        }
+
+        if (cnt_nn) {
+            std::vector<int> idx_mem;
+            cnt_nn = 0;
+            for (int j = 0; j < nMemsCnt; j++) {
+                if (!vnMatchedMem[j]) {
+                    idx_mem.resize(cnt_nn + 1);
+                    idx_mem[cnt_nn++] = j;
+                }
+            }
+
+
+            int munkres_huge = 100;
+            int nDimMunkres = max((int)idx_seg.size(), (int)idx_mem.size());
+            MunkresMatrix<double> m_MunkresIn(nDimMunkres, nDimMunkres);
+            MunkresMatrix<double> m_MunkresOut(nDimMunkres, nDimMunkres);
+
+            for (size_t i = 0; i < idx_seg.size(); i++) {
+                for (size_t j = 0; j < idx_mem.size(); j++)
+                    m_MunkresIn(i,j) = mnDistTmp[idx_seg[i]][idx_mem[j]];
+            }
+
+            if (idx_mem.size() > idx_seg.size()) {
+                for (int i = (int)idx_seg.size(); i < nDimMunkres; i++) {
+                    for (int j = 0; j < nDimMunkres; j++) m_MunkresIn(i,j) = rand()% 10 + munkres_huge;
+                }
+            }
+            if (idx_mem.size() < idx_seg.size()) {
+                for (int j = (int)idx_mem.size(); j < nDimMunkres; j++) {
+                    for (int i = 0; i < nDimMunkres; i++) m_MunkresIn(i,j) = rand()% 10 + munkres_huge;
+                }
+
+            }
+
+            m_MunkresOut = m_MunkresIn;
+
+            Munkres m;
+            m.solve(m_MunkresOut);
+
+
+
+            //////* Specifying the output matrix *//////////////////
+            for (size_t i = 0; i < idx_seg.size(); i++) {
+                for (size_t j = 0; j < idx_mem.size(); j++) {
+                    if (m_MunkresOut(i,j) == 0) vnMatchedSeg[idx_seg[i]] = idx_mem[j];
+                    else mnDistTmp[idx_seg[i]][idx_mem[j]] = DISTANCE_HUGE;
+                }
+            }
+        }
+        // End of the optimization
+
     }
     else {
 
