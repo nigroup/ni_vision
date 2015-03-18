@@ -269,4 +269,68 @@ void SurfaceTracking::computeFeatureDistance(const vector<Surface> &surfaces,
     } // i'th newly observed surface
 }
 
+/* Pre-Processing of the optimization of the tracking: elemination of the unique elements in Munkres-matrix
+ */
+void SurfaceTracking::Tracking_OptPre (int nMemsCnt, int nSurfCnt, int huge, int nObjsNrLimit,
+                      std::vector<std::vector<float> > &mnDistTmp, std::vector<int> &vnSurfCandCnt, std::vector<int> &vnSegCandMin, std::vector<int> &vnMemsCandCnt, std::vector<int> &vnMemCandMin, std::vector<int> &vnMatchedSeg) {
 
+    float offset = 0.01;
+    for (int i = 0; i < nSurfCnt; i++) {
+        float j_min = huge;
+        for (int j = 0; j < nMemsCnt; j++) {
+            if (mnDistTmp[i][j] >= stTrack.Dist) {mnDistTmp[i][j] = huge; continue;}
+            vnSurfCandCnt[i]++;
+
+            if (mnDistTmp[i][j] > j_min) continue;
+            if (mnDistTmp[i][j] == j_min) mnDistTmp[i][j] += offset;
+            else {j_min = mnDistTmp[i][j]; vnSegCandMin[i] = j;}
+        }
+    }
+
+    for (int j = 0; j < nMemsCnt; j++) {
+        float i_min = huge;
+        for (int i = 0; i < nSurfCnt; i++) {
+            if (mnDistTmp[i][j] >= stTrack.Dist) continue;
+            vnMemsCandCnt[j]++;
+
+            if (mnDistTmp[i][j] > i_min) continue;
+            if (mnDistTmp[i][j] == i_min) mnDistTmp[i][j] += offset;
+            else {i_min = mnDistTmp[i][j]; vnMemCandMin[j] = i;}
+        }
+    }
+
+    for (int i = 0; i < nSurfCnt; i++) {
+        if (vnSurfCandCnt[i]) {
+            //// if no other initial elements in the column
+            if (vnMemsCandCnt[vnSegCandMin[i]] < 2) {
+                if (vnMatchedSeg[i] < nObjsNrLimit) printf("Error, the segment %d is already matched %d\n", i, vnSegCandMin[i]);
+                vnMatchedSeg[i] = vnSegCandMin[i];
+
+                if (vnSurfCandCnt[i] > 1) Tracking_OptPreFunc (i, vnSegCandMin[i], nMemsCnt, nObjsNrLimit, stTrack.Dist, huge, vnSurfCandCnt, vnMemsCandCnt, vnMemCandMin, vnMatchedSeg, mnDistTmp);
+            }
+        }
+        else vnMatchedSeg[i] = nObjsNrLimit;
+    }
+}
+
+/* Sub-function of the pre-processing of the optimization of the tracking: elemination of the unique elements in Munkres-matrix
+ */
+void SurfaceTracking::Tracking_OptPreFunc(int seg, int j_min, int nMemsCnt, int nObjsNrLimit, float nTrackDist, float huge, std::vector<int> &vnSurfCandCnt, std::vector<int> &vnMemsCandCnt, std::vector<int> &vnMemCandMin, std::vector<int> &vnMatchedSeg, std::vector<std::vector<float> > &mnDistTmp) {
+    for (int j = 0; j < nMemsCnt; j++) {
+        if (j == j_min) continue;                       //
+        if (mnDistTmp[seg][j] > nTrackDist) continue;   //
+
+        mnDistTmp[seg][j] = huge;
+        vnMemsCandCnt[j]--;
+        vnSurfCandCnt[seg]--;
+        if (!vnMemsCandCnt[j]) vnMemCandMin[j] = nObjsNrLimit;
+
+        //// if there is only one candidate in the colum left
+        if (vnMemsCandCnt[j] != 1) continue;
+        for (int i = 0; i < seg; i++) {
+            if (mnDistTmp[i][j] > nTrackDist) continue;
+            vnMatchedSeg[i] = j;
+            if (vnSurfCandCnt[i] > 1) Tracking_OptPreFunc (i, j, nMemsCnt, nObjsNrLimit, nTrackDist, huge, vnSurfCandCnt, vnMemsCandCnt, vnMemCandMin, vnMatchedSeg, mnDistTmp);
+        }
+    }
+}
