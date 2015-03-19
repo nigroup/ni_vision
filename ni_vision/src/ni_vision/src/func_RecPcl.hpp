@@ -267,7 +267,7 @@ void chooseGbSegs(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, std::vector< std
     int Segnum = mnGSegmPts.size();
 
     //mapping point -> segment
-    cv::Mat cvm_gbsegm(HrImg.size(), CV_32SC1);
+    cv::Mat cvm_gbsegm = cv::Mat(HrImg.rows, HrImg.cols, CV_32SC1, cv::Scalar(Segnum));
     for (int seg = 0; seg < Segnum; seg++)
         for (int p = 0; p < mnGSegmPts[seg].size(); p++)
             cvm_gbsegm.at<int>(mnGSegmPts[seg][p].y, mnGSegmPts[seg][p].x) = seg;
@@ -279,21 +279,25 @@ void chooseGbSegs(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, std::vector< std
 
 
     //choose surfaces
-    float distMax = 5.0;
-    float intensityMin = 0.2;
+    float distMax = 50.0;            //to do: ask user to specify these parameters
+    float intensityMin = 0.2;        //to do: ask user to specify these parameters
 
     cv::Mat org_gray;
     cvtColor(cvm_rgb_org, org_gray, CV_BGR2GRAY);
     cv::Mat dst, labels;
-    cv::distanceTransform(binary, dst, labels, CV_DIST_L1, 3);
-    std::vector <float> minDist(Segnum);
-    std::vector <float> avgIntensity(Segnum);
-    std::vector <int> share(Segnum);
-    for (int seg = 0; seg < Segnum; seg++)
+    cv::Mat invBin=  cv::Scalar::all(255) - binary;
+    cv::distanceTransform(invBin, dst, labels, CV_DIST_L1, 3);
+    std::vector <float> minDist(Segnum+1);
+    std::vector <float> intensity(Segnum+1);
+    std::vector <int> share(Segnum+1);
+    for (int seg = 0; seg <= Segnum; seg++)
     {
         share[seg] = 0;
         minDist[seg] = distMax;
+        intensity[seg] = 0;
     }
+
+
 
     for(int i=0; i<HrImg.rows; i++)
         for(int j=0; j<HrImg.cols; j++)
@@ -304,19 +308,24 @@ void chooseGbSegs(const cv::Mat & cvm_rgb_org, cv::Mat & HrImg, std::vector< std
                 share[seg] ++;
             }
 
+
             if (dst.at<float>(i,j) < minDist[cvm_gbsegm.at<int>(i,j)])
                 minDist[cvm_gbsegm.at<int>(i,j)] = dst.at<float>(i,j);
 
-            avgIntensity[cvm_gbsegm.at<int>(i,j)] += org_gray.at<float>(i,j);
+            intensity[cvm_gbsegm.at<int>(i,j)] += org_gray.at<uchar>(i,j);
         }
 
+
     for (int seg = 0; seg < Segnum; seg++)
+    {
         if (float(share[seg]) / mnGSegmPts[seg].size() > ShareThresh)
             fits[seg] = true;
-        else if ( minDist[seg] < distMax && ( avgIntensity[seg] / mnGSegmPts[seg].size() ) > intensityMin )
+        else if ( minDist[seg] < distMax && ( intensity[seg] / (mnGSegmPts[seg].size()*255) ) > intensityMin )
             fits[seg] = true;
         else
             fits[seg] = false;
+
+    }
 
 }
 
@@ -446,7 +455,6 @@ void smoothHighRes(const cv::Mat & cvm_rgb_org, const cv::Mat & cvm_rgb_ds, cv::
     }
 
 
-
     //find the right surfaces
     //cv::Mat HrSmooth = cv::Mat::zeros(HrImg.rows, HrImg.cols, HrImg.type());
     vector<bool> fits(mnGSegmPts.size());
@@ -464,6 +472,7 @@ void smoothHighRes(const cv::Mat & cvm_rgb_org, const cv::Mat & cvm_rgb_ds, cv::
             }
         }
     }
+
 
     if (fnRGB != "")
         cv::imwrite(fnRGB, HrSmooth);
@@ -552,10 +561,10 @@ bool Registration( cv::Size size_org, int nImgScale, int nDsWidth,
         //grab RGB image
         cvm_image_camera.copyTo(cvm_rgb_org);
         // generate downsampled image
-        cv::Size size_ds = cv::Size(nDsWidth, nDsHeight);
+        cv::Size size_ds = cv::Size(size_org.width / nImgScale, size_org.height / nImgScale);
         cv::Mat cvm_rgb_ds(size_ds, CV_8UC3);
         cvm_rgb_ds = cv::Scalar(0, 0, 0);
-        for(size_t i = 0; i < nDsSize; i++)
+        for(size_t i = 0; i < size_org.width*size_org.height/(nImgScale*nImgScale); i++)
         {
             int xx, yy;
             GetPixelPos(i, nDsWidth, xx, yy);
