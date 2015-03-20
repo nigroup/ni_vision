@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ni_vision)
 
+# ----------------------------------------------------------------------------
+# NI Libraries
+# ----------------------------------------------------------------------------
+set(NI_LIBS ni_3rdparty ni_legacy)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  ni
   pcl_conversions
   pcl_ros
   roscpp
@@ -121,7 +127,7 @@ list_filterout(SRC_LIST ${REGEX_EXCLUDE_FROM_MODULE})
 list_filterout(HEADERS  ${REGEX_EXCLUDE_FROM_MODULE})
 
 add_executable(ni_vision ${SRC_LIST} ${HEADERS})
-target_link_libraries(ni_vision ${catkin_LIBRARIES} siftfast terminal_tools ${OpenCV_LIBRARIES})
+target_link_libraries(ni_vision ${catkin_LIBRARIES} siftfast terminal_tools ${OpenCV_LIBRARIES} ${NI_LIBS})
 
 ## Declare a cpp library
 # add_library(ni_vision
