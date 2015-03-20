@@ -27,7 +27,7 @@ include(cmake/MessageUtils.cmake)
 # Set global CMake variables
 # ----------------------------------------------------------------------------
 # Print all warnings and enable C++11 support
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++0x")
 set(CMAKE_VERBOSE ON CACHE BOOL "Verbose mode")
 
 ## Find catkin macros and libraries

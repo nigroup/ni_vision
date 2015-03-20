@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 2.8.3)
 project(ni_vision)
 
 # ----------------------------------------------------------------------------
+# Set global CMake variables
+# ----------------------------------------------------------------------------
+# Print all warnings and enable C++11 support
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++0x")
+set(CMAKE_VERBOSE ON CACHE BOOL "Verbose mode")
+
+# ----------------------------------------------------------------------------
 # NI Libraries
 # ----------------------------------------------------------------------------
 set(NI_LIBS ni_3rdparty ni_legacy)
