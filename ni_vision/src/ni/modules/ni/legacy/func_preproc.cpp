@@ -2,6 +2,10 @@
  * Functions for preprocessing of segmentation; creating depth map/depth-gradient map
  */
 
+#include "ni/legacy/func_preproc.h"
+
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
 /* Create depth map from RGB point cloud
  *
