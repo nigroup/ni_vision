@@ -33,10 +33,10 @@
 // -----Sub functions-----------------------
 // -----------------------------------------
 #include "func_header.hpp"
-#include "func_operations.hpp"
+#include "ni/legacy/func_operations.hpp"
 
 #include "func_init.hpp"
-#include "ni/legacy/func_preproc.hpp"
+#include "ni/legacy/func_preproc.h"
 #include "func_segmentation.hpp"
 #include "func_segmentation_gb.hpp"
 #include "func_recognition.hpp"
@@ -352,8 +352,8 @@ void updateImage() {
             struct timespec t_depth_start, t_depth_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_depth_start); bTimeDepth = true;
 
             //////*  Making depth map: storing coordinates from point cloud  *////////////
-            if (bPointRgb) MakeDepthMap (cloud_Input_rgb, nDsSize, nDsWidth, nDMax, nDMin, nDIdxCntTmp, vnCloudIdx_d, vnX, vnY, vnZ);
-            else MakeDepthMap (cloud_Input, nDsSize, nDMax, nDMin, nDIdxCntTmp, vnCloudIdx_d, vnX, vnY, vnZ);
+            if (bPointRgb) MakeDepthMap (cloud_Input_rgb, nDsSize, nDsWidth, nDLimit, nDMax, nDMin, nDIdxCntTmp, vnCloudIdx_d, vnX, vnY, vnZ);
+            else MakeDepthMap (cloud_Input, nDsSize, nDLimit, nDMax, nDMin, nDIdxCntTmp, vnCloudIdx_d, vnX, vnY, vnZ);
 
             //////*  Making depth-gradient map  *////////////////////////////////////////
             MakeDGradMap (vnZ, vnCloudIdx_d, nDIdxCntTmp, nDGradConst, nSegmDThres, nDGradNan, nDsWidth, nDGradXMin, nDGradXMax, nDGradYMin, nDGradYMax, vnDGradX, vnDGradY);

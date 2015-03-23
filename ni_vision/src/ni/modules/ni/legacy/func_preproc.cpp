@@ -7,6 +7,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+#include "ni/legacy/func_operations.hpp"
+
 /* Create depth map from RGB point cloud
  *
  * Input:
@@ -19,7 +21,7 @@
  * Output:
  * vnX, vnY, vnZ - output vectors for point cloud coordinates
  */
-void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nDsSize, int nDsWidth, float &nDMax, float &nDMin,
+void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nDsSize, int nDsWidth, float nDLimit, float &nDMax, float &nDMin,
                    int &nDIdxCntTmp, std::vector<int> &vnCloudIdx_d, std::vector<float> &vnX, std::vector<float> &vnY, std::vector<float> &vnZ)
 {
     if (nDsWidth <= 320) {
@@ -68,7 +70,7 @@ void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nDsSize, int nDs
  * Output:
  * vnX, vnY, vnZ - output vectors for point cloud coordinates
  */
-void MakeDepthMap (pcl::PointCloud<pcl::PointXYZ> cloud, int nDsSize, float &nDMax, float &nDMin,
+void MakeDepthMap (pcl::PointCloud<pcl::PointXYZ> cloud, int nDsSize, float nDLimit, float &nDMax, float &nDMin,
                    int &nDIdxCntTmp, std::vector<int> &vnCloudIdx_d, std::vector<float> &vnX, std::vector<float> &vnY, std::vector<float> &vnZ)
 {
     for (int i = 1; i < nDsSize; i++) {// the first pixel has wrong depth info

@@ -2,6 +2,9 @@
  * Functions for Histogram calculation and processing of image data
  */
 
+#include <vector>
+
+#include <opencv2/core/core.hpp>
 
 int min(int a, int b) {if (a > b) return b; else return a;}
 float min(float a, float b) {if (a > b) return b; else return a;}

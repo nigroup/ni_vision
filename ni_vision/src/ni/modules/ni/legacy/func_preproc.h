@@ -22,7 +22,7 @@ class PointXYZRGB;
  * Output:
  * vnX, vnY, vnZ - output vectors for point cloud coordinates
  */
-void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nDsSize, int nDsWidth, float &nDMax, float &nDMin,
+void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nDsSize, int nDsWidth, float nDLimit, float &nDMax, float &nDMin,
                    int &nDIdxCntTmp, std::vector<int> &vnCloudIdx_d, std::vector<float> &vnX, std::vector<float> &vnY, std::vector<float> &vnZ);
 
 /* Create depth map from monochrome point cloud
@@ -37,7 +37,7 @@ void MakeDepthMap (pcl::PointCloud<pcl::PointXYZRGB> cloud, int nDsSize, int nDs
  * Output:
  * vnX, vnY, vnZ - output vectors for point cloud coordinates
  */
-void MakeDepthMap (pcl::PointCloud<pcl::PointXYZ> cloud, int nDsSize, float &nDMax, float &nDMin,
+void MakeDepthMap (pcl::PointCloud<pcl::PointXYZ> cloud, int nDsSize, float nDLimit, float &nDMax, float &nDMin,
                    int &nDIdxCntTmp, std::vector<int> &vnCloudIdx_d, std::vector<float> &vnX, std::vector<float> &vnY, std::vector<float> &vnZ);
 
 
