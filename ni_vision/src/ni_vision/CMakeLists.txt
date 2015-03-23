@@ -11,7 +11,7 @@ set(CMAKE_VERBOSE ON CACHE BOOL "Verbose mode")
 # ----------------------------------------------------------------------------
 # NI Libraries
 # ----------------------------------------------------------------------------
-set(NI_LIBS ni_3rdparty ni_legacy)
+set(NI_LIBS ni_3rdparty ni_core ni_layers ni_legacy)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
