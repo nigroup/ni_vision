@@ -15,7 +15,7 @@ using namespace ni;
 /** Define parameters and I/O keys
   */
 const string DepthMap::PARAM_DEPTH_MAX = "depth_min";
-const float DepthMap::DEFAULT_DEPTH_MAX = 3.f;
+const float DepthMap::DEFAULT_DEPTH_MAX = 5.f;
 
 /** @todo why does define guard lead to undefined reference error?
  */
@@ -89,7 +89,7 @@ void DepthMap::Reset(const LayerConfig &config)
 
 void DepthMap::Reconfigure(const LayerConfig &config)
 {
-    depth_max_ = config.Params().get<float>(PARAM_DEPTH_MAX, 3.f);
+    depth_max_ = config.Params().get<float>(PARAM_DEPTH_MAX, DEFAULT_DEPTH_MAX);
 }
 
 void DepthMap::Activate(const Signal &signal)
