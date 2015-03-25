@@ -194,8 +194,7 @@ DepthGradient::DepthGradient(const LayerConfig& config)
 
 void DepthGradient::computeDerivative(const Mat1f &src, int dim, Mat1f &dst) const
 {
-    Mat1f in_shift;
-    Mat1f diff;
+    Mat1f in_shift, denom, diff;
 
     if(dim == 0) {
 
@@ -218,6 +217,6 @@ void DepthGradient::computeDerivative(const Mat1f &src, int dim, Mat1f &dst) con
     }
 
     // gradient =  diff ./ (|in|+w)
-    cv::add(abs(in_shift), w_, in_shift);
-    divide(diff, in_shift, dst);
+    cv::add(abs(in_shift), w_, denom);
+    divide(diff, denom, dst);
 }
