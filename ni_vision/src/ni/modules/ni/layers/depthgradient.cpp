@@ -162,14 +162,14 @@ void DepthGradient::Activate(const Signal &signal)
 
     const float NaN = std::numeric_limits<float>::quiet_NaN();
 
-    hconcat(grad_x_, Mat1f(grad_x_.rows, 1, NaN), grad_x_);
+    hconcat(Mat1f(grad_x_.rows, 1, NaN), grad_x_, grad_x_);
 
     ELM_THROW_BAD_DIMS_IF(in.rows < 2,
                           "Input must have > 1 rows to compute gradient in y direction.");
 
     // compute gradient in y direction:
     computeDerivative(in, 1, grad_y_);
-    vconcat(grad_y_, Mat1f(1, grad_y_.cols, NaN), grad_y_);
+    vconcat(Mat1f(1, grad_y_.cols, NaN), grad_y_, grad_y_);
 }
 
 void DepthGradient::Response(Signal &signal)
@@ -194,19 +194,19 @@ DepthGradient::DepthGradient(const LayerConfig& config)
 
 void DepthGradient::computeDerivative(const Mat1f &src, int dim, Mat1f &dst) const
 {
-    Mat1f in_shift, denom, diff;
+    Mat1f in_shift, in_crop, denom, diff;
 
     if(dim == 0) {
 
         // horizontal
         in_shift = src.colRange(1, src.cols);
-        diff = in_shift - src.colRange(0, src.cols-1);
+        in_crop = src.colRange(0, src.cols-1);
     }
     else if(dim == 1) {
 
         // vertical
         in_shift = src.rowRange(1, src.rows);
-        diff = in_shift - src.rowRange(0, src.rows-1);
+        in_crop = src.rowRange(0, src.rows-1);
     }
     else {
 
@@ -216,7 +216,26 @@ void DepthGradient::computeDerivative(const Mat1f &src, int dim, Mat1f &dst) con
         ELM_THROW_VALUE_ERROR(s.str());
     }
 
+    //diff = in_shift - in_crop;
+    cv::subtract(in_shift, in_crop, diff);
+
     // gradient =  diff ./ (|in|+w)
-    cv::add(abs(in_shift), w_, denom);
-    divide(diff, denom, dst);
+    cv::add(in_shift, w_, denom);
+
+    dst = Mat1f(in_shift.size());
+
+    // Had to replace call to divide() with iterating over all elements
+    // divide() was producing nan results instead of zeros
+    // could not reproduce in unit test.
+    //divide(diff, denom, dst);
+    float *data_numer_ptr = reinterpret_cast<float*>(diff.data);
+    float *data_numer_end = reinterpret_cast<float*>(diff.dataend);
+    float *data_denom_ptr = reinterpret_cast<float*>(denom.data);
+    float *data_dst_ptr = reinterpret_cast<float*>(dst.data);
+
+    for(; data_numer_ptr != data_numer_end;
+        ++data_numer_ptr, ++data_denom_ptr, ++data_dst_ptr) {
+
+        *data_dst_ptr = *data_numer_ptr / (*data_denom_ptr);
+    }
 }

@@ -9,6 +9,7 @@
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"
 #include "elm/ts/layer_assertions.h"
+#include "elm/ts/mat_assertions.h"
 #include "elm/core/debug_utils.h"
 
 using namespace std;
@@ -134,15 +135,13 @@ TEST_F(DepthGradientTest, Param_default_weight_zero)
 
     Mat1f grad_x = sig.MostRecentMat1f(NAME_GRAD_X);
 
-    EXPECT_FLOAT_EQ((1000.f-1.f)/1000.f, grad_x(0));
-    EXPECT_FLOAT_EQ((1000.f-1.f)/1000.f, grad_x(2));
+    EXPECT_MAT_EQ(Mat1f(2, 1, (1000.f-1.f)/1000.f), grad_x.col(1));
 
     EXPECT_EQ(2, countNonZero(elm::isnan(grad_x)));
 
     Mat1f grad_y = sig.MostRecentMat1f(NAME_GRAD_Y);
 
-    EXPECT_FLOAT_EQ(0.f, grad_y(0));
-    EXPECT_FLOAT_EQ(0.f, grad_y(1));
+    EXPECT_MAT_EQ(Mat1f(1, 2, 0.f), grad_y.row(1));
 \
     EXPECT_EQ(2, countNonZero(elm::isnan(grad_y)));
 }
@@ -167,15 +166,45 @@ TEST_F(DepthGradientTest, Param_weight)
 
     Mat1f grad_x = sig.MostRecentMat1f(NAME_GRAD_X);
 
-    EXPECT_FLOAT_EQ(1.f/3.f, grad_x(0));
+    EXPECT_FLOAT_EQ(1.f/3.f, grad_x(1));
     EXPECT_EQ(2, countNonZero(elm::isnan(grad_x)));
-    EXPECT_EQ(2, countNonZero(elm::isnan(grad_x.col(1))));
+    EXPECT_EQ(2, countNonZero(elm::isnan(grad_x.col(0))));
 
     Mat1f grad_y = sig.MostRecentMat1f(NAME_GRAD_Y);
 
-    EXPECT_FLOAT_EQ(1.f/3.f, grad_y(0));
+    EXPECT_FLOAT_EQ(1.f/3.f, grad_y(2));
     EXPECT_EQ(2, countNonZero(elm::isnan(grad_y)));
-    EXPECT_EQ(2, countNonZero(elm::isnan(grad_y.row(1))));
+    EXPECT_EQ(2, countNonZero(elm::isnan(grad_y.row(0))));
+}
+
+TEST_F(DepthGradientTest, Grad_Y_nans)
+{
+    const int ROWS=3;
+    const int COLS=3;
+
+    const float NAN_VALUE=std::numeric_limits<float>::quiet_NaN();
+
+    float data1[ROWS*COLS] = {NAN_VALUE, NAN_VALUE, NAN_VALUE,
+                              1.3740001f, 1.3790001f, 1.3850001f,
+                              1.3740001f, 1.3790001f, 1.3790001f
+                             };
+    Mat1f depth = Mat1f(ROWS, COLS, data1).clone();
+
+    Signal sig;
+    sig.Append(NAME_IN, depth);
+
+    to_->Activate(sig);
+    to_->Response(sig);
+
+    Mat1f grad_y = sig.MostRecentMat1f(NAME_GRAD_Y);
+
+    Mat is_nan_grad = elm::isnan(grad_y);
+    EXPECT_EQ(6, cv::countNonZero(is_nan_grad));
+
+    float data_res[3] = {0.f, 0.f, -0.0043510091f};
+
+    EXPECT_MAT_EQ(Mat1f(1, grad_y.cols, data_res).clone(), grad_y.row(grad_y.rows-1));
+
 }
 
 } // annonymous namespace for test cases and fixtures
