@@ -25,6 +25,7 @@
 #include "ni/layers/mapneighadjacency.h"
 #include "ni/layers/depthgradient.h"
 #include "ni/layers/depthgradientrectify.h"
+#include "ni/layers/depthgradientsmoothing.h"
 #include "ni/layers/depthmap.h"
 #include "ni/layers/depthsegmentation.h"
 #include "ni/layers/prunesmallsegments.h"
@@ -47,6 +48,7 @@ LayerRegistry g_layerRegistry = map_list_of
         LAYER_REGISTRY_PAIR( AttentionWindow )
         LAYER_REGISTRY_PAIR( DepthGradient )
         LAYER_REGISTRY_PAIR( DepthGradientRectify )
+        LAYER_REGISTRY_PAIR( DepthGradientSmoothing )
         LAYER_REGISTRY_PAIR( DepthMap )
         LAYER_REGISTRY_PAIR( DepthSegmentation )
         LAYER_REGISTRY_PAIR( GradAssignment )

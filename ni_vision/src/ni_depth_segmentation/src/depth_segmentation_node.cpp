@@ -26,6 +26,7 @@
 #include "ni/layers/depthmap.h"
 #include "ni/layers/depthgradient.h"
 #include "ni/layers/depthgradientrectify.h"
+#include "ni/layers/depthgradientsmoothing.h"
 #include "ni/layers/depthsegmentation.h"
 #include "ni/layers/mapareafilter.h"
 #include "ni/layers/layerfactoryni.h"
@@ -93,19 +94,40 @@ public:
             io.Output(DepthGradient::KEY_OUTPUT_GRAD_Y, "depth_grad_y");
             layers_.push_back(LayerFactoryNI::CreateShared("DepthGradient", cfg, io));
         }
+//        { // 2
+//            // Instantiate MedianBlur layer
+//            // applied on vertical gradient component
+//            LayerConfig cfg;
+
+//            PTree p;
+//            p.put(MedianBlur::PARAM_APERTURE_SIZE, 5);
+//            cfg.Params(p);
+
+//            LayerIONames io;
+//            io.Input(MedianBlur::KEY_INPUT_STIMULUS, "depth_grad_y");
+//            io.Output(MedianBlur::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth");
+//            layers_.push_back(LayerFactoryNI::CreateShared("MedianBlur", cfg, io));
+//        }
         { // 2
-            // Instantiate MedianBlur layer
+            // Instantiate Depth gradient smoothing layer
             // applied on vertical gradient component
             LayerConfig cfg;
 
             PTree p;
-            p.put(MedianBlur::PARAM_APERTURE_SIZE, 5);
+            p.put(DepthGradientSmoothing::PARAM_APERTURE_SIZE, 5);
+            p.put(DepthGradientSmoothing::PARAM_BAND_1, 5);
+            p.put(DepthGradientSmoothing::PARAM_BAND_2, 14);
+            p.put(DepthGradientSmoothing::PARAM_FILTER_MODE, 2);
+            p.put(DepthGradientSmoothing::PARAM_MAX, 0.04f);
+            p.put(DepthGradientSmoothing::PARAM_SMOOTH_CENTER, 128);
+            p.put(DepthGradientSmoothing::PARAM_SMOOTH_FACTOR, 3);
+            p.put(DepthGradientSmoothing::PARAM_SMOOTH_MODE, 2 );
             cfg.Params(p);
 
             LayerIONames io;
-            io.Input(MedianBlur::KEY_INPUT_STIMULUS, "depth_grad_y");
-            io.Output(MedianBlur::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth");
-            layers_.push_back(LayerFactoryNI::CreateShared("MedianBlur", cfg, io));
+            io.Input(DepthGradientSmoothing::KEY_INPUT_STIMULUS, "depth_grad_y");
+            io.Output(DepthGradientSmoothing::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth");
+            layers_.push_back(LayerFactoryNI::CreateShared("DepthGradientSmoothing", cfg, io));
         }
         { // 3
             // Instantiate layer for rectifying smoothed gradient
