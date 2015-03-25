@@ -20,7 +20,7 @@ public:
     static const std::string PARAM_MAX_GRAD;    ///< threshold for segmentation (if depth-gradient between two pixel is >= than threshold, they get segmented)
 
     // defaults
-    static const int DEFAULT_TAU_SIZE;      ///< = 200 @todo units?
+    static const int DEFAULT_TAU_SIZE;      ///< = 200 [pixels]
     static const float DEFAULT_MAX_GRAD;    ///< = 0.005f;
 
     static const int DEFAULT_LABEL_UNASSIGNED; ///< =0 value for labeling elements not assigned to any segment
