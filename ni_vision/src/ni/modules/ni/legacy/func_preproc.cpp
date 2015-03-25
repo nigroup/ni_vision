@@ -7,7 +7,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include "ni/legacy/func_operations.hpp"
+#include "ni/legacy/func_operations.h"
 
 /* Create depth map from RGB point cloud
  *

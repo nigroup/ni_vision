@@ -2,19 +2,7 @@
  * Functions for Histogram calculation and processing of image data
  */
 
-#include <vector>
-
-#include <opencv2/core/core.hpp>
-
-int min(int a, int b) {if (a > b) return b; else return a;}
-float min(float a, float b) {if (a > b) return b; else return a;}
-double min(double a, double b) {if (a > b) return b; else return a;}
-int max(int a, int b) {if (a > b) return a; else return b;}
-float max(float a, float b) {if (a > b) return a; else return b;}
-double max(double a, double b) {if (a > b) return a; else return b;}
-
-
-
+#include "ni/legacy/func_operations.h"
 
 /* Converting vector indices to matrix indices
  *

@@ -38,11 +38,7 @@ double nGSegmSigma = 0, nGSegmSigma_default = 0.8;
 int nGSegmGrThrs = 0, nGSegmGrThrs_default = 500;
 int nGSegmMinSize = 0, nGSegmMinSize_default = 450;
 
-struct TrackProp {
-    int ClrMode, HistoBin;
-    double DPos, DSize, DClr, Dist, FPos, FSize, FClr, MFac;
-    int CntMem, CntStable, CntLost;
-}; TrackProp stTrack, stTrack_default;
+TrackProp stTrack, stTrack_default;
 
 int nAttTDMode = 0, nAttTDMode_default = 0;
 int nAttSizeMax = 0, nAttSizeMax_default = 350;

@@ -2,10 +2,17 @@
  * Functions for Segmentation and tracking
  */
 
+#include <fstream> // for debugging
+
+#include <opencv2/imgproc/imgproc.hpp>
+
+#include "ni/legacy/func_segmentation.h"
+#include "ni/legacy/func_operations.h"
 
 #include "ni/3rdparty/munkres/munkres.hpp"
 
-
+using std::min;
+using std::max;
 
 int FuncFindPos (std::vector<int> idx_vector, int value) {
     for (int i = 0; i < idx_vector.size(); i++) {
@@ -614,6 +621,7 @@ void Tracking_OptPreFunc (int seg, int j_min, int nMemsCnt, int nObjsNrLimit, fl
 /* Pre-Processing of the optimization of the tracking: elemination of the unique elements in Munkres-matrix
  */
 void Tracking_OptPre (int nMemsCnt, int nSurfCnt, int huge, int nObjsNrLimit,
+                      const TrackProp &stTrack,
                       std::vector<std::vector<float> > &mnDistTmp, std::vector<int> &vnSurfCandCnt, std::vector<int> &vnSegCandMin, std::vector<int> &vnMemsCandCnt, std::vector<int> &vnMemCandMin, std::vector<int> &vnMatchedSeg) {
 
     float offset = 0.01;
@@ -706,7 +714,7 @@ void Tracking_Post1(int nAttSizeMin, int nMemsCnt, int cnt_new, std::vector<int>
 
 /* Postprocessing of the tracking
   */
-void Tracking_Post2(int nMemsCnt, SurfProp stMemsOld, std::vector<int> &vnMemsValidIdx, std::vector<std::vector<float> > &mnMemsRelPose, SurfProp &stMems, int framec, bool flag_mat) {
+void Tracking_Post2(int nMemsCnt, const TrackProp &stTrack, SurfProp stMemsOld, std::vector<int> &vnMemsValidIdx, std::vector<std::vector<float> > &mnMemsRelPose, SurfProp &stMems, int framec, bool flag_mat) {
 
     std::vector<int> past_idx = vnMemsValidIdx;
     std::vector<std::vector<float> > past_pose = mnMemsRelPose;
@@ -969,7 +977,7 @@ void Tracking (int nSurfCnt, int nObjsNrLimit, TrackProp stTrack, int bin, SurfP
     std::vector<int> vnMatchedMem(nMemsCnt, nObjsNrLimit*2);
 
     std::vector<std::vector<float> > mnDistTmp = mnDistTotal;           // specified distance matrix
-    Tracking_OptPre (nMemsCnt, nSurfCnt, huge, nObjsNrLimit, mnDistTmp, vnSurfCandCnt, vnSegCandMin, vnMemsCandCnt, vnMemCandMin, vnMatchedSeg);
+    Tracking_OptPre (nMemsCnt, nSurfCnt, huge, nObjsNrLimit, stTrack, mnDistTmp, vnSurfCandCnt, vnSegCandMin, vnMemsCandCnt, vnMemCandMin, vnMatchedSeg);
 
 
     /////////////////////////////////////////////////////////////////////////////////
@@ -1204,6 +1212,6 @@ void Tracking (int nSurfCnt, int nObjsNrLimit, TrackProp stTrack, int bin, SurfP
     ////////**      2. Postprocessing - Enhancing tracking agility      **//////////
     ////////////////////////////////////////////////////////////////////////////////
 
-    Tracking_Post2 (nMemsCnt, stMemsOld, vnMemsValidIdx, mnMemsRelPose, stMems, framec, flag_mat);
+    Tracking_Post2 (nMemsCnt, stTrack, stMemsOld, vnMemsValidIdx, mnMemsRelPose, stMems, framec, flag_mat);
 }
 
