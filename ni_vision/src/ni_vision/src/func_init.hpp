@@ -12,6 +12,7 @@
  */
 
 #include "ni/legacy/surfprop.h"
+#include "ni/legacy/trackprop.h"
 
 ////////// System Paramters ///////////////////////////////////////
 bool bDepthDispMode = false, bDepthDispMode_default = false;
