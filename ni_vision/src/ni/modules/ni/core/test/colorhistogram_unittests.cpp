@@ -172,7 +172,7 @@ TEST_F(ColorHistogramTest, Color_8u_masked)
 
     float denom = static_cast<float>(indices.size());
 
-    ELM_COUT_VAR(hist);
+    //ELM_COUT_VAR(hist);
 
     expected_hist((8-1)*64+0*8+(8-1)) = 1.f/denom;            // 1x purple
     expected_hist(8/3*64+8/3*8+8/3) = (indices.size()-1)/denom; // several black and gray
