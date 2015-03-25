@@ -37,7 +37,7 @@
 
 #include "func_init.hpp"
 #include "ni/legacy/func_preproc.h"
-#include "func_segmentation.hpp"
+#include "ni/legacy/func_segmentation.hpp"
 #include "func_segmentation_gb.hpp"
 #include "func_recognition.hpp"
 #include "func_etc.hpp"
