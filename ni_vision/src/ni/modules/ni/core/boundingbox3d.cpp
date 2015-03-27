@@ -22,13 +22,14 @@ BoundingBox3D::BoundingBox3D(CloudXYZPtr &cld)
     Mat1f point_coords = PointCloud2Mat_<PointXYZ>(cld);
 
     const int NB_FLOATS=PCLPointTraits_<PointXYZ>::NbFloats();
+    const int NB_FIELDS=PCLPointTraits_<PointXYZ>::FieldCount();
 
     int new_rows = point_coords.total()/NB_FLOATS;
-    point_coords = point_coords.reshape(1, new_rows);
+    point_coords = point_coords.reshape(1, new_rows).colRange(0, NB_FIELDS);
 
     if(point_coords.rows > 1) {
 
-        cog_ = Mat1f(1, NB_FLOATS);
+        cog_ = Mat1f(1, point_coords.cols);
         reduce(point_coords, cog_, 0, CV_REDUCE_AVG);
 
         Mat1f _min, _max;
