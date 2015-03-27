@@ -99,3 +99,13 @@ void Surface::rect(const cv::Rect2i &r)
 {
     rect_ = r;
 }
+
+cv::Matx23f Surface::cubeVertices() const
+{
+    return cube_vertices_;
+}
+
+void Surface::cubeVertices(const cv::Matx23f &cube)
+{
+    cube_vertices_ = cube;
+}

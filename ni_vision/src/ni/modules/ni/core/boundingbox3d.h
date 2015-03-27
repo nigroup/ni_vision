@@ -26,9 +26,9 @@ public:
 
     float volume() const;
 
-    cv::Mat1f cubeVertices() const;
+    cv::Matx23f cubeVertices() const;
 
-    void cubeVertices(const cv::Mat1f& cube);
+    void cubeVertices(const cv::Matx23f& cube);
 
 protected:
 
@@ -36,7 +36,7 @@ protected:
     cv::Mat1f cog_; ///< center of gravity
 
     cv::Mat1f box_xy_;    ///< bounding box in xy plane
-    cv::Mat1f box_yz_;    ///< bounding box in yz plane
+    cv::Mat1f box_zy_;    ///< bounding box in yz plane
 };
 
 } // namespace ni

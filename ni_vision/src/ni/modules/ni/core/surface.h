@@ -105,6 +105,16 @@ public:
     void rect(const cv::Rect2i &rect);
 
     /**
+     * @todo test
+     */
+    cv::Matx23f cubeVertices() const;
+
+    /**
+     * @todo test, align with cube center?
+     */
+    void cubeVertices(const cv::Matx23f &cube);
+
+    /**
      * @brief Default Constructor
      */
     Surface();
@@ -120,6 +130,7 @@ protected:
 
     float diagonal_;         ///< diagonal length in 3d point cloud coorindate system [meters]
     cv::Matx13f cube_center_;   ///< vector to center of cube surrounding surface
+    cv::Matx23f cube_vertices_;   ///< vertices of cube surrounding surface
 
     cv::Rect2i rect_;        ///< rectangle for representing 2d bounding box in pixel coordinate space
 };
