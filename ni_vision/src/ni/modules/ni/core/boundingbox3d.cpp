@@ -55,7 +55,7 @@ BoundingBox3D::BoundingBox3D(CloudXYZPtr &cld)
         box_zy_ = cog_.clone();
     }
     else {
-        cog_ = Mat1f(0, NB_FLOATS);
+        cog_ = Mat1f(0, NB_FIELDS);
         box_xy_ = Mat1f(0, 4);
         box_zy_ = Mat1f(0, 4);
     }
