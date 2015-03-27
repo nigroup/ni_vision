@@ -71,6 +71,7 @@ void SurfaceTracking::Clear()
 void SurfaceTracking::Reset(const LayerConfig &config)
 {
     framec = 0;
+    nMemsCnt = 0;
     Reconfigure(config);
 }
 
