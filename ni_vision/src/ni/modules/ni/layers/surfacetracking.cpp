@@ -14,6 +14,9 @@
 #include "ni/core/colorhistogram.h"
 
 #include "ni/3rdparty/munkres/munkres.hpp"
+#include "ni/legacy/func_segmentation.h"
+#include "ni/legacy/surfprop.h"
+#include "ni/legacy/trackprop.h"
 
 using namespace std;
 using namespace cv;
@@ -229,12 +232,54 @@ void SurfaceTracking::Activate(const Signal &signal)
         }
         // End of the optimization
 
-        // Postprocessing...
+//        // Postprocessing...
 
-        // Short-Term-Memory (STM)...
+//        // Short-Term-Memory (STM)...
 
-        // Update properties of matched segments in the Short-Term-Memory
+//        // Update properties of matched segments in the Short-Term-Memory
 //        std::vector<bool> objs_old_flag(nMemsCnt, false);
+
+//        // conversion: new vector of Surface objects to legacy SurfProp object
+
+//        int nTrackHistoBin_max = nb_bins_ * nb_bins_ * nb_bins_;
+
+//        SurfProp stMems;
+//        stMems.vnIdx.resize(nObjsNrLimit, 0);
+//        stMems.vnPtsCnt.resize(nObjsNrLimit, 0);
+//        stMems.mnPtsIdx.assign(nObjsNrLimit, VecI(0, 0));
+//        stMems.mnRect.assign(nObjsNrLimit, VecI(4, 0));
+//        stMems.mnRCenter.assign(nObjsNrLimit, VecI(2, 0));
+//        stMems.mnCubic.assign(nObjsNrLimit, VecF(6, 0.f));
+//        stMems.mnCCenter.assign(nObjsNrLimit, VecF(3, 0.f));
+//        stMems.mnColorHist.assign(nObjsNrLimit, VecF(nTrackHistoBin_max, 0.f));
+//        stMems.vnLength.resize(nObjsNrLimit, 0);
+//        stMems.vnMemCtr.resize(nObjsNrLimit, 0);
+//        stMems.vnStableCtr.resize(nObjsNrLimit, 0);
+//        stMems.vnLostCtr.resize(nObjsNrLimit, 0);
+//        stMems.vnFound.resize(nObjsNrLimit, 0);
+
+//        for(size_t i=0; i<memory_.size(); i++) {
+
+//            Surface s;
+
+//            stMems.vnIdx[i] = s.id();
+//            stMems.vnPtsCnt[i] = s.pixelCount();
+//            //stMems.mnPtsIdx[i] = s. // do we need this?
+
+//            stMems.mnRect.assign(nObjsNrLimit, VecI(4, 0));
+//            stMems.mnRCenter.assign(nObjsNrLimit, VecI(2, 0));
+//            stMems.mnCubic.assign(nObjsNrLimit, VecF(6, 0.f));
+//            stMems.mnCCenter.assign(nObjsNrLimit, VecF(3, 0.f));
+//            stMems.mnColorHist.assign(nObjsNrLimit, VecF(nTrackHistoBin_max, 0.f));
+//            stMems.vnLength.resize(nObjsNrLimit, 0);
+//            stMems.vnMemCtr.resize(nObjsNrLimit, 0);
+//            stMems.vnStableCtr.resize(nObjsNrLimit, 0);
+//            stMems.vnLostCtr.resize(nObjsNrLimit, 0);
+//            stMems.vnFound.resize(nObjsNrLimit, 0);
+//        }
+
+//        // conversion done
+
 //        SurfProp stMemsOld = stMems;
 //        for (int i=0; i < nSurfCnt; i++) {
 
