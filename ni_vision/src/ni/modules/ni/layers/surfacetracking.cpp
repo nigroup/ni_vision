@@ -70,6 +70,7 @@ void SurfaceTracking::Clear()
 
 void SurfaceTracking::Reset(const LayerConfig &config)
 {
+    framec = 0;
     Reconfigure(config);
 }
 
@@ -468,6 +469,16 @@ void SurfaceTracking::Activate(const Signal &signal)
             printf("Object queue exceeds object no. limit %d\n", nObjsNrLimit);
         }
 
+        // 2. Postprocessing - Enhancing tracking agility
+        Tracking_Post2 (nMemsCnt,
+                        stTrack,
+                        stMemsOld,
+                        vnMemsValidIdx,
+                        mnMemsRelPose,
+                        stMems,
+                        framec,
+                        false);
+
         //  Making tracking map to a neighborhood matrix for surface saliencies
         const int nDsSize = static_cast<int>(map.total());
         std::vector<int> vnTrkMap(nDsSize, -1);         // Tracking Map
@@ -503,6 +514,7 @@ void SurfaceTracking::Activate(const Signal &signal)
     }
 
     m_ = map; // until layer produces actual output
+    framec++;
 }
 
 void SurfaceTracking::extractFeatures(

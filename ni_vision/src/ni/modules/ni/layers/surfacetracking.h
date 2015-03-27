@@ -151,8 +151,12 @@ protected:
     std::vector<ni::Surface> obsereved_;
     std::vector<ni::Surface> memory_;
 
+    // legacy members
     SurfProp stMems;
     TrackProp stTrack;
+    VecI vnMemsValidIdx;
+    std::vector<elm::VecF > mnMemsRelPose;
+    int framec;
 };
 
 } // namespace ni
