@@ -70,8 +70,29 @@ void SurfaceTracking::Clear()
 
 void SurfaceTracking::Reset(const LayerConfig &config)
 {
+    // reset legacy members
+    int nTrackHistoBin_max = nb_bins_ * nb_bins_ * nb_bins_;
+    int nObjsNrLimit = 1000;
+
+    stMems.vnIdx.resize(nObjsNrLimit,       0);
+    stMems.vnPtsCnt.resize(nObjsNrLimit,    0);
+
+    stMems.mnPtsIdx.assign(nObjsNrLimit,    VecI(0, 0));
+    stMems.mnRect.assign(nObjsNrLimit,      VecI(4, 0));
+    stMems.mnRCenter.assign(nObjsNrLimit,   VecI(2, 0));
+    stMems.mnCubic.assign(nObjsNrLimit,     VecF(6, 0.f));
+    stMems.mnCCenter.assign(nObjsNrLimit,   VecF(3, 0.f));
+    stMems.mnColorHist.resize(nObjsNrLimit);
+
+    stMems.vnLength.resize(nObjsNrLimit, 0);
+    stMems.vnMemCtr.resize(nObjsNrLimit, 0);
+    stMems.vnStableCtr.resize(nObjsNrLimit, 0);
+    stMems.vnLostCtr.resize(nObjsNrLimit,   0);
+    stMems.vnFound.resize(nObjsNrLimit,     0);
+
     framec = 0;
     nMemsCnt = 0;
+
     Reconfigure(config);
 }
 
@@ -90,26 +111,6 @@ void SurfaceTracking::Reconfigure(const LayerConfig &config)
     max_dist_   = p.get<float>(PARAM_MAX_DIST);
 
     // initialize legacy members
-    int nTrackHistoBin_max = nb_bins_ * nb_bins_ * nb_bins_;
-    int nObjsNrLimit = 1000;
-
-    stMems.vnIdx.resize(nObjsNrLimit,       0);
-    stMems.vnPtsCnt.resize(nObjsNrLimit,    0);
-
-    stMems.mnPtsIdx.assign(nObjsNrLimit,    VecI(0, 0));
-    stMems.mnRect.assign(nObjsNrLimit,      VecI(4, 0));
-    stMems.mnRCenter.assign(nObjsNrLimit,   VecI(2, 0));
-    stMems.mnCubic.assign(nObjsNrLimit,     VecF(6, 0.f));
-    stMems.mnCCenter.assign(nObjsNrLimit,   VecF(3, 0.f));
-    stMems.mnColorHist.assign(nObjsNrLimit, VecF(nTrackHistoBin_max, 0.f));
-
-    stMems.vnLength.resize(nObjsNrLimit, 0);
-    stMems.vnMemCtr.resize(nObjsNrLimit, 0);
-    stMems.vnStableCtr.resize(nObjsNrLimit, 0);
-    stMems.vnLostCtr.resize(nObjsNrLimit,   0);
-    stMems.vnFound.resize(nObjsNrLimit,     0);
-
-    //
     stTrack.ClrMode = 1;
     stTrack.CntLost = 1;
     stTrack.CntMem = 10;
