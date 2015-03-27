@@ -108,6 +108,20 @@ void SurfaceTracking::Reconfigure(const LayerConfig &config)
     stMems.vnLostCtr.resize(nObjsNrLimit,   0);
     stMems.vnFound.resize(nObjsNrLimit,     0);
 
+    //
+    stTrack.ClrMode = 1;
+    stTrack.CntLost = 1;
+    stTrack.CntMem = 10;
+    stTrack.CntStable = 1;
+    stTrack.DClr = max_color_;
+    stTrack.DPos = max_pos_;
+    stTrack.DSize = max_size_;
+    stTrack.Dist = max_dist_;
+    stTrack.FClr = weight_color_;
+    stTrack.DPos = weight_pos_;
+    stTrack.FSize = weight_size_;
+    stTrack.HistoBin = nb_bins_;
+    stTrack.MFac = 100.;
 }
 
 void SurfaceTracking::InputNames(const LayerInputNames &io)
