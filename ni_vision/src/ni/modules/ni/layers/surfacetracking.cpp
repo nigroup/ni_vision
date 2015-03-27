@@ -467,10 +467,39 @@ void SurfaceTracking::Activate(const Signal &signal)
 
             printf("Object queue exceeds object no. limit %d\n", nObjsNrLimit);
         }
+
+        //  Making tracking map to a neighborhood matrix for surface saliencies
+        const int nDsSize = static_cast<int>(map.total());
+        std::vector<int> vnTrkMap(nDsSize, -1);         // Tracking Map
+        //std::vector<int> vnTrkMapComp(nDsSize, -1);     // for the making of the Neighbor Matrix
+        for (int i = 0; i < nMemsCnt; i++) {
+
+            if (stMems.vnStableCtr[i] < stTrack.CntStable
+                    || stMems.vnLostCtr[i] > stTrack.CntLost) {
+                continue;
+            }
+
+            for (size_t j=0; j < stMems.mnPtsIdx[i].size(); j++) {
+
+                vnTrkMap[stMems.mnPtsIdx[i][j]] = stMems.vnIdx[i];
+                //vnTrkMapComp[stMems.mnPtsIdx[i][j]] = i;
+            }
+        }
+
+        // Show Tracking
+        m_ = Mat1f::zeros(map.size());
+        for (int i=0; i < nDsSize; i++) {
+
+            if (vnTrkMap[i] < 0) {
+                continue;
+            }
+            m_(i) = vnTrkMap[i];
+        }
     }
     else {
 
         memory_ = obsereved_;
+        m_ = map; // until layer produces actual output
     }
 
     m_ = map; // until layer produces actual output
