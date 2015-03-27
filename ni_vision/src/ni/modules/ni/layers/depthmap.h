@@ -20,7 +20,7 @@ public:
     static const std::string PARAM_DEPTH_MAX;   ///< min. depth value
 
     // default values
-    static const float DEFAULT_DEPTH_MAX;   ///< max. depth (3.)
+    static const float DEFAULT_DEPTH_MAX;   ///< max. depth (5.)
 
     virtual void Clear();
 
