@@ -266,7 +266,7 @@ TEST_F(SurfaceTrackingProtectedTest, Observed_histogram_dims)
     }
 }
 
-TEST_F(SurfaceTrackingProtectedTest, Distance_dims)
+TEST_F(SurfaceTrackingProtectedTest, DISABLED_Distance_dims)
 {
     vector<Surface> obs = top_.getObserved();
     top_.Activate(sig_);
