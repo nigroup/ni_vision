@@ -25,7 +25,11 @@ BoundingBox3D::BoundingBox3D(CloudXYZPtr &cld)
     const int NB_FIELDS=PCLPointTraits_<PointXYZ>::FieldCount();
 
     int new_rows = point_coords.total()/NB_FLOATS;
-    point_coords = point_coords.reshape(1, new_rows).colRange(0, NB_FIELDS);
+
+    if(!cld->empty()) {
+
+        point_coords = point_coords.reshape(1, new_rows).colRange(0, NB_FIELDS);
+    }
 
     if(point_coords.rows > 1) {
 
