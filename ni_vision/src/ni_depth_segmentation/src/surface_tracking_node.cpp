@@ -189,10 +189,9 @@ protected:
             imshow("img_seg_", ConvertTo8U(img_seg_));
             imshow("out",  ConvertTo8U(sig_.MostRecentMat1f(name_out_)));
 
-            //Mat1f img = sig_.MostRecentMat1f(name_in_seg_);
-            Mat1f img = img_seg_;
+            Mat1f img = sig_.MostRecentMat1f(name_out_);
+            img(1) = 15.f;
 
-            img.setTo(0.f, isnan(img));
             Mat mask_not_assigned = img <= 0.f;
 
             Mat img_color;
