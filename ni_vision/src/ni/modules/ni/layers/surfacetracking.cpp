@@ -143,391 +143,67 @@ void SurfaceTracking::Activate(const Signal &signal)
     obsereved_.clear();
     extractFeatures(cloud, bgr, map, obsereved_);
 
-    int nSurfCnt = static_cast<int>(obsereved_.size());
-    int cnt_new = 0, cnt_old = 0;
-    std::vector<int> objs_new_no(nSurfCnt, 0);
+    int nSurfCnt = static_cast<int>(obsereved_.size())+1;
 
-    if(memory_.size() > 0) {
-
-        computeFeatureDistance(obsereved_, memory_);
-
-        // Elemination of rows and columns that have a unique minimum match
-        int nMemsCnt = static_cast<int>(memory_.size());
-
-        vector<VecF> mnDistTmp(dist_.rows, VecF(dist_.cols));
-        for(int r=0; r<dist_.rows; r++) {
-
-            for(int c=0; c<dist_.cols; c++) {
-
-                mnDistTmp[r][c] = dist_(r, c);
-            }
-        }
-
-        int nObjsNrLimit = 1000;
-
-        VecI surfCandCount(nSurfCnt, 0);
-        VecI segCandMin(nSurfCnt, nObjsNrLimit);
-        VecI memCandCount(nMemsCnt, 0);
-        VecI memCandMin(nMemsCnt, nObjsNrLimit);
-        VecI vnMatchedSeg(nSurfCnt, nObjsNrLimit*2);
-
-        Tracking_OptPre(nMemsCnt, nSurfCnt,
-                        nObjsNrLimit,
-                        mnDistTmp,
-                        surfCandCount,
-                        segCandMin,
-                        memCandCount,
-                        memCandMin,
-                        vnMatchedSeg);
-
-        VecI vnMatchedMem(nMemsCnt, nObjsNrLimit*2);
-
-        /* Main Optimization */
-        std::vector<int> idx_seg;
-        int cnt_nn = 0;
-        for (int i=0; i < nSurfCnt; i++) {
-
-            if (vnMatchedSeg[i] > nObjsNrLimit) {
-
-                for (int j=0; j < nMemsCnt; j++) {
-
-                    if (mnDistTmp[i][j] < max_dist_) {
-
-                        vnMatchedMem[j] = 0;
-                    }
-                }
-                idx_seg.resize(cnt_nn + 1);
-                idx_seg[cnt_nn++] = i;
-            }
-        }
-
-        if (cnt_nn > 0) {
-
-            std::vector<int> idx_mem;
-            cnt_nn = 0;
-            for (int j=0; j < nMemsCnt; j++) {
-
-                if (!vnMatchedMem[j]) {
-
-                    idx_mem.resize(cnt_nn + 1);
-                    idx_mem[cnt_nn++] = j;
-                }
-            }
-
-            int munkres_huge = 100;
-            int nDimMunkres = max(static_cast<int>(idx_seg.size()),
-                                  static_cast<int>(idx_mem.size()));
-            MunkresMatrix<double> m_MunkresIn(nDimMunkres, nDimMunkres);
-            MunkresMatrix<double> m_MunkresOut(nDimMunkres, nDimMunkres);
-
-            for (size_t i=0; i < idx_seg.size(); i++) {
-
-                for (size_t j=0; j < idx_mem.size(); j++) {
-
-                    m_MunkresIn(i, j) = mnDistTmp[idx_seg[i]][idx_mem[j]];
-                }
-            }
-
-            if (idx_mem.size() > idx_seg.size()) {
-
-                for (int i=(int)idx_seg.size(); i < nDimMunkres; i++) {
-
-                    for (int j=0; j < nDimMunkres; j++) {
-
-                        m_MunkresIn(i, j) = static_cast<double>(rand() % 10 + munkres_huge);
-                    }
-                }
-            }
-            if (idx_mem.size() < idx_seg.size()) {
-
-                for (int j=(int)idx_mem.size(); j < nDimMunkres; j++) {
-
-                    for (int i=0; i < nDimMunkres; i++) {
-
-                        m_MunkresIn(i,j) = static_cast<double>(rand()% 10 + munkres_huge);
-                    }
-                }
-            }
-
-            m_MunkresOut = m_MunkresIn; // for in-place substitution
-
-            Munkres m;
-            m.solve(m_MunkresOut);
-
-            // Specifying the output matrix
-            for (size_t i=0; i < idx_seg.size(); i++) {
-
-                for (size_t j=0; j < idx_mem.size(); j++) {
-
-                    if (m_MunkresOut(i,j) == 0) {
-
-                        vnMatchedSeg[idx_seg[i]] = idx_mem[j];
-                    }
-                    else {
-                        mnDistTmp[idx_seg[i]][idx_mem[j]] = DISTANCE_HUGE;
-                    }
-                }
-            }
-        }
-        // End of the optimization
-
-        // Postprocessing...
-
-        // Short-Term-Memory (STM)...
-
-        // Update properties of matched segments in the Short-Term-Memory
-        std::vector<bool> objs_old_flag(nMemsCnt, false);
-
-        // conversion: new vector of Surface objects to legacy SurfProp object
+    {
         int nTrackHistoBin_max = nb_bins_ * nb_bins_ * nb_bins_;
 
         SurfProp stSurf;
-        stSurf.vnIdx    = VecI(nSurfCnt, 0);
-        stSurf.vnPtsCnt = VecI(nSurfCnt);
-        stSurf.mnPtsIdx = std::vector<VecI>(nSurfCnt, VecI());
-        stSurf.mnRect.assign(nSurfCnt, std::vector<int>(4,0));
-        stSurf.mnRCenter.assign(nSurfCnt, std::vector<int>(2,0));
-        stSurf.mnCubic.assign(nSurfCnt, std::vector<float>(6,0));
-        stSurf.mnCCenter.assign(nSurfCnt, std::vector<float>(3,0));
+        stSurf.vnIdx.resize(nSurfCnt, 0);
+        stSurf.vnPtsCnt.resize(nSurfCnt, 0);
+        stSurf.mnPtsIdx.resize(nSurfCnt,    VecI());
+        stSurf.mnRect.assign(nSurfCnt,      VecI(4,0));
+        stSurf.mnRCenter.assign(nSurfCnt,   VecI(2,0));
+        stSurf.mnCubic.assign(nSurfCnt,     VecF(6,0));
+        stSurf.mnCCenter.assign(nSurfCnt,   VecF(3,0));
         stSurf.vnLength.resize(nSurfCnt, 0);
-        stSurf.mnColorHist.resize(nSurfCnt, std::vector<float> (nTrackHistoBin_max, 0));
+        stSurf.mnColorHist.resize(nSurfCnt, VecF(nTrackHistoBin_max, 0));
         stSurf.vnMemCtr.resize(nSurfCnt, 0);
         stSurf.vnStableCtr.resize(nSurfCnt, 0);
         stSurf.vnLostCtr.resize(nSurfCnt, 0);
 
         VecSurfacesToSurfProp(obsereved_, stSurf);
-        for (int i=1; i < nSurfCnt; i++) {
 
-            stSurf.vnMemCtr[i] = stTrack.CntMem - stTrack.CntStable;
-            stSurf.vnStableCtr[i] = 0;
-            stSurf.vnLostCtr[i] = stTrack.CntLost + 10;
-        }
+        int nObjsNrLimit = 1000;
 
-        // conversion done
-
-        SurfProp stMemsOld = stMems;
-        for (int i=0; i < nSurfCnt; i++) {
-
-            //** Assign matched segments to the Short-Term-Memory **//
-            int cand = 0, j_tmp = -1;
-            if (vnMatchedSeg[i] < nObjsNrLimit) {
-
-                cand = 1;
-                j_tmp = vnMatchedSeg[i];
-            }
-
-            if (cand) {
-
-                if (j_tmp < 0) {
-                    printf("Tracking Error\n");
-                    continue;
-                }
-
-                objs_old_flag[j_tmp] = true;
-                stMems.vnPtsCnt[j_tmp] = stSurf.vnPtsCnt[i];
-                stMems.mnPtsIdx[j_tmp] = stSurf.mnPtsIdx[i];
-                stMems.mnRect[j_tmp] = stSurf.mnRect[i];
-                stMems.mnRCenter[j_tmp] = stSurf.mnRCenter[i];
-                stMems.mnCubic[j_tmp] = stSurf.mnCubic[i];
-                stMems.mnCCenter[j_tmp] = stSurf.mnCCenter[i];
-                stMems.mnColorHist[j_tmp] = stSurf.mnColorHist[i];
-                stMems.vnLength[j_tmp] = stSurf.vnLength[i];
-            }
-            else {
-                objs_new_no[cnt_new++] = i;
-            }
-        }
-
-        // Filter stable objects from the Short-Term-Memory
-        for (int memc=0; memc < nMemsCnt; memc++) {
-
-            if (objs_old_flag[memc]) {
-
-                stMems.vnMemCtr[memc]++;
-                if (stMems.vnMemCtr[memc] < stTrack.CntMem - stTrack.CntStable + 2) stMems.vnMemCtr[memc] = stTrack.CntMem - stTrack.CntStable + 1;
-                if (stMems.vnMemCtr[memc] > 100*stTrack.CntMem) stMems.vnMemCtr[memc] = 100*stTrack.CntMem;
-                if (stMems.vnStableCtr[memc] < 0) stMems.vnStableCtr[memc] = 1; else stMems.vnStableCtr[memc]++;
-                if (stMems.vnStableCtr[memc] > 100*(stTrack.CntStable+1)) stMems.vnStableCtr[memc] = 100*stTrack.CntStable;
-                stMems.vnLostCtr[memc] = 0;
-            }
-            else {
-                if (cnt_new) {
-                    for (int trc=0; trc < cnt_new; trc++) {
-                    }
-                }
-
-                stMems.vnMemCtr[memc]--;
-                stMems.vnLostCtr[memc]++;
-                if (stMems.vnMemCtr[memc] >= stTrack.CntMem) {
-
-                    stMems.vnMemCtr[memc] = stTrack.CntMem;
-                }
-
-                if (stMems.vnStableCtr[memc] > 0) {
-                    stMems.vnStableCtr[memc] = 0;
-                }
-                else {
-                    stMems.vnStableCtr[memc]--;
-                }
-
-                if (stMems.vnStableCtr[memc] < -100*(stTrack.CntStable+1)) {
-
-                    stMems.vnStableCtr[memc] = -100*stTrack.CntStable;
-                }
-
-                if (stMems.vnLostCtr[memc] > 100*(stTrack.CntLost+1)) {
-
-                    stMems.vnLostCtr[memc] = 100*stTrack.CntLost;
-                }
-            }
-        }
-
-        //** Restack stable objects in the Short-Term-Memory **//
-        int cnt_tmp = 0;
-        for (int i=0; i < nMemsCnt; i++) {
-
-            if (stMems.vnMemCtr[i] < 0) {
-
-                continue;
-            }
-            stMems.vnIdx[cnt_tmp] = stMems.vnIdx[i];
-            stMems.vnPtsCnt[cnt_tmp] = stMems.vnPtsCnt[i];
-            stMems.mnPtsIdx[cnt_tmp] = stMems.mnPtsIdx[i];
-            stMems.mnRect[cnt_tmp] = stMems.mnRect[i];
-            stMems.mnRCenter[cnt_tmp] = stMems.mnRCenter[i];
-            stMems.mnCubic[cnt_tmp] = stMems.mnCubic[i];
-            stMems.mnCCenter[cnt_tmp] = stMems.mnCCenter[i];
-            stMems.mnColorHist[cnt_tmp] = stMems.mnColorHist[i];
-            stMems.vnLength[cnt_tmp] = stMems.vnLength[i];
-            stMems.vnStableCtr[cnt_tmp] = stMems.vnStableCtr[i];
-            stMems.vnLostCtr[cnt_tmp] = stMems.vnLostCtr[i];
-            stMems.vnMemCtr[cnt_tmp] = stMems.vnMemCtr[i];
-            stMems.vnFound[cnt_tmp] = stMems.vnFound[i];
-            cnt_tmp++;
-        }
-        cnt_old = cnt_tmp;
-
-        //** Reusing unused surface indeces to the new appearing surfaces **//
-        std::vector<int> mems_idx(cnt_old, 0);
-        std::vector<int> mems_idx_new(cnt_new, 0);
-
-        for (int i=0; i < cnt_old; i++) {
-
-            mems_idx[i] = stMems.vnIdx[i];
-        }
-
-        std::sort(mems_idx.begin(), mems_idx.end());
-
-        int cnt_tmp_tmp = 0;
-        if (cnt_old > 2 && cnt_new) {
-
-            if (mems_idx[2] > mems_idx[1]) {
-
-                for (int i=2; i < cnt_old; i++) {
-
-                    int diff = mems_idx[i] - mems_idx[i-1];
-                    if (diff > 1) {
-
-                        for (int j=0; j < diff-1; j++) {
-
-                            mems_idx_new[cnt_tmp_tmp++] = mems_idx[i-1] + j+1;
-                            if (cnt_tmp_tmp >= cnt_new) {
-
-                                break;
-                            }
-                        }
-                    }
-                    if (cnt_tmp_tmp >= cnt_new) {
-                        break;
-                    }
-                }
-                if (cnt_tmp_tmp < cnt_new) {
-
-                    for (int i=0; i < cnt_new - cnt_tmp_tmp; i++) {
-
-                        mems_idx_new[cnt_tmp_tmp + i] = mems_idx[cnt_old-1] + i+1;
-                    }
-                }
-            }
-            else {
-                printf("eeeeeeeeeeee \n");
-            }
-        }
-        else {
-            for (int i=0; i < cnt_new; i++) {
-
-                mems_idx_new[i] = i;
-            }
-        }
-
-        // Pushing new objects (unmatched segments) on the Short-Term-Memory
-        for (int i=0; i < cnt_new; i++) {
-
-            stMems.vnIdx[cnt_old + i] = mems_idx_new[i];
-            stMems.vnPtsCnt[cnt_old + i] = stSurf.vnPtsCnt[objs_new_no[i]];
-            stMems.mnPtsIdx[cnt_old + i] = stSurf.mnPtsIdx[objs_new_no[i]];
-            stMems.mnRect[cnt_old + i] = stSurf.mnRect[objs_new_no[i]];
-            stMems.mnRCenter[cnt_old + i] = stSurf.mnRCenter[objs_new_no[i]];
-            stMems.mnCubic[cnt_old + i] = stSurf.mnCubic[objs_new_no[i]];
-            stMems.mnCCenter[cnt_old + i] = stSurf.mnCCenter[objs_new_no[i]];
-            stMems.mnColorHist[cnt_old + i] = stSurf.mnColorHist[objs_new_no[i]];
-            stMems.vnLength[cnt_old + i] = stSurf.vnLength[objs_new_no[i]];
-            stMems.vnStableCtr[cnt_old + i] = stSurf.vnStableCtr[objs_new_no[i]];
-            stMems.vnLostCtr[cnt_old + i] = stSurf.vnLostCtr[objs_new_no[i]];
-            stMems.vnMemCtr[cnt_old + i] = stSurf.vnMemCtr[objs_new_no[i]];
-        }
-        nMemsCnt = cnt_old + cnt_new;
-
-        if (nMemsCnt >= nObjsNrLimit) {
-
-            printf("Object queue exceeds object no. limit %d\n", nObjsNrLimit);
-        }
-
-        // 2. Postprocessing - Enhancing tracking agility
-        Tracking_Post2 (nMemsCnt,
-                        stTrack,
-                        stMemsOld,
-                        vnMemsValidIdx,
-                        mnMemsRelPose,
-                        stMems,
-                        framec,
-                        false);
+        Tracking(nSurfCnt,
+                 nObjsNrLimit,
+                 stTrack,
+                 nTrackHistoBin_max,
+                 stSurf,
+                 stMems,
+                 nMemsCnt,
+                 vnMemsValidIdx,
+                 mnMemsRelPose,
+                 false,
+                 framec);
 
         //  Making tracking map to a neighborhood matrix for surface saliencies
-        const int nDsSize = static_cast<int>(map.total());
-        std::vector<int> vnTrkMap(nDsSize, -1);         // Tracking Map
-        //std::vector<int> vnTrkMapComp(nDsSize, -1);     // for the making of the Neighbor Matrix
-        for (int i = 0; i < nMemsCnt; i++) {
+        int nDsSize = static_cast<int>(map.total());
+        VecI vnTrkMap(nDsSize, -1);         // Tracking Map
 
-            if (stMems.vnStableCtr[i] < stTrack.CntStable
-                    || stMems.vnLostCtr[i] > stTrack.CntLost) {
+        for (int i=0; i < nMemsCnt; i++) {
+
+            if (stMems.vnStableCtr[i] < stTrack.CntStable ||
+                    stMems.vnLostCtr[i] > stTrack.CntLost) {
                 continue;
             }
-
             for (size_t j=0; j < stMems.mnPtsIdx[i].size(); j++) {
 
                 vnTrkMap[stMems.mnPtsIdx[i][j]] = stMems.vnIdx[i];
-                //vnTrkMapComp[stMems.mnPtsIdx[i][j]] = i;
             }
         }
 
-        // Show Tracking
         m_ = Mat1f::zeros(map.size());
         for (int i=0; i < nDsSize; i++) {
 
             if (vnTrkMap[i] < 0) {
                 continue;
             }
-            m_(i) = vnTrkMap[i];
+            m_(i) = static_cast<float>(vnTrkMap[i]);
         }
     }
-    else {
 
-        memory_ = obsereved_;
-        m_ = map; // until layer produces actual output
-    }
-
-    m_ = map; // until layer produces actual output
     framec++;
 }
 
@@ -686,138 +362,6 @@ void SurfaceTracking::computeFeatureDistance(const vector<Surface> &surfaces,
             }
         } // j'th surface in STM
     } // i'th newly observed surface
-}
-
-void SurfaceTracking::Tracking_OptPre(int nMemsCnt, int nSurfCnt,
-                                      int nObjsNrLimit,
-                                      vector<VecF > &mnDistTmp,
-                                      VecI &vnSurfCandCnt,
-                                      VecI &vnSegCandMin,
-                                      VecI &vnMemsCandCnt,
-                                      VecI &vnMemCandMin,
-                                      VecI &vnMatchedSeg) const
-{
-    float offset = 0.01;
-    for (int i = 0; i < nSurfCnt; i++) {
-
-        float j_min = DISTANCE_HUGE;
-        for (int j = 0; j < nMemsCnt; j++) {
-
-            if (mnDistTmp[i][j] >= max_dist_) {
-
-                mnDistTmp[i][j] = DISTANCE_HUGE;
-            }
-            else {
-                vnSurfCandCnt[i]++;
-
-                if (mnDistTmp[i][j] > j_min) {
-                    continue;
-                }
-                if (mnDistTmp[i][j] == j_min) {
-
-                    mnDistTmp[i][j] += offset;
-                }
-                else {
-                    j_min = mnDistTmp[i][j];
-                    vnSegCandMin[i] = j;
-                }
-            }
-        }
-    }
-
-    for (int j=0; j < nMemsCnt; j++) {
-
-        float i_min = DISTANCE_HUGE;
-        for (int i=0; i < nSurfCnt; i++) {
-
-            if (mnDistTmp[i][j] >= max_dist_) {
-                continue;
-            }
-            vnMemsCandCnt[j]++;
-
-            if (mnDistTmp[i][j] > i_min) {
-                continue;
-            }
-            if (mnDistTmp[i][j] == i_min) {
-
-                mnDistTmp[i][j] += offset;
-            }
-            else {
-                i_min = mnDistTmp[i][j];
-                vnMemCandMin[j] = i;
-            }
-        }
-    }
-
-    for (int i=0; i < nSurfCnt; i++) {
-        if (vnSurfCandCnt[i]) {
-
-            // if no other initial elements in the column
-            if (vnMemsCandCnt[vnSegCandMin[i]] < 2) {
-
-                if (vnMatchedSeg[i] < nObjsNrLimit) {
-
-                    printf("Error, the segment %d is already matched %d\n",
-                           i, vnSegCandMin[i]);
-                }
-                vnMatchedSeg[i] = vnSegCandMin[i];
-
-                if (vnSurfCandCnt[i] > 1) Tracking_OptPreFunc(i,
-                                                              vnSegCandMin[i],
-                                                              nMemsCnt,
-                                                              nObjsNrLimit,
-                                                              vnSurfCandCnt,
-                                                              vnMemsCandCnt,
-                                                              vnMemCandMin,
-                                                              vnMatchedSeg,
-                                                              mnDistTmp);
-            }
-        }
-        else vnMatchedSeg[i] = nObjsNrLimit;
-    }
-}
-
-void SurfaceTracking::Tracking_OptPreFunc(int seg,
-                                          int j_min,
-                                          int nMemsCnt,
-                                          int nObjsNrLimit,
-                                          VecI &vnSurfCandCnt,
-                                          VecI &vnMemsCandCnt,
-                                          VecI &vnMemCandMin,
-                                          VecI &vnMatchedSeg,
-                                          vector<VecF > &mnDistTmp) const
-{
-    for (int j=0; j < nMemsCnt; j++) {
-
-        if (j != j_min && mnDistTmp[seg][j] <= max_dist_) {
-
-            mnDistTmp[seg][j] = DISTANCE_HUGE;
-            vnMemsCandCnt[j]--;
-            vnSurfCandCnt[seg]--;
-            if (!vnMemsCandCnt[j]) vnMemCandMin[j] = nObjsNrLimit;
-
-            //// if there is only one candidate in the colum left
-            if (vnMemsCandCnt[j] == 1) {
-
-                for (int i=0; i < seg; i++) {
-
-                    if (mnDistTmp[i][j] <= max_dist_) {
-
-                        vnMatchedSeg[i] = j;
-                        if (vnSurfCandCnt[i] > 1) {
-                            Tracking_OptPreFunc(i, j,
-                                                nMemsCnt, nObjsNrLimit,
-                                                vnSurfCandCnt,
-                                                vnMemsCandCnt,
-                                                vnMemCandMin,
-                                                vnMatchedSeg,
-                                                mnDistTmp);
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 void SurfaceTracking::SurfPropToVecSurfaces(const SurfProp &surf_prop, std::vector<Surface> &surfaces) const

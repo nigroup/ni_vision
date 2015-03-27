@@ -153,6 +153,7 @@ protected:
 
     // legacy members
     SurfProp stMems;
+    int nMemsCnt;
     TrackProp stTrack;
     VecI vnMemsValidIdx;
     std::vector<elm::VecF > mnMemsRelPose;
