@@ -13,6 +13,13 @@ set(CMAKE_VERBOSE ON CACHE BOOL "Verbose mode")
 # ----------------------------------------------------------------------------
 set(NI_LIBS ni_3rdparty ni_core ni_layers ni_legacy)
 
+# ----------------------------------------------------------------------------
+# ELM Libraries (must preceed OpenCV)
+# ----------------------------------------------------------------------------
+# ELM Layers describe the model pipeline
+# ----------------------------------------------------------------------------
+include(../ni/cmake/DetectELM.cmake)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -134,7 +141,7 @@ list_filterout(SRC_LIST ${REGEX_EXCLUDE_FROM_MODULE})
 list_filterout(HEADERS  ${REGEX_EXCLUDE_FROM_MODULE})
 
 add_executable(ni_vision ${SRC_LIST} ${HEADERS})
-target_link_libraries(ni_vision ${catkin_LIBRARIES} siftfast terminal_tools ${OpenCV_LIBRARIES} ${NI_LIBS})
+target_link_libraries(ni_vision ${catkin_LIBRARIES} siftfast terminal_tools ${OpenCV_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
 
 ## Declare a cpp library
 # add_library(ni_vision
