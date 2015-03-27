@@ -82,3 +82,27 @@ float BoundingBox3D::volume() const
 
     return dx*dy*dz;
 }
+
+Mat1f BoundingBox3D::cubeVertices() const
+{
+    Mat1f cube(2, 3);
+    cube(0) = box_xy_(0); // cx_min;
+    cube(1) = box_xy_(3); // cy_min;
+    cube(2) = box_yz_(0); // cz_min;
+    cube(3) = box_xy_(2); // cx_max;
+    cube(4) = box_xy_(1); // cy_max;
+    cube(5) = box_yz_(2); // cz_max;
+    return cube;
+}
+
+void BoundingBox3D::cubeVertices(const Mat1f &cube)
+{
+    box_xy_(0) = cube(0); // cx_min;
+    box_xy_(3) = cube(1); // cy_min;
+    box_yz_(0) = cube(2); // cz_min;
+    box_xy_(2) = cube(3); // cx_max;
+    box_xy_(1) = cube(4); // cy_max;
+    box_yz_(2) = cube(5); // cz_max;
+
+    reduce(cube.reshape(1, 2), cog_, 0, CV_REDUCE_AVG);
+}

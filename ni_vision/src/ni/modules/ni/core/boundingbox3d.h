@@ -26,6 +26,10 @@ public:
 
     float volume() const;
 
+    cv::Mat1f cubeVertices() const;
+
+    void cubeVertices(const cv::Mat1f& cube);
+
 protected:
 
     // members
