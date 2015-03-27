@@ -89,3 +89,13 @@ float Surface::distance(const Surface &s) const
 {
     return static_cast<float>(cv::norm(cube_center_-s.cubeCenter(), cv::NORM_L2));
 }
+
+Rect2i Surface::rect() const
+{
+    return rect_;
+}
+
+void Surface::rect(const cv::Rect2i &r)
+{
+    rect_ = r;
+}

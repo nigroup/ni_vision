@@ -3,6 +3,7 @@
 
 #include <opencv2/core/core.hpp>
 
+#include "elm/core/cv/typedefs_fwd.h"
 #include "ni/core/stl/typedefs.h"
 
 namespace ni {
@@ -91,6 +92,19 @@ public:
     float distance(const Surface &s) const;
 
     /**
+     * @brief rect
+     * @return
+     * @todo test
+     */
+    cv::Rect2i rect() const;
+
+    /**
+     * @brief rect
+     * @todo test
+     */
+    void rect(const cv::Rect2i &rect);
+
+    /**
      * @brief Default Constructor
      */
     Surface();
@@ -106,6 +120,8 @@ protected:
 
     float diagonal_;         ///< diagonal length in 3d point cloud coorindate system [meters]
     cv::Matx13f cube_center_;   ///< vector to center of cube surrounding surface
+
+    cv::Rect2i rect_;        ///< rectangle for representing 2d bounding box in pixel coordinate space
 };
 
 } // namespace ni
