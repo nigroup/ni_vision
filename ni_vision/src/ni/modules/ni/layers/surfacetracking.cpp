@@ -808,7 +808,7 @@ void SurfaceTracking::Tracking_OptPreFunc(int seg,
 
 void SurfaceTracking::SurfPropToVecSurfaces(const SurfProp &surf_prop, std::vector<Surface> &surfaces) const
 {
-    for(size_t i=0; i<surf_prop.vnIdx.size(); i++) {
+    for(size_t i=1; i<surf_prop.vnIdx.size(); i++) {
 
         Surface s;
 
@@ -828,34 +828,34 @@ void SurfaceTracking::SurfPropToVecSurfaces(const SurfProp &surf_prop, std::vect
         s.colorHistogram(Mat1f(surf_prop.mnColorHist[i], true));
         s.diagonal(surf_prop.vnLength[i]);
 
-        surfaces[i] = s;
+        surfaces[i-1] = s;
     }
 }
 
 void SurfaceTracking::VecSurfacesToSurfProp(const std::vector<Surface> &surfaces, SurfProp &surf_prop) const
 {
-    for(size_t i=0; i<surfaces.size(); i++) {
+    for(size_t i=0, j=1; i<surfaces.size(); i++, j++) {
 
         Surface s = surfaces[i];
 
-        surf_prop.vnIdx[i] = s.id();
-        surf_prop.vnPtsCnt[i] = s.pixelCount();
-        surf_prop.mnPtsIdx[i] = s.pixelIndices(); // do we need this?
+        surf_prop.vnIdx[j] = s.id();
+        surf_prop.vnPtsCnt[j] = s.pixelCount();
+        surf_prop.mnPtsIdx[j] = s.pixelIndices(); // do we need this?
 
         Rect2i r = s.rect();
-        surf_prop.mnRect[i][0] = r.x;
-        surf_prop.mnRect[i][1] = r.y;
-        surf_prop.mnRect[i][2] = r.x + r.width;
-        surf_prop.mnRect[i][3] = r.y + r.height;
+        surf_prop.mnRect[j][0] = r.x;
+        surf_prop.mnRect[j][1] = r.y;
+        surf_prop.mnRect[j][2] = r.x + r.width;
+        surf_prop.mnRect[j][3] = r.y + r.height;
 
         BoundingBox2D bbox(r);
         Mat1f pt = bbox.centralPoint();
-        surf_prop.mnRCenter[i][0] = static_cast<int>(pt(0));
-        surf_prop.mnRCenter[i][1] = static_cast<int>(pt(1));
+        surf_prop.mnRCenter[j][0] = static_cast<int>(pt(0));
+        surf_prop.mnRCenter[j][1] = static_cast<int>(pt(1));
 
-        surf_prop.mnCubic[i]   = elm::Mat_ToVec_(Mat1f(s.cubeVertices()));
-        surf_prop.mnCCenter[i] = elm::Mat_ToVec_(Mat1f(s.cubeCenter()));
-        surf_prop.mnColorHist[i] = elm::Mat_ToVec_(s.colorHistogram());
-        surf_prop.vnLength[i] = s.diagonal();
+        surf_prop.mnCubic[j]   = elm::Mat_ToVec_(Mat1f(s.cubeVertices()));
+        surf_prop.mnCCenter[j] = elm::Mat_ToVec_(Mat1f(s.cubeCenter()));
+        surf_prop.mnColorHist[j] = elm::Mat_ToVec_(s.colorHistogram());
+        surf_prop.vnLength[j] = s.diagonal();
     }
 }
