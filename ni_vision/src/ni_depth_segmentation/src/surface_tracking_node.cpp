@@ -30,6 +30,7 @@
 #include "ni/core/color_utils.h"
 #include "ni/core/surface.h"
 #include "ni/layers/depthmap.h"
+#include "ni/layers/surfacetracking.h"
 #include "ni/layers/layerfactoryni.h"
 
 /** A post from ROS Answers suggested using image_transport::SubscriberFilter
@@ -104,6 +105,30 @@ public:
             io.Output(DepthMap::KEY_OUTPUT_RESPONSE, "depth_map");
             layers_.push_back(LayerFactoryNI::CreateShared("DepthMap", cfg, io));
         }
+        { // 0
+            // Instantiate DepthMap layer
+            LayerConfig cfg;
+
+            PTree p;
+            p.put(SurfaceTracking::PARAM_HIST_BINS, 8);
+            p.put(SurfaceTracking::PARAM_WEIGHT_COLOR, 0.4f);
+
+            p.put(SurfaceTracking::PARAM_WEIGHT_POS, 0.1f);
+            p.put(SurfaceTracking::PARAM_WEIGHT_SIZE, 0.5f);
+            p.put(SurfaceTracking::PARAM_MAX_COLOR, 0.3f);
+            p.put(SurfaceTracking::PARAM_MAX_POS, 0.15f);
+            p.put(SurfaceTracking::PARAM_MAX_SIZE, 0.3f);
+            p.put(SurfaceTracking::PARAM_MAX_DIST, 1.6f);
+
+            cfg.Params(p);
+
+            LayerIONames io;
+            io.Input(SurfaceTracking::KEY_INPUT_BGR_IMAGE, name_in_img_);
+            io.Input(SurfaceTracking::KEY_INPUT_CLOUD, name_in_cld_);
+            io.Input(SurfaceTracking::KEY_INPUT_MAP, name_in_seg_);
+            io.Output(SurfaceTracking::KEY_OUTPUT_RESPONSE, name_out_);
+            layers_.push_back(LayerFactoryNI::CreateShared("SurfaceTracking", cfg, io));
+        }
 
         img_pub_ = it_.advertise(name_out_, 1);
     }
@@ -162,6 +187,7 @@ protected:
 
             //imshow("depth_map", ConvertTo8U(sig_.MostRecentMat1f("depth_map")));
             imshow("img_seg_", ConvertTo8U(img_seg_));
+            imshow("out",  ConvertTo8U(sig_.MostRecentMat1f(name_out_)));
 
             //Mat1f img = sig_.MostRecentMat1f(name_in_seg_);
             Mat1f img = img_seg_;
