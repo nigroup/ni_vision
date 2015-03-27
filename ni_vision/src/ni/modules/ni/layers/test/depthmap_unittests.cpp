@@ -35,6 +35,7 @@ protected:
 
         // params
         PTree params;
+        params.put(DepthMap::PARAM_DEPTH_MAX, 5.f);
         config_.Params(params);
 
         config_.Input(DepthMap::KEY_INPUT_STIMULUS, NAME_CLOUD);
@@ -78,14 +79,13 @@ TEST_F(DepthMapTest, Depth_larger_max)
 
     cld->push_back(PointXYZ(-1.f, -2.f, 1.f));
     cld->push_back(PointXYZ(-1.f, -2.f, 2.f));
-    cld->push_back(PointXYZ(-1.f, -2.f, 3.f));
+    cld->push_back(PointXYZ(-1.f, -2.f, 7.f));
     cld->push_back(PointXYZ(-1.f, -2.f, 4.f));
-    cld->push_back(PointXYZ(-1.f, -2.f, 5.f));
+    cld->push_back(PointXYZ(-1.f, -2.f, 6.f));
 
-    // sanity check to vrify effectiveness of fake point cloud data
-    Mat1f tmp = PointCloud2Mat_(cld);
-    ASSERT_GT(static_cast<int>(tmp.total()),
-              countNonZero(tmp <= DepthMap::DEFAULT_DEPTH_MAX));
+    // sanity check to verify effectiveness of fake point cloud data
+    Mat1f tmp = PointCloud2Mat_(cld).reshape(1, static_cast<int>(cld->size())).col(2);
+    ASSERT_GT(tmp.rows, countNonZero(tmp <= DepthMap::DEFAULT_DEPTH_MAX));
 
     Signal sig;
     sig.Append(NAME_CLOUD, cld);
