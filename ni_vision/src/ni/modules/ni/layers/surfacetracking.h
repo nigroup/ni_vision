@@ -8,6 +8,8 @@
 #include "elm/layers/layers_interim/base_matoutputlayer.h"
 
 #include "ni/core/surface.h"
+#include "ni/legacy/surfprop.h"
+#include "ni/legacy/trackprop.h"
 
 namespace ni {
 
@@ -121,6 +123,10 @@ protected:
                              VecI &vnMatchedSeg,
                              std::vector<elm::VecF > &mnDistTmp) const;
 
+
+    void SurfPropToVecSurfaces(const SurfProp &surf_prop, std::vector<ni::Surface> &surfaces) const;
+    void VecSurfacesToSurfProp(const std::vector<ni::Surface> &surfaces, SurfProp &surf_prop) const;
+
     // members
     std::string input_name_bgr_;
     std::string input_name_cloud_;
@@ -144,6 +150,9 @@ protected:
 
     std::vector<ni::Surface> obsereved_;
     std::vector<ni::Surface> memory_;
+
+    SurfProp stMems;
+    TrackProp stTrack;
 };
 
 } // namespace ni
