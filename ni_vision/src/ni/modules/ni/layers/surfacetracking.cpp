@@ -135,7 +135,7 @@ void SurfaceTracking::InputNames(const LayerInputNames &io)
 
 void SurfaceTracking::Activate(const Signal &signal)
 {
-    Mat1f color         = signal.MostRecent(input_name_bgr_).get<Mat1f>();
+    Mat3f color         = signal.MostRecent(input_name_bgr_).get<Mat1f>();
     CloudXYZPtr cloud   = signal.MostRecent(input_name_cloud_).get<CloudXYZPtr>();
     Mat1f map           = signal.MostRecent(input_name_map_).get<Mat1f>();
 
@@ -145,7 +145,7 @@ void SurfaceTracking::Activate(const Signal &signal)
     obsereved_.clear();
     extractFeatures(cloud, bgr, map, obsereved_);
 
-    int nSurfCnt = static_cast<int>(obsereved_.size())+1;
+    int nSurfCnt = static_cast<int>(obsereved_.size());
 
     {
         int nTrackHistoBin_max = nb_bins_ * nb_bins_ * nb_bins_;
@@ -160,9 +160,9 @@ void SurfaceTracking::Activate(const Signal &signal)
         stSurf.mnCCenter.assign(nSurfCnt,   VecF(3,0));
         stSurf.vnLength.resize(nSurfCnt, 0);
         stSurf.mnColorHist.resize(nSurfCnt, VecF(nTrackHistoBin_max, 0));
-        stSurf.vnMemCtr.resize(nSurfCnt, 0);
+        stSurf.vnMemCtr.resize(nSurfCnt, stTrack.CntMem - stTrack.CntStable);
         stSurf.vnStableCtr.resize(nSurfCnt, 0);
-        stSurf.vnLostCtr.resize(nSurfCnt, 0);
+        stSurf.vnLostCtr.resize(nSurfCnt, stTrack.CntLost + 10);
 
         VecSurfacesToSurfProp(obsereved_, stSurf);
 
@@ -293,7 +293,7 @@ void SurfaceTracking::extractFeatures(
             cv::minMaxIdx(coords.col(1), &min_y, &max_y);
 
             r.x = static_cast<int>(min_x);
-            r.y = static_cast<int>(min_x);
+            r.y = static_cast<int>(min_y);
             r.width = static_cast<int>(max_x-min_x+1);
             r.height = static_cast<int>(max_y-min_y+1);
 
@@ -394,28 +394,28 @@ void SurfaceTracking::SurfPropToVecSurfaces(const SurfProp &surf_prop, std::vect
 
 void SurfaceTracking::VecSurfacesToSurfProp(const std::vector<Surface> &surfaces, SurfProp &surf_prop) const
 {
-    for(size_t i=0, j=1; i<surfaces.size(); i++, j++) {
+    for(size_t i=0; i<surfaces.size(); i++) {
 
         Surface s = surfaces[i];
 
-        surf_prop.vnIdx[j] = s.id();
-        surf_prop.vnPtsCnt[j] = s.pixelCount();
-        surf_prop.mnPtsIdx[j] = s.pixelIndices(); // do we need this?
+        surf_prop.vnIdx[i] = s.id();
+        surf_prop.vnPtsCnt[i] = s.pixelCount();
+        surf_prop.mnPtsIdx[i] = s.pixelIndices(); // do we need this?
 
         Rect2i r = s.rect();
-        surf_prop.mnRect[j][0] = r.x;
-        surf_prop.mnRect[j][1] = r.y;
-        surf_prop.mnRect[j][2] = r.x + r.width;
-        surf_prop.mnRect[j][3] = r.y + r.height;
+        surf_prop.mnRect[i][0] = r.x;
+        surf_prop.mnRect[i][1] = r.y;
+        surf_prop.mnRect[i][2] = r.x + r.width;
+        surf_prop.mnRect[i][3] = r.y + r.height;
 
         BoundingBox2D bbox(r);
         Mat1f pt = bbox.centralPoint();
-        surf_prop.mnRCenter[j][0] = static_cast<int>(pt(0));
-        surf_prop.mnRCenter[j][1] = static_cast<int>(pt(1));
+        surf_prop.mnRCenter[i][0] = static_cast<int>(pt(0));
+        surf_prop.mnRCenter[i][1] = static_cast<int>(pt(1));
 
-        surf_prop.mnCubic[j]   = elm::Mat_ToVec_(Mat1f(s.cubeVertices()));
-        surf_prop.mnCCenter[j] = elm::Mat_ToVec_(Mat1f(s.cubeCenter()));
-        surf_prop.mnColorHist[j] = elm::Mat_ToVec_(s.colorHistogram());
-        surf_prop.vnLength[j] = s.diagonal();
+        surf_prop.mnCubic[i]   = elm::Mat_ToVec_(Mat1f(s.cubeVertices()));
+        surf_prop.mnCCenter[i] = elm::Mat_ToVec_(Mat1f(s.cubeCenter()));
+        surf_prop.mnColorHist[i] = elm::Mat_ToVec_(s.colorHistogram());
+        surf_prop.vnLength[i] = s.diagonal();
     }
 }
