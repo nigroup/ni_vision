@@ -254,7 +254,7 @@ protected:
             }
 
             Mat1f img = sig_.MostRecentMat1f(name_out_);
-            img(0) = 12.f;
+            //img(0) = 12.f;
 
             Mat mask_not_assigned = img <= 0.f;
 
@@ -266,8 +266,8 @@ protected:
 
             img_color.setTo(Scalar(0), mask_not_assigned);
 
-            imshow("img_color", img_color);
-            waitKey(1);
+            //imshow("img_color", img_color);
+            //waitKey(1);
 
             // convert in preparation to publish depth map image
             sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(
