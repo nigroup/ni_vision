@@ -68,7 +68,7 @@ public:
     /**
      * @brief Constructor
      *
-     * Register subscriptions.
+     * Register subscriptions and publications.
      *
      * @param nh node handle reference
      * @todo determine ideal queue size for subscribers and sync policy
@@ -209,6 +209,9 @@ public:
             io.Output(SurfaceTracking::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(LayerFactoryNI::CreateShared("SurfaceTracking", cfg, io));
         }
+
+        // publishers
+        img_pub_bgr_ = it_.advertise(name_out_+"_color", 1);
         img_pub_ = it_.advertise(name_out_, 1);
     }
 
@@ -259,8 +262,8 @@ protected:
             Mat mask_not_assigned = img <= 0.f;
 
             Mat img_color;
-
-            applyColorMap(ConvertTo8U(img),
+            Mat1b img_gray = ConvertTo8U(img);
+            applyColorMap(img_gray,
                           img_color,
                           COLORMAP_HSV);
 
@@ -269,13 +272,26 @@ protected:
             //imshow("img_color", img_color);
             //waitKey(1);
 
-            // convert in preparation to publish depth map image
-            sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(
-                        std_msgs::Header(),
+            // convert to publish map image
+            // mimic timestamp of processed point cloud
+            std_msgs::Header header;
+            header.stamp = ros::Time().fromNSec(cld->header.stamp*1e3);
+
+            // in color
+            sensor_msgs::ImagePtr img_msg_color = cv_bridge::CvImage(
+                        header,
                         sensor_msgs::image_encodings::BGR8,
                         img_color).toImageMsg();
 
-            img_pub_.publish(img_msg);
+            img_pub_bgr_.publish(img_msg_color);
+
+            // in grayscale
+            sensor_msgs::ImagePtr img_msg_gray = cv_bridge::CvImage(
+                        header,
+                        sensor_msgs::image_encodings::MONO8,
+                        img_gray).toImageMsg();
+
+            img_pub_.publish(img_msg_gray);
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);
             double nTimeTotal = double(timespecDiff(&t_total_end, &t_total_start)/1e9);
@@ -308,7 +324,8 @@ protected:
     ImageSubscriber img_sub_; ///< synchronized image subscriber (RGB)
     message_filters::Subscriber<CloudXYZ > cloud_sub_;         ///< synchronized point cloud subscriber
 
-    image_transport::Publisher img_pub_;    ///< surface map image publisher
+    image_transport::Publisher img_pub_bgr_;    ///< surface map image publisher
+    image_transport::Publisher img_pub_;        ///< surface map image publisher
 
     boost::mutex mtx_;                      ///< mutex object for thread safety
 
