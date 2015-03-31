@@ -1,6 +1,7 @@
 #include "ni/layers/surfacetracking.h"
-
+#include <opencv2/highgui/highgui.hpp>
 #include "elm/core/debug_utils.h"
+#include <set>
 
 #include "elm/core/cv/mat_vector_utils.h"
 #include "elm/core/cv/mat_vector_utils_inl.h"
@@ -204,6 +205,48 @@ void SurfaceTracking::Activate(const Signal &signal)
             }
             m_(i) = static_cast<float>(vnTrkMap[i]);
         }
+
+//        {
+//            std::set<int> snew;
+//            for(size_t i=0; i<m_.total(); i++) {
+
+//                snew.insert(static_cast<int>(m_(i)));
+//            }
+
+//            VecI vtracked;
+//            std::copy(snew.begin(), snew.end(), std::back_inserter(vtracked));
+
+//              ELM_COUT_VAR(elm::to_string(vtracked));
+//        }
+//        {
+//            std::set<int> seg;
+//            for(size_t i=0; i<map.total(); i++) {
+
+//                seg.insert(static_cast<int>(map(i)));
+//            }
+
+//            VecI vseg;
+//            std::copy(seg.begin(), seg.end(), std::back_inserter(vseg));
+
+//            ELM_COUT_VAR(elm::to_string(vseg));
+//        }
+
+//        Mat bgr2 = bgr.clone();
+//        cv::imshow("t", Mat1b::zeros(10, 10));
+//        cv::waitKey(1);
+//        for (int i=0; i < stMems.vnIdx.size(); i++) {
+
+//            Point org(stMems.mnRCenter[i][0], stMems.mnRCenter[i][1]);
+//            stringstream s;
+//            s<<stMems.vnIdx[i];
+//            cv::putText(bgr2,
+//                        s.str(),
+//                        org,
+//                        1,
+//                        1.f,
+//                        Scalar(255, 255, 255));
+//        }
+//        cv::imshow("t", bgr2);
     }
 
     framec++;
