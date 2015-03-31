@@ -121,7 +121,7 @@ public:
             p.put(DepthGradientSmoothing::PARAM_MAX, 0.04f);
             p.put(DepthGradientSmoothing::PARAM_SMOOTH_CENTER, 128);
             p.put(DepthGradientSmoothing::PARAM_SMOOTH_FACTOR, 3);
-            p.put(DepthGradientSmoothing::PARAM_SMOOTH_MODE, 2 );
+            p.put(DepthGradientSmoothing::PARAM_SMOOTH_MODE, 2);
             cfg.Params(p);
 
             LayerIONames io;
