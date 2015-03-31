@@ -195,6 +195,30 @@ public:
             io.Output(MapAreaFilter::KEY_OUTPUT_RESPONSE, "map_gray_");
             layers_.push_back(LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
         }
+//        {
+//            LayerConfig cfg;
+
+//            PTree p;
+//            p.put(SurfaceTracking::PARAM_HIST_BINS, 8);
+//            p.put(SurfaceTracking::PARAM_WEIGHT_COLOR, 0.4f);
+
+//            p.put(SurfaceTracking::PARAM_WEIGHT_POS, 0.1f);
+//            p.put(SurfaceTracking::PARAM_WEIGHT_SIZE, 0.5f);
+//            p.put(SurfaceTracking::PARAM_MAX_COLOR, 0.3f);
+//            p.put(SurfaceTracking::PARAM_MAX_POS, 0.15f);
+//            p.put(SurfaceTracking::PARAM_MAX_SIZE, 0.3f);
+//            p.put(SurfaceTracking::PARAM_MAX_DIST, 1.6f);
+
+//            cfg.Params(p);
+
+//            LayerIONames io;
+//            io.Input(SurfaceTracking::KEY_INPUT_BGR_IMAGE, name_in_img_);
+//            io.Input(SurfaceTracking::KEY_INPUT_CLOUD, name_in_cld_);
+//            io.Input(SurfaceTracking::KEY_INPUT_MAP, "map_gray_");
+//            io.Output(SurfaceTracking::KEY_OUTPUT_RESPONSE, name_out_);
+//            //io.Output(SurfaceTracking::KEY_OUTPUT_RESPONSE, "name_out_2");
+//            layers_.push_back(LayerFactoryNI::CreateShared("SurfaceTracking", cfg, io));
+//        }
         {
             LayerConfig cfg;
 
@@ -214,11 +238,10 @@ public:
             LayerIONames io;
             io.Input(SurfaceTracking::KEY_INPUT_BGR_IMAGE, name_in_img_);
             io.Input(SurfaceTracking::KEY_INPUT_CLOUD, name_in_cld_);
-            io.Input(SurfaceTracking::KEY_INPUT_MAP, "map_gray_");
+            io.Input(SurfaceTracking::KEY_INPUT_MAP, name_in_seg_);
             io.Output(SurfaceTracking::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(LayerFactoryNI::CreateShared("SurfaceTracking", cfg, io));
         }
-
         img_pub_ = it_.advertise(name_out_, 1);
     }
 
@@ -275,27 +298,30 @@ protected:
             }
 
             //imshow("depth_map", ConvertTo8U(sig_.MostRecentMat1f("depth_map")));
+            imshow("map_gray_", ConvertTo8U(sig_.MostRecentMat1f("map_gray_")));
+
+            {
+                Mat1f tmp = sig_.MostRecentMat1f("map_gray_");
+                std::set<int> seg;
+                for(size_t i=0; i<tmp.total(); i++) {
+
+                    seg.insert(static_cast<int>(tmp(i)));
+                }
+
+                VecI vtmp;
+                std::copy(seg.begin(), seg.end(), std::back_inserter(vtmp));
+
+                ELM_COUT_VAR(elm::to_string(vtmp));
+            }
+
             imshow("img_seg_", ConvertTo8U(img_seg_));
+            //imshow("nes", ConvertTo8U(sig_.MostRecentMat1f("map_gray_")) != ConvertTo8U(img_seg_));
             imshow("out",  ConvertTo8U(sig_.MostRecentMat1f(name_out_)));
+//            imshow("net", ConvertTo8U(sig_.MostRecentMat1f(name_out_)) != ConvertTo8U(sig_.MostRecentMat1f("name_out_2")));
+            //imshow("out2",  ConvertTo8U(sig_.MostRecentMat1f("name_out_2")));
 
             Mat1f img = sig_.MostRecentMat1f(name_out_);
             img(0) = 12.f;
-
-            {
-                std::set<int> snew;
-                for(size_t i=0; i<img.total(); i++) {
-
-                    snew.insert(static_cast<int>(img(i)));
-                }
-
-                VecI vnew;
-                std::copy(snew.begin(), snew.end(), std::back_inserter(vnew));
-
-                ELM_COUT_VAR(elm::to_string(vnew));
-
-                int x = 0;
-                x++;
-            }
 
             Mat mask_not_assigned = img <= 0.f;
 
@@ -308,7 +334,7 @@ protected:
             img_color.setTo(Scalar(0), mask_not_assigned);
 
             imshow("img_color", img_color);
-            waitKey(1);
+            waitKey(0);
 
             // convert in preparation to publish depth map image
             sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(
