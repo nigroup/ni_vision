@@ -196,7 +196,7 @@ void SurfaceTracking::Activate(const Signal &signal)
             }
         }
 
-        m_ = Mat1f::zeros(map.size());
+        m_ = Mat1f(map.size(), -1.f);
         for (int i=0; i < nDsSize; i++) {
 
             if (vnTrkMap[i] < 0) {
