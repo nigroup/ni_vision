@@ -166,7 +166,10 @@ target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
 set(NODE_NAME surface_tracking_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
-add_dependencies(${NODE_NAME} beginner_tutorials_generate_messages_cpp)
+
+set(NODE_NAME surface_segmentation_and_tracking_node)
+add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
+target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
 
 add_executable(talker_node src/talker_node.cpp)
 target_link_libraries(talker_node ${catkin_LIBRARIES})
