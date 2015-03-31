@@ -1,6 +1,8 @@
 // %Tag(FULLTEXT)%
 #include <ros/ros.h>
 
+#include <set>
+
 #include <boost/foreach.hpp>
 #include <boost/thread/mutex.hpp>
 
@@ -32,6 +34,14 @@
 #include "ni/layers/depthmap.h"
 #include "ni/layers/surfacetracking.h"
 #include "ni/layers/layerfactoryni.h"
+
+#include "ni/layers/depthmap.h"
+#include "ni/layers/depthgradient.h"
+#include "ni/layers/depthgradientrectify.h"
+#include "ni/layers/depthgradientsmoothing.h"
+#include "ni/layers/depthsegmentation.h"
+#include "ni/layers/mapareafilter.h"
+
 
 /** A post from ROS Answers suggested using image_transport::SubscriberFilter
  *  source: http://answers.ros.org/question/9705/synchronizer-and-image_transportsubscriber/
@@ -105,8 +115,87 @@ public:
             io.Output(DepthMap::KEY_OUTPUT_RESPONSE, "depth_map");
             layers_.push_back(LayerFactoryNI::CreateShared("DepthMap", cfg, io));
         }
-        { // 0
-            // Instantiate DepthMap layer
+        { // 1
+            // Instantiate Depth Gradient layer
+            LayerConfig cfg;
+
+            PTree p;
+            p.put(DepthGradient::PARAM_GRAD_WEIGHT, 0.5f);
+            cfg.Params(p);
+
+            LayerIONames io;
+            io.Input(DepthGradient::KEY_INPUT_STIMULUS, "depth_map");
+            io.Output(DepthGradient::KEY_OUTPUT_GRAD_X, "depth_grad_x");
+            io.Output(DepthGradient::KEY_OUTPUT_GRAD_Y, "depth_grad_y");
+            layers_.push_back(LayerFactoryNI::CreateShared("DepthGradient", cfg, io));
+        }
+        { // 2
+            // Instantiate Depth gradient smoothing layer
+            // applied on vertical gradient component
+            LayerConfig cfg;
+
+            PTree p;
+            p.put(DepthGradientSmoothing::PARAM_APERTURE_SIZE, 5);
+            p.put(DepthGradientSmoothing::PARAM_BAND_1, 5);
+            p.put(DepthGradientSmoothing::PARAM_BAND_2, 14);
+            p.put(DepthGradientSmoothing::PARAM_FILTER_MODE, 2);
+            p.put(DepthGradientSmoothing::PARAM_MAX, 0.04f);
+            p.put(DepthGradientSmoothing::PARAM_SMOOTH_CENTER, 128);
+            p.put(DepthGradientSmoothing::PARAM_SMOOTH_FACTOR, 3);
+            p.put(DepthGradientSmoothing::PARAM_SMOOTH_MODE, 2 );
+            cfg.Params(p);
+
+            LayerIONames io;
+            io.Input(DepthGradientSmoothing::KEY_INPUT_STIMULUS, "depth_grad_y");
+            io.Output(DepthGradientSmoothing::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth");
+            layers_.push_back(LayerFactoryNI::CreateShared("DepthGradientSmoothing", cfg, io));
+        }
+        { // 3
+            // Instantiate layer for rectifying smoothed gradient
+            // apply thresholds on raw gradient and have them reflect on smoothed component
+            LayerConfig cfg;
+
+            PTree p;
+            p.put(DepthGradientRectify::PARAM_MAX_GRAD, 0.04f); // paper = 0.04
+            cfg.Params(p);
+
+            LayerIONames io;
+            io.Input(DepthGradientRectify::KEY_INPUT_GRAD_X, "depth_grad_x");
+            io.Input(DepthGradientRectify::KEY_INPUT_GRAD_Y, "depth_grad_y");
+            io.Input(DepthGradientRectify::KEY_INPUT_GRAD_SMOOTH, "depth_grad_y_smooth");
+            io.Output(DepthGradientRectify::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth_r");
+            layers_.push_back(LayerFactoryNI::CreateShared("DepthGradientRectify", cfg, io));
+        }
+        {
+            // Instantiate Depth segmentation layer
+            // applied on smoothed vertical gradient component
+            LayerConfig cfg;
+
+            PTree params;
+            params.put(DepthSegmentation::PARAM_MAX_GRAD, 0.003f); // paper = 0.003
+            cfg.Params(params);
+
+            LayerIONames io;
+            io.Input(DepthSegmentation::KEY_INPUT_STIMULUS, "depth_grad_y_smooth_r");
+            io.Output(DepthSegmentation::KEY_OUTPUT_RESPONSE, "depth_seg_raw");
+            layers_.push_back(LayerFactoryNI::CreateShared("DepthSegmentation", cfg, io));
+        }
+        {
+            // Instantiate Map Area Filter layer for smoothing surfaces
+            // by merging small-sized surfaces together
+            // then merging them with largest neighbor
+            LayerConfig cfg;
+
+            PTree params;
+            params.put(MapAreaFilter::PARAM_TAU_SIZE, 200); // @todo adapt this threshold to higher resolution input
+            cfg.Params(params);
+
+            LayerIONames io;
+            io.Input(MapAreaFilter::KEY_INPUT_STIMULUS, "depth_seg_raw");
+            io.Output(MapAreaFilter::KEY_OUTPUT_RESPONSE, "map_gray_");
+            layers_.push_back(LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
+        }
+        {
             LayerConfig cfg;
 
             PTree p;
@@ -125,7 +214,7 @@ public:
             LayerIONames io;
             io.Input(SurfaceTracking::KEY_INPUT_BGR_IMAGE, name_in_img_);
             io.Input(SurfaceTracking::KEY_INPUT_CLOUD, name_in_cld_);
-            io.Input(SurfaceTracking::KEY_INPUT_MAP, name_in_seg_);
+            io.Input(SurfaceTracking::KEY_INPUT_MAP, "map_gray_");
             io.Output(SurfaceTracking::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(LayerFactoryNI::CreateShared("SurfaceTracking", cfg, io));
         }
@@ -190,7 +279,23 @@ protected:
             imshow("out",  ConvertTo8U(sig_.MostRecentMat1f(name_out_)));
 
             Mat1f img = sig_.MostRecentMat1f(name_out_);
-            img(1) = 15.f;
+            img(0) = 12.f;
+
+            {
+                std::set<int> snew;
+                for(size_t i=0; i<img.total(); i++) {
+
+                    snew.insert(static_cast<int>(img(i)));
+                }
+
+                VecI vnew;
+                std::copy(snew.begin(), snew.end(), std::back_inserter(vnew));
+
+                ELM_COUT_VAR(elm::to_string(vnew));
+
+                int x = 0;
+                x++;
+            }
 
             Mat mask_not_assigned = img <= 0.f;
 
