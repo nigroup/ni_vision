@@ -30,6 +30,7 @@
 #include "ni/layers/depthsegmentation.h"
 #include "ni/layers/mapareafilter.h"
 #include "ni/layers/layerfactoryni.h"
+#include "ni/legacy/timer.h"
 
 using namespace cv;
 using namespace elm;
@@ -180,11 +181,6 @@ public:
     }
 
 protected:
-
-    int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p) {
-
-        return ((timeA_p->tv_sec * 1e9) + timeA_p->tv_nsec) - ((timeB_p->tv_sec * 1e9) + timeB_p->tv_nsec);
-    }
 
     /**
      * @brief Point cloud callback
