@@ -34,6 +34,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   cv_bridge
+  OpenCV               # for complete link directories
   image_transport
   pcl_conversions
   pcl_ros
@@ -172,9 +173,10 @@ set(NODE_NAME surface_segmentation_and_tracking_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
 
+#status(${ELM_DEPS_LIBS})
 set(NODE_NAME nyu_depth_v2_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
-target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS} /home/kashefy/build/matio_install/lib/libmatio.a "/home/kashefy/build/hdf5_install/lib/libhdf5.a")
+target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS} ${ELM_DEPS_LIBS})
 
 add_executable(talker_node src/talker_node.cpp)
 target_link_libraries(talker_node ${catkin_LIBRARIES})
