@@ -143,6 +143,8 @@ add_library(ni_depth_segmentation
 
 # Declare a cpp executable for nodes
 
+set(NODE_NAMES "")
+
 # glob node code only
 file(GLOB SRC_LIST src/*node.c*)
 file(GLOB HEADERS  src/*node.h*)
@@ -160,27 +162,32 @@ list_filterout(HEADERS  ${REGEX_EXCLUDE_FROM_MODULE})
 set(NODE_NAME depth_map_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
+list(APPEND NODE_NAMES ${NODE_NAME})
 
 set(NODE_NAME depth_segmentation_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
+list(APPEND NODE_NAMES ${NODE_NAME})
 
 set(NODE_NAME surface_tracking_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
+list(APPEND NODE_NAMES ${NODE_NAME})
 
 set(NODE_NAME surface_segmentation_and_tracking_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
+list(APPEND NODE_NAMES ${NODE_NAME})
 
 #status(${ELM_DEPS_LIBS})
-if(WITH_MATIO)
+if(ELM_WITH_MATIO)
     set(NODE_NAME nyu_depth_v2_node)
     add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
     target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS} ${ELM_DEPS_LIBS})
-else(WITH_MATIO)
+    list(APPEND NODE_NAMES ${NODE_NAME})
+else(ELM_WITH_MATIO)
     status("Skipping node: nyu_depth_v2_node")
-endif(WITH_MATIO)
+endif(ELM_WITH_MATIO)
 
 add_executable(talker_node src/talker_node.cpp)
 target_link_libraries(talker_node ${catkin_LIBRARIES})
@@ -189,6 +196,10 @@ add_dependencies(talker_node beginner_tutorials_generate_messages_cpp)
 add_executable(listener_node src/listener_node.cpp)
 target_link_libraries(listener_node ${catkin_LIBRARIES})
 add_dependencies(listener_node beginner_tutorials_generate_messages_cpp)
+
+status("")
+status("Build:")
+status("    nodes: ${NODE_NAMES}")
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
