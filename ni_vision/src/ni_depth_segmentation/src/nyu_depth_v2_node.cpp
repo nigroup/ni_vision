@@ -108,6 +108,12 @@ public:
 
         pub_img_label_.publish(img_msg_gray);
 
+//        std::stringstream s;
+//        s<<"/home/kashefy/nyudv2/labels/" << count_ << ".png";
+
+//        labels.convertTo(labels, CV_8UC1);
+//        cv::imwrite(s.str(), labels);
+
         ELM_COUT_VAR(count_);
         count_++;
     }
@@ -153,8 +159,8 @@ int main(int argc, char** argv)
     ros::NodeHandle nh;
     ni::NYUV2DepthNode nyu_v2_depth_node(nh);
 
-    ros::Rate loop_rate(5);
-    while (nh.ok()) {
+    ros::Rate loop_rate(0.5);
+    while (ros::ok()) {
 
         nyu_v2_depth_node.next();
         ros::spinOnce();
