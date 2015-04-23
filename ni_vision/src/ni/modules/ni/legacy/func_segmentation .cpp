@@ -24,22 +24,16 @@ int FuncFindPos(const std::vector<int> &idx_vector, int value) {
     }
 }
 
-/**
- * @brief Flattening depth-gradient map
- * @param[in] cvm_input depth-gradient map
- * @param[in] index indices of pixels of depth-gradient map which should be processed
- * @param[in] max upper bound for range of grayscale depth-gradient
- * @param[in] min lower bound for range of grayscale depth-gradient
- * @param[in] mode
- * @param[in] scenter center bandwidth for flattening
- * @param[in] sband1 range (lower band) of bandwidth for flattening
- * @param[in] sband2 range (upper band) of bandwidth for flattening
- * @param[in] factor center, range and factor of bandwidth for flattening
- * @param[out] output_blur depth-gradient map after blurring
- * @param[out] output_ct depth-gradient map after flattening
- */
-void Segm_FlatDepthGrad (cv::Mat cvm_input, std::vector<int> index, float max, float min, int mode, int scenter, int sband1, int sband2, float factor, std::vector<float> &output_blur, std::vector<float> &output_ct)
-{
+void Segm_FlatDepthGrad(const cv::Mat &cvm_input,
+                        const std::vector<int> &index,
+                        float max, float min,
+                        int mode,
+                        int scenter,
+                        int sband1, int sband2,
+                        float factor,
+                        std::vector<float> &output_blur,
+                        std::vector<float> &output_ct) {
+
     float scale =  (max-min), x;
     uint8_t gr;
     for(size_t i = 0; i < index.size(); i++) {
@@ -79,27 +73,20 @@ void Segm_FlatDepthGrad (cv::Mat cvm_input, std::vector<int> index, float max, f
     }
 }
 
+void Segm_SmoothDepthGrad(const std::vector<float> &vInput,
+                          const std::vector<int> &index,
+                          const cv::Size &size,
+                          float max, float min,
+                          float none,
+                          int fmode,
+                          int fsize,
+                          int smode,
+                          int scenter,
+                          int sband1, int sband2,
+                          float clfac,
+                          std::vector<float> &output_blur,
+                          std::vector<float> &output_ct) {
 
-
-
-/* Smoothing depth-gradient map
- *
- * Input:
- * vInput -
- * index - indices of pixels of depth-gradient map which should be processed
- * size - size of input image
- * max, min - range of depth-gradient
- * none - constant for invalid depth and depth-gradient
- * fmode - filter mode
- * fsize - size of filter
- * smode, scenter, sband1, sband2, clfac - mode center, range and factor for flattening
- *
- * Output:
- * output_blur - depth-gradient map after blurring
- * output_ct - depth-gradient map after flattening
- */
-void Segm_SmoothDepthGrad (std::vector<float> vInput, std::vector<int> index, cv::Size size, float max, float min, float none, int fmode, int fsize, int smode, int scenter, int sband1, int sband2, float clfac, std::vector<float> &output_blur, std::vector<float> &output_ct)
-{
     cv::Mat input_gray(size, CV_8UC1, cv::Scalar(0));
     cv::Mat input_gray_blur(size, CV_8UC1, cv::Scalar(0));
 
@@ -116,7 +103,7 @@ void Segm_SmoothDepthGrad (std::vector<float> vInput, std::vector<int> index, cv
     //input_gray.copyTo(input_gray_blur);
     //input_gray_blur.copyTo(input_gray);
     //Segm_FlatDepthGrad_old (input_gray_blur, index, size.width, size.height, max, min, smode, scenter, sband1, clfac, output_blur, output_ct);
-    Segm_FlatDepthGrad (input_gray_blur, index, max, min, smode, scenter, sband1, sband2, clfac, output_blur, output_ct);
+    Segm_FlatDepthGrad(input_gray_blur, index, max, min, smode, scenter, sband1, sband2, clfac, output_blur, output_ct);
     input_gray.release(); input_gray_blur.release();
 }
 

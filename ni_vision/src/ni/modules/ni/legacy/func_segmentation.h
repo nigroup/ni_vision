@@ -44,7 +44,7 @@ void Segm_FlatDepthGrad(const cv::Mat &cvm_input,
                         std::vector<float> &output_blur,
                         std::vector<float> &output_ct);
 
-/* Smoothing depth-gradient map
+/*
  *
  * Input:
  * vInput -
@@ -60,7 +60,37 @@ void Segm_FlatDepthGrad(const cv::Mat &cvm_input,
  * output_blur - depth-gradient map after blurring
  * output_ct - depth-gradient map after flattening
  */
-void Segm_SmoothDepthGrad (std::vector<float> vInput, std::vector<int> index, cv::Size size, float max, float min, float none, int fmode, int fsize, int smode, int scenter, int sband1, int sband2, float clfac, std::vector<float> &output_blur, std::vector<float> &output_ct);
+/**
+ * @brief Smoothing depth-gradient map
+ * @param[in] vInput depth-gradient map
+ * @param[in] index
+ * @param[in] size
+ * @param[in] max
+ * @param[in] min
+ * @param[in] none
+ * @param[in] fmode
+ * @param[in] fsize
+ * @param[in] smode
+ * @param[in] scenter
+ * @param[in] sband1
+ * @param[in] sband2
+ * @param[in] clfac
+ * @param[out] output_blur
+ * @param[out] output_ct
+ */
+void Segm_SmoothDepthGrad(const std::vector<float> &vInput,
+                          const std::vector<int> &index,
+                          const cv::Size &size,
+                          float max, float min,
+                          float none,
+                          int fmode,
+                          int fsize,
+                          int smode,
+                          int scenter,
+                          int sband1, int sband2,
+                          float clfac,
+                          std::vector<float> &output_blur,
+                          std::vector<float> &output_ct);
 
 /* Creating matrix about information of adjacent segments
  *
