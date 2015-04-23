@@ -109,21 +109,12 @@ void Segm_SmoothDepthGrad(const std::vector<float> &vInput,
     input_gray.release(); input_gray_blur.release();
 }
 
+void Segm_NeighborMatrix(const std::vector<int> &vInputMap,
+                         const std::vector<int> &input_idx,
+                         int range,
+                         int width,
+                         std::vector<std::vector<bool> >& mnOut) {
 
-
-
-/* Creating matrix about information of adjacent segments
- *
- * Input:
- * vInputMap - input map
- * input idx - indices of input map which should be processed
- * range - distance of adjacent segments
- * width - width of input map
- *
- * Output:
- * mnOut - neighborhood matrix
- */
-void Segm_NeighborMatrix (std::vector<int> vInputMap, std::vector<int> input_idx, int range, int width, std::vector<std::vector<bool> >& mnOut) {
     for (size_t i = 0; i < input_idx.size() ; i++) {
         int x, y;
         int Ref, Cand;
