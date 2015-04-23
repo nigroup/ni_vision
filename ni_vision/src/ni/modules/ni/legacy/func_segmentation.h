@@ -88,121 +88,251 @@ void Segm_NeighborMatrix(const std::vector<int> &vInputMap,
                          int width,
                          std::vector<std::vector<bool> >& mnOut);
 
-/* Creating matrix about information of adjacent segments (for saliency program)
-*
-* Input:
-* vInputMap - input map
-* input idx - indices of input map which should be processed
-* range - distance of adjacent segments
-* width - width of input map
-*
-* Output:
-* mnOut - neighborhood matrix
-*/
-void Segm_NeighborMatrix1 (std::vector<int> vInputMap, std::vector<int> input_idx, int range, int width, std::vector<std::vector<bool> >& mnOut);
+/**
+ * @brief Creating matrix about information of adjacent segments (for saliency program)
+ * @param[in] vInputMap input map
+ * @param[in] input_idx indices of input map which should be processed
+ * @param[in] range distance of adjacent segments
+ * @param[in] width width of input map
+ * @param[out] mnOut neighborhood matrix
+ */
+void Segm_NeighborMatrix1(const std::vector<int> &vInputMap,
+                          const std::vector<int> &input_idx,
+                          int range,
+                          int width,
+                          std::vector<std::vector<bool> >& mnOut);
          
-/* Checking if two points are in the same segment
- *
- * Input:
- * idx_ref - reference point
- * idx_cand - candidate point
- * nSurfCnt - number of segments
- *
- * Output:
- * seg_map - segment map (which maps every point to the segment number it lies in)
- * seg_list - segment buffer */
-void Segm_MatchPoints (int idx_ref, int idx_cand, int nSurfCnt, std::vector<int>& seg_map, std::vector<int>& seg_list);
-
-/* Merging two segments
- * 
- * 		Segments are not merged in the sense of reduced to a single entry
- * 		but rather info of the merged segment is duplicated.
- * Input:
- * ref - reference segment
- * cand - candidate segment
- * clear - flag for merging (true, then merging)
- * n - number segments
- *
- * Output:
- * vnLB - label buffer, contains segments labels
- * vnSB - size buffer, contains segments sizes
- * vbCB - clearing buffer, contains merging flags (indicate if a segment was merged)
+/**
+ * @brief Checking if two points are in the same segment
+ * @param idx_ref reference point
+ * @param idx_cand candidate point
+ * @param nSurfCnt number of segments
+ * @param seg_map segment map (which maps every point to the segment number it lies in)
+ * @param seg_list segment buffer
  */
-void Segm_MergeSegments(int ref, int cand, bool clear, int n, std::vector<int> &vnLB, std::vector<int> &vnSB, std::vector<bool> &vbCB);
+void Segm_MatchPoints(int idx_ref,
+                      int idx_cand,
+                      int nSurfCnt,
+                      std::vector<int>& seg_map,
+                      std::vector<int>& seg_list);
 
-/* Main segmentation function
+/**
+ * @brief Merging two segments
  *
- * Input:
- * vnDGrad - depth-gradient map
- * input_idx - indices of the pixel which should be processed
- * tau_s - threshold for size differences
- * nSegmGradDist - threshold for segmentation (if depth-gradient between two pixel is greater than threshold, they get segmented)
- * nDepthGradNone -  constant for invalid depth-gradient
- * width - width of depth-gradient map
- * nMapSize - size of depth-gradient map
- * x_min, x_max, y_min, y_max - coordinates of the area of the map which should be processed
+ * Segments are not merged in the sense of reduced to a single entry
+ * but rather info of the merged segment is duplicated.
  *
- * Output:
- * vnLblMap - segment map before post-processing
- * vnLblMapFinal - segment map
- * nSurfCnt - number of segments
+ * @param ref reference segment
+ * @param cand candidate segment
+ * @param clear flag for merging (true, then merging)
+ * @param n number segments
+ * @param vnLB label buffer, contains segments labels (modified in-place)
+ * @param vnSB size buffer, contains segments sizes (modified in-place)
+ * @param vbCB clearing buffer, contains merging flags (indicate if a segment was merged) (modified in-place)
  */
-void Segmentation (std::vector<float> vnDGrad, std::vector<int> input_idx, int tau_s, float nSegmGradDist, float nDepthGradNone,
-                        int width, int nMapSize, int x_min, int x_max, int y_min, int y_max, std::vector<int> &vnLblMap, std::vector<int> &vnLblMapFinal, int &nSurfCnt);
+void Segm_MergeSegments(int ref,
+                        int cand,
+                        bool clear,
+                        int n,
+                        std::vector<int> &vnLB,
+                        std::vector<int> &vnSB,
+                        std::vector<bool> &vbCB);
 
-/* Pre-processing of the tracking, extracting object properties in current scene
+/**
+ * @brief Main segmentation function
+ * @param[in] vnDGrad depth-gradient map
+ * @param[in] input_idx indices of the pixel which should be processed
+ * @param[in] tau_s threshold for size differences
+ * @param[in] nSegmGradDist threshold for segmentation (if depth-gradient between two pixel is greater than threshold, they get segmented)
+ * @param[in] nDepthGradNone constant for invalid depth-gradient
+ * @param[in] width width of depth-gradient map
+ * @param[in] nMapSize size of depth-gradient map
+ * @param[in] x_min coordinates of the area of the map which should be processed
+ * @param[in] x_max
+ * @param[in] y_min
+ * @param[in] y_max
+ * @param[out] vnLblMap segment map before post-processing
+ * @param[out] vnLblMapFinal segment map
+ * @param[out] nSurfCnt number of segments
+ */
+void Segmentation(const std::vector<float> &vnDGrad,
+                  const std::vector<int> &input_idx,
+                  int tau_s,
+                  float nSegmGradDist,
+                  float nDepthGradNone,
+                  int width,
+                  int nMapSize,
+                  int x_min,
+                  int x_max,
+                  int y_min,
+                  int y_max,
+                  std::vector<int> &vnLblMap,
+                  std::vector<int> &vnLblMapFinal,
+                  int &nSurfCnt);
+
+/**
+ * @brief Pre-processing of the tracking, extracting object properties in current scene
  *
- * Input:
- * nSegmCutSize - minimum pixel count for objects to be processed
- * nDsWidth, nDsHeight - width and height of downsampled segment map
- * vnX, vnY, vnZ - coordinate values for point cloud
- * cvm_rgb_ds - downsampled image
- * stTrack - parameters of tracking process
+ * @param[in] nSegmCutSize minimum pixel count for objects to be processed
+ * @param[in] nDsWidth width downsampled segment map
+ * @param[in] nDsHeight height of downsampled segment map
+ * @param[in] vnX coordinate values for point cloud
+ * @param[in] vnY
+ * @param[in] vnZ
+ * @param[in] cvm_rgb_ds downsampled image
+ * @param[in] stTrack parameters of tracking process
+ * @param[out] stSurf properties for object surfaces for tracking
+ * @param[out] nSurfCnt number of segments for tracking (reduced from the number of segmentes after the segmentation)
+ */
+void Tracking_Pre(int nSegmCutSize,
+                  int nDsWidth,
+                  int nDsHeight,
+                  const std::vector<float> &vnX,
+                  const std::vector<float> &vnY,
+                  const std::vector<float> &vnZ,
+                  const cv:: Mat &cvm_rgb_ds,
+                  const TrackProp &stTrack,
+                  SurfProp &stSurf,
+                  int &nSurfCnt);
+
+
+/* */
+/**
+ * @brief Recursive Sub-function of the pre-processing of the optimization of the tracking
  *
- * Output:
- * stSurf - properties for object surfaces for tracking (siehe struct SurfProp)
- * nSegmCnt - number of segments for tracking (reduced from the number of segmentes after the segmentation)
- */
-void Tracking_Pre (int nSegmCutSize, int nDsWidth, int nDsHeight, std::vector<float> vnX, std::vector<float> vnY, std::vector<float> vnZ, cv:: Mat cvm_rgb_ds, TrackProp stTrack,
-                  SurfProp &stSurf, int &nSurfCnt);
+ * Elimination of the unique elements in Munkres-matrix
 
-
-/* Sub-function of the pre-processing of the optimization of the tracking: elemination of the unique elements in Munkres-matrix
+ * @param seg
+ * @param j_min
+ * @param nMemsCnt
+ * @param nObjsNrLimit
+ * @param nTrackDist
+ * @param huge
+ * @param vnSurfCandCnt
+ * @param vnMemsCandCnt
+ * @param vnMemCandMin
+ * @param vnMatchedSeg
+ * @param mnDistTmp
  */
-void Tracking_OptPreFunc (int seg, int j_min, int nMemsCnt, int nObjsNrLimit, float nTrackDist, float huge, std::vector<int> &vnSurfCandCnt, std::vector<int> &vnMemsCandCnt, std::vector<int> &vnMemCandMin, std::vector<int> &vnMatchedSeg, std::vector<std::vector<float> > &mnDistTmp);
+void Tracking_OptPreFunc(int seg,
+                         int j_min,
+                         int nMemsCnt,
+                         int nObjsNrLimit,
+                         float nTrackDist,
+                         float huge,
+                         std::vector<int> &vnSurfCandCnt,
+                         std::vector<int> &vnMemsCandCnt,
+                         std::vector<int> &vnMemCandMin,
+                         std::vector<int> &vnMatchedSeg,
+                         std::vector<std::vector<float> > &mnDistTmp);
 
-/* Pre-Processing of the optimization of the tracking: elemination of the unique elements in Munkres-matrix
+/**
+ * @brief Pre-Processing of the optimization of the tracking
+ *
+ * Elimination of the unique elements in Munkres-matrix
+
+ * @param[in] nMemsCnt
+ * @param[in] nSurfCnt
+ * @param[in] huge
+ * @param[in] nObjsNrLimit
+ * @param[in] stTrack
+ * @param[out] mnDistTmp modified in-place
+ * @param[out] vnSurfCandCnt
+ * @param[out] vnSegCandMin
+ * @param[out] vnMemsCandCnt
+ * @param[out] vnMemCandMin
+ * @param[out] vnMatchedSeg
  */
-void Tracking_OptPre (int nMemsCnt, int nSurfCnt, int huge, int nObjsNrLimit,
+void Tracking_OptPre (int nMemsCnt,
+                      int nSurfCnt,
+                      int huge,
+                      int nObjsNrLimit,
                       const TrackProp &stTrack,
-                      std::vector<std::vector<float> > &mnDistTmp, std::vector<int> &vnSurfCandCnt, std::vector<int> &vnSegCandMin, std::vector<int> &vnMemsCandCnt, std::vector<int> &vnMemCandMin, std::vector<int> &vnMatchedSeg);
+                      std::vector<std::vector<float> > &mnDistTmp,
+                      std::vector<int> &vnSurfCandCnt,
+                      std::vector<int> &vnSegCandMin,
+                      std::vector<int> &vnMemsCandCnt,
+                      std::vector<int> &vnMemCandMin,
+                      std::vector<int> &vnMatchedSeg);
 
-/* Postprocessing of the tracking
-  */
-void Tracking_Post1(int nAttSizeMin, int nMemsCnt, int cnt_new, std::vector<int> objs_new_no, std::vector<bool> objs_old_flag,
-                   std::vector<int> vnMemsPtsCnt, std::vector<std::vector<int> > mnMemsRCenter, std::vector<int> vnSurfPtsCnt, std::vector<std::vector<int> > mnSurfRCenter,
-                   std::vector<std::vector<float> > &mnNewSize, std::vector<std::vector<float> > &mnNewPos, bool flag_mat, int framec);
-
-/* Postprocessing of the tracking
-  */
-void Tracking_Post2(int nMemsCnt, const TrackProp &stTrack, SurfProp stMemsOld, std::vector<int> &vnMemsValidIdx, std::vector<std::vector<float> > &mnMemsRelPose, SurfProp &stMems, int framec, bool flag_mat);
-
-/* Main tracking function - matching objects surfaces in current frame to object surfaces in Short-Term memory
- *
- * Input:
- * nSurfCnt - number of object surfaces in current scene
- * nObjsNrLimit - maximum number of object surfaces which can be handled by the system
- * dp_dia - position displacement
- * stTrack -  tracking parameters
- * bin - number of bins for color histogram
- * stSurf - object properties for tracking (siehe struct SurfProp)
- *
- * Output:
- * stMems - properties of object surfaces in the Short-Term Memory (SurfProp is self-defined struct)
- * nMemsCnt - number of object surfaces in Short-Term Memory
+/**
+ * @brief Postprocessing of the tracking (Part 1)
+ * @param[in] nAttSizeMin
+ * @param[in] nMemsCnt
+ * @param[in] cnt_new
+ * @param[in] objs_new_no
+ * @param[in] objs_old_flag
+ * @param[in] vnMemsPtsCnt
+ * @param[in] mnMemsRCenter
+ * @param[in] vnSurfPtsCnt
+ * @param[in] mnSurfRCenter
+ * @param[out] mnNewSize
+ * @param[out] mnNewPos
+ * @param[in] flag_mat flag for debugging
+ * @param[in] framec frame count
  */
-void Tracking (int nSurfCnt, int nObjsNrLimit, TrackProp stTrack, int bin, SurfProp stSurf, SurfProp &stMems, int &nMemsCnt,
-              std::vector<int> &vnMemsValidIdx, std::vector<std::vector<float> > &mnMemsRelPose, bool flag_mat, int framec);
+void Tracking_Post1(int nAttSizeMin,
+                    int nMemsCnt,
+                    int cnt_new,
+                    const std::vector<int> &objs_new_no,
+                    const std::vector<bool> &objs_old_flag,
+                    const std::vector<int> &vnMemsPtsCnt,
+                    const std::vector<std::vector<int> > &mnMemsRCenter,
+                    const std::vector<int> &vnSurfPtsCnt,
+                    const std::vector<std::vector<int> > &mnSurfRCenter,
+                    std::vector<std::vector<float> > &mnNewSize,
+                    std::vector<std::vector<float> > &mnNewPos,
+                    bool flag_mat,
+                    int framec);
+
+/**
+ * @brief Postprocessing of the tracking (Part 2)
+ * @param[in] nMemsCnt
+ * @param[in] stTrack tracking params
+ * @param[in] stMemsOld
+ * @param[out] vnMemsValidIdx
+ * @param[out] mnMemsRelPose
+ * @param[out] stMems
+ * @param[in] framec frame count
+ * @param[in] flag_mat flag for debugging
+ */
+void Tracking_Post2(int nMemsCnt,
+                    const TrackProp &stTrack,
+                    const SurfProp &stMemsOld,
+                    std::vector<int> &vnMemsValidIdx,
+                    std::vector<std::vector<float> > &mnMemsRelPose,
+                    SurfProp &stMems,
+                    int framec,
+                    bool flag_mat);
+
+/**
+ * @brief TrackingMain tracking function
+ *
+ * Matching objects surfaces in current frame to object surfaces in Short-Term memory
+
+ * @param[in] nSurfCnt number of object surfaces in current scene
+ * @param[in] nObjsNrLimit maximum number of object surfaces which can be handled by the system
+ * @param[in] stTrack tracking parameters
+ * @param[in] bin number of bins for color histogram
+ * @param[in] stSurf object properties for tracking
+ * @param[out] stMems properties of object surfaces in the Short-Term Memory
+ * @param[out] nMemsCnt number of object surfaces in Short-Term Memory
+ * @param[out] vnMemsValidIdx
+ * @param[out] mnMemsRelPose
+ * @param[in] flag_mat flag for debugging
+ * @param[in] framec frame count
+ */
+void Tracking(int nSurfCnt,
+              int nObjsNrLimit,
+              const TrackProp &stTrack,
+              int bin,
+              const SurfProp &stSurf,
+              SurfProp &stMems,
+              int &nMemsCnt,
+              std::vector<int> &vnMemsValidIdx,
+              std::vector<std::vector<float> > &mnMemsRelPose,
+              bool flag_mat,
+              int framec);
 
 
 #endif // _NI_LEGACY_FUNC_SEGMENTATION_H_
