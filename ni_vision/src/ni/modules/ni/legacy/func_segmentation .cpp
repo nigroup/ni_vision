@@ -14,9 +14,19 @@
 using std::min;
 using std::max;
 
-int FuncFindPos (std::vector<int> idx_vector, int value) {
-    for (int i = 0; i < idx_vector.size(); i++) {
-        if (idx_vector[i] == value) {return i; break;}
+/**
+ * @brief linear search for value in vector
+ * @param idx_vector list of values
+ * @param value value searching for
+ * @return position (if pos==size then value not found)
+ */
+int FuncFindPos(const std::vector<int> &idx_vector, int value) {
+
+    for (size_t i=0; i < idx_vector.size(); i++) {
+
+        if (idx_vector[i] == value) {
+            return i;
+        }
     }
 }
 
