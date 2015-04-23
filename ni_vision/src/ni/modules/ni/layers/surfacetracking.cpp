@@ -6,6 +6,7 @@
 #include "elm/core/cv/mat_vector_utils.h"
 #include "elm/core/cv/mat_vector_utils_inl.h"
 #include "elm/core/exception.h"
+#include "elm/core/featuredata.h"
 #include "elm/core/inputname.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/layerinputnames.h"

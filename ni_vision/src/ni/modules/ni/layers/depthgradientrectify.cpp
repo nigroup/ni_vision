@@ -2,6 +2,7 @@
 
 #include <boost/assign/list_of.hpp>
 
+#include "elm/core/cv/mat_utils.h"
 #include "elm/core/inputname.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"

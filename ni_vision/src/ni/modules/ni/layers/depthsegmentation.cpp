@@ -70,7 +70,7 @@ void DepthSegmentation::Reconfigure(const LayerConfig &config)
 
 void DepthSegmentation::Activate(const Signal &signal)
 {
-    Mat1f g = signal.MostRecent(name_input_); // weighted gradient after thresholding
+    Mat1f g = signal.MostRecentMat1f(name_input_); // weighted gradient after thresholding
 
     m_ = group(g);
 }

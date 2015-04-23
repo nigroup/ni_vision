@@ -1,6 +1,10 @@
 #include "ni/layers/depthmap.h"
 
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+
 #include "elm/core/exception.h"
+#include "elm/core/featuredata.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"
 #include "elm/ts/layerattr_.h"\

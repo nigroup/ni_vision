@@ -1,5 +1,6 @@
 #include "ni/layers/depthgradientsmoothing.h"
 
+#include "elm/core/cv/mat_utils.h"
 #include "elm/core/cv/mat_vector_utils_inl.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"
