@@ -6,7 +6,6 @@
 #include "elm/core/cv/lut.h"
 #include "elm/core/cv/mat_utils.h"
 #include "elm/core/exception.h"
-#include "elm/core/graph/graphmap.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"
 #include "elm/ts/layerattr_.h"
