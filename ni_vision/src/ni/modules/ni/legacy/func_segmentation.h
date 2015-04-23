@@ -44,39 +44,23 @@ void Segm_FlatDepthGrad(const cv::Mat &cvm_input,
                         std::vector<float> &output_blur,
                         std::vector<float> &output_ct);
 
-/*
- *
- * Input:
- * vInput -
- * index - indices of pixels of depth-gradient map which should be processed
- * size - size of input image
- * max, min - range of depth-gradient
- * none - constant for invalid depth and depth-gradient
- * fmode - filter mode
- * fsize - size of filter
- * smode, scenter, sband1, sband2, clfac - mode center, range and factor for flattening
- *
- * Output:
- * output_blur - depth-gradient map after blurring
- * output_ct - depth-gradient map after flattening
- */
 /**
  * @brief Smoothing depth-gradient map
  * @param[in] vInput depth-gradient map
- * @param[in] index
- * @param[in] size
- * @param[in] max
- * @param[in] min
- * @param[in] none
- * @param[in] fmode
- * @param[in] fsize
+ * @param[in] index indices of pixels of depth-gradient map which should be processed
+ * @param[in] size size of input image
+ * @param[in] max range of depth-gradient
+ * @param[in] min range of depth-gradient
+ * @param[in] none constant for invalid depth and depth-gradient
+ * @param[in] fmode filter mode
+ * @param[in] fsize size of filter
  * @param[in] smode
- * @param[in] scenter
- * @param[in] sband1
- * @param[in] sband2
- * @param[in] clfac
- * @param[out] output_blur
- * @param[out] output_ct
+ * @param[in] scenter center for flattening
+ * @param[in] sband1 range for flattening
+ * @param[in] sband2 range for flattening
+ * @param[in] clfac factor for flattening
+ * @param[out] output_blur depth-gradient map after blurring
+ * @param[out] output_ct depth-gradient map after flattening
  */
 void Segm_SmoothDepthGrad(const std::vector<float> &vInput,
                           const std::vector<int> &index,
