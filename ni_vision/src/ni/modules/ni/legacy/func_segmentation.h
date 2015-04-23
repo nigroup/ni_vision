@@ -1,7 +1,5 @@
-/*
- * Functions for Segmentation and tracking
+/** @file Functions for Segmentation and tracking
  */
-
 #ifndef _NI_LEGACY_FUNC_SEGMENTATION_H_
 #define _NI_LEGACY_FUNC_SEGMENTATION_H_
 
