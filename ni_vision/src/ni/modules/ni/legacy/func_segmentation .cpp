@@ -19,9 +19,11 @@ int FuncFindPos(const std::vector<int> &idx_vector, int value) {
     for (size_t i=0; i < idx_vector.size(); i++) {
 
         if (idx_vector[i] == value) {
-            return i;
+            return static_cast<int>(i);
         }
     }
+
+    return -1;
 }
 
 void Segm_FlatDepthGrad(const cv::Mat &cvm_input,

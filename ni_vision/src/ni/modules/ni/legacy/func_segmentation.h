@@ -16,7 +16,7 @@
  * @brief linear search for value in vector
  * @param idx_vector list of values
  * @param value value searching for
- * @return position (if pos==size then value not found)
+ * @return position (negative for not found)
  */
 int FuncFindPos(const std::vector<int> &idx_vector, int value);
 
