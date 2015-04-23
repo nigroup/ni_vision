@@ -12,24 +12,37 @@
 #include "ni/legacy/surfprop.h"
 #include "ni/legacy/trackprop.h"
 
-int FuncFindPos (std::vector<int> idx_vector, int value);
-
-
-
-/* Flattening depth-gradient map
- *
- * Input:
- * cvm_input - depth-gradient map
- * index - indices of pixels of depth-gradient map which should be processed
- * max, min - range of grayscale depth-gradient
- * mode - flattening mode
- * scenter, sband1, sband2, factor - center, range and factor of bandwidth for flattening
- *
- * Output:
- * output_blur - depth-gradient map after blurring
- * output_ct - depth-gradient map after flattening
+/**
+ * @brief linear search for value in vector
+ * @param idx_vector list of values
+ * @param value value searching for
+ * @return position (if pos==size then value not found)
  */
-void Segm_FlatDepthGrad (cv::Mat cvm_input, std::vector<int> index, float max, float min, int mode, int scenter, int sband1, int sband2, float factor, std::vector<float> &output_blur, std::vector<float> &output_ct);
+int FuncFindPos(const std::vector<int> &idx_vector, int value);
+
+/**
+ * @brief Flattening depth-gradient map
+ * @param[in] cvm_input depth-gradient map
+ * @param[in] index indices of pixels of depth-gradient map which should be processed
+ * @param[in] max upper bound for range of grayscale depth-gradient
+ * @param[in] min lower bound for range of grayscale depth-gradient
+ * @param[in] mode flattening mode
+ * @param[in] scenter center bandwidth for flattening
+ * @param[in] sband1 range (lower band) of bandwidth for flattening
+ * @param[in] sband2 range (upper band) of bandwidth for flattening
+ * @param[in] factor center, range and factor of bandwidth for flattening
+ * @param[out] output_blur depth-gradient map after blurring
+ * @param[out] output_ct depth-gradient map after flattening
+ */
+void Segm_FlatDepthGrad(const cv::Mat &cvm_input,
+                        const std::vector<int> &index,
+                        float max, float min,
+                        int mode,
+                        int scenter,
+                        int sband1, int sband2,
+                        float factor,
+                        std::vector<float> &output_blur,
+                        std::vector<float> &output_ct);
 
 /* Smoothing depth-gradient map
  *
