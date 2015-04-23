@@ -1372,10 +1372,11 @@ public:
     }
 
     void imageCb(const sensor_msgs::ImageConstPtr& msg) {
+
         cv_bridge::CvImagePtr cv_ptr;
         try {
 
-            if (bFlagWait && cloud_){
+            if (bFlagWait && cloud_) {
                 bFlagWait = false;
                 printf("O.K.\n\n\n");
                 //cvm_image_camera.create(cv::Size(width, height), CV_8UC3);
@@ -1390,12 +1391,13 @@ public:
 
             m.unlock ();
         }
-        catch (cv_bridge::Exception& e) {ROS_ERROR("cv_bridge exception: %s", e.what()); return;}
+        catch (cv_bridge::Exception& e) {
 
+            ROS_ERROR("cv_bridge exception: %s", e.what());
+            return;
+        }
     }
 };
-
-
 
 int main(int argc, char** argv)
 {
