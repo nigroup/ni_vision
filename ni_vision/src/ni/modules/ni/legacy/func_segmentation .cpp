@@ -14,29 +14,28 @@
 using std::min;
 using std::max;
 
-int FuncFindPos (std::vector<int> idx_vector, int value) {
-    for (int i = 0; i < idx_vector.size(); i++) {
-        if (idx_vector[i] == value) {return i; break;}
+int FuncFindPos(const std::vector<int> &idx_vector, int value) {
+
+    for (size_t i=0; i < idx_vector.size(); i++) {
+
+        if (idx_vector[i] == value) {
+            return static_cast<int>(i);
+        }
     }
+
+    return -1;
 }
 
+void Segm_FlatDepthGrad(const cv::Mat &cvm_input,
+                        const std::vector<int> &index,
+                        float max, float min,
+                        int mode,
+                        int scenter,
+                        int sband1, int sband2,
+                        float factor,
+                        std::vector<float> &output_blur,
+                        std::vector<float> &output_ct) {
 
-
-/* Flattening depth-gradient map
- *
- * Input:
- * cvm_input - depth-gradient map
- * index - indices of pixels of depth-gradient map which should be processed
- * max, min - range of grayscale depth-gradient
- * mode - flattening mode
- * scenter, sband1, sband2, factor - center, range and factor of bandwidth for flattening
- *
- * Output:
- * output_blur - depth-gradient map after blurring
- * output_ct - depth-gradient map after flattening
- */
-void Segm_FlatDepthGrad (cv::Mat cvm_input, std::vector<int> index, float max, float min, int mode, int scenter, int sband1, int sband2, float factor, std::vector<float> &output_blur, std::vector<float> &output_ct)
-{
     float scale =  (max-min), x;
     uint8_t gr;
     for(size_t i = 0; i < index.size(); i++) {
@@ -76,27 +75,20 @@ void Segm_FlatDepthGrad (cv::Mat cvm_input, std::vector<int> index, float max, f
     }
 }
 
+void Segm_SmoothDepthGrad(const std::vector<float> &vInput,
+                          const std::vector<int> &index,
+                          const cv::Size &size,
+                          float max, float min,
+                          float none,
+                          int fmode,
+                          int fsize,
+                          int smode,
+                          int scenter,
+                          int sband1, int sband2,
+                          float clfac,
+                          std::vector<float> &output_blur,
+                          std::vector<float> &output_ct) {
 
-
-
-/* Smoothing depth-gradient map
- *
- * Input:
- * vInput -
- * index - indices of pixels of depth-gradient map which should be processed
- * size - size of input image
- * max, min - range of depth-gradient
- * none - constant for invalid depth and depth-gradient
- * fmode - filter mode
- * fsize - size of filter
- * smode, scenter, sband1, sband2, clfac - mode center, range and factor for flattening
- *
- * Output:
- * output_blur - depth-gradient map after blurring
- * output_ct - depth-gradient map after flattening
- */
-void Segm_SmoothDepthGrad (std::vector<float> vInput, std::vector<int> index, cv::Size size, float max, float min, float none, int fmode, int fsize, int smode, int scenter, int sband1, int sband2, float clfac, std::vector<float> &output_blur, std::vector<float> &output_ct)
-{
     cv::Mat input_gray(size, CV_8UC1, cv::Scalar(0));
     cv::Mat input_gray_blur(size, CV_8UC1, cv::Scalar(0));
 
@@ -113,25 +105,16 @@ void Segm_SmoothDepthGrad (std::vector<float> vInput, std::vector<int> index, cv
     //input_gray.copyTo(input_gray_blur);
     //input_gray_blur.copyTo(input_gray);
     //Segm_FlatDepthGrad_old (input_gray_blur, index, size.width, size.height, max, min, smode, scenter, sband1, clfac, output_blur, output_ct);
-    Segm_FlatDepthGrad (input_gray_blur, index, max, min, smode, scenter, sband1, sband2, clfac, output_blur, output_ct);
+    Segm_FlatDepthGrad(input_gray_blur, index, max, min, smode, scenter, sband1, sband2, clfac, output_blur, output_ct);
     input_gray.release(); input_gray_blur.release();
 }
 
+void Segm_NeighborMatrix(const std::vector<int> &vInputMap,
+                         const std::vector<int> &input_idx,
+                         int range,
+                         int width,
+                         std::vector<std::vector<bool> >& mnOut) {
 
-
-
-/* Creating matrix about information of adjacent segments
- *
- * Input:
- * vInputMap - input map
- * input idx - indices of input map which should be processed
- * range - distance of adjacent segments
- * width - width of input map
- *
- * Output:
- * mnOut - neighborhood matrix
- */
-void Segm_NeighborMatrix (std::vector<int> vInputMap, std::vector<int> input_idx, int range, int width, std::vector<std::vector<bool> >& mnOut) {
     for (size_t i = 0; i < input_idx.size() ; i++) {
         int x, y;
         int Ref, Cand;
@@ -156,21 +139,12 @@ void Segm_NeighborMatrix (std::vector<int> vInputMap, std::vector<int> input_idx
     }
 }
 
+void Segm_NeighborMatrix1(const std::vector<int> &vInputMap,
+                          const std::vector<int> &input_idx,
+                          int range,
+                          int width,
+                          std::vector<std::vector<bool> >& mnOut) {
 
-
-
-/* Creating matrix about information of adjacent segments (for saliency program)
-*
-* Input:
-* vInputMap - input map
-* input idx - indices of input map which should be processed
-* range - distance of adjacent segments
-* width - width of input map
-*
-* Output:
-* mnOut - neighborhood matrix
-*/
-void Segm_NeighborMatrix1 (std::vector<int> vInputMap, std::vector<int> input_idx, int range, int width, std::vector<std::vector<bool> >& mnOut) {
     for (size_t i = 0; i < input_idx.size() ; i++) {
         int x, y;
         int Ref, Cand;
@@ -195,18 +169,11 @@ void Segm_NeighborMatrix1 (std::vector<int> vInputMap, std::vector<int> input_id
     }
 }
 
-         
-/* Checking if two points are in the same segment
- *
- * Input:
- * idx_ref - reference point
- * idx_cand - candidate point
- * nSurfCnt - number of segments
- *
- * Output:
- * seg_map - segment map (which maps every point to the segment number it lies in)
- * seg_list - segment buffer */
-void Segm_MatchPoints (int idx_ref, int idx_cand, int nSurfCnt, std::vector<int>& seg_map, std::vector<int>& seg_list) {
+void Segm_MatchPoints(int idx_ref,
+                      int idx_cand,
+                      int nSurfCnt,
+                      std::vector<int>& seg_map,
+                      std::vector<int>& seg_list) {
     
     /* if not zero (not assigned?)
      * then:
@@ -240,25 +207,14 @@ void Segm_MatchPoints (int idx_ref, int idx_cand, int nSurfCnt, std::vector<int>
     else seg_map[idx_ref] = seg_map[idx_cand];
 }
 
+void Segm_MergeSegments(int ref,
+                        int cand,
+                        bool clear,
+                        int n,
+                        std::vector<int> &vnLB,
+                        std::vector<int> &vnSB,
+                        std::vector<bool> &vbCB) {
 
-
-
-/* Merging two segments
- * 
- * 		Segments are not merged in the sense of reduced to a single entry
- * 		but rather info of the merged segment is duplicated.
- * Input:
- * ref - reference segment
- * cand - candidate segment
- * clear - flag for merging (true, then merging)
- * n - number segments
- *
- * Output:
- * vnLB - label buffer, contains segments labels
- * vnSB - size buffer, contains segments sizes
- * vbCB - clearing buffer, contains merging flags (indicate if a segment was merged)
- */
-void Segm_MergeSegments(int ref, int cand, bool clear, int n, std::vector<int> &vnLB, std::vector<int> &vnSB, std::vector<bool> &vbCB) {
     if (vnLB[ref] < vnLB[cand]) {
         vnSB[ref] = vnSB[ref] + vnSB[cand];
         for (int i = 1; i < n; i++) {
@@ -282,28 +238,20 @@ void Segm_MergeSegments(int ref, int cand, bool clear, int n, std::vector<int> &
     }
 }
 
-
-
-
-/* Main segmentation function
- *
- * Input:
- * vnDGrad - depth-gradient map
- * input_idx - indices of the pixel which should be processed
- * tau_s - threshold for size differences
- * nSegmGradDist - threshold for segmentation (if depth-gradient between two pixel is greater than threshold, they get segmented)
- * nDepthGradNone -  constant for invalid depth-gradient
- * width - width of depth-gradient map
- * nMapSize - size of depth-gradient map
- * x_min, x_max, y_min, y_max - coordinates of the area of the map which should be processed
- *
- * Output:
- * vnLblMap - segment map before post-processing
- * vnLblMapFinal - segment map
- * nSurfCnt - number of segments
- */
-void Segmentation (std::vector<float> vnDGrad, std::vector<int> input_idx, int tau_s, float nSegmGradDist, float nDepthGradNone,
-                        int width, int nMapSize, int x_min, int x_max, int y_min, int y_max, std::vector<int> &vnLblMap, std::vector<int> &vnLblMapFinal, int &nSurfCnt) {
+void Segmentation(const std::vector<float> &vnDGrad,
+                  const std::vector<int> &input_idx,
+                  int tau_s,
+                  float nSegmGradDist,
+                  float nDepthGradNone,
+                  int width,
+                  int nMapSize,
+                  int x_min,
+                  int x_max,
+                  int y_min,
+                  int y_max,
+                  std::vector<int> &vnLblMap,
+                  std::vector<int> &vnLblMapFinal,
+                  int &nSurfCnt) {
 
     int seg_cnt = 1;
     int seg_cnt_final = 1;
@@ -518,48 +466,81 @@ void Segmentation (std::vector<float> vnDGrad, std::vector<int> input_idx, int t
     if (!seg_cnt_final) printf("----------------------Error\n");
 }
 
+void Tracking_Pre(int nSegmCutSize,
+                  int nDsWidth,
+                  int nDsHeight,
+                  const std::vector<float> &vnX,
+                  const std::vector<float> &vnY,
+                  const std::vector<float> &vnZ,
+                  const cv:: Mat &cvm_rgb_ds,
+                  const TrackProp &stTrack,
+                  SurfProp &stSurf,
+                  int &nSurfCnt) {
 
-
-
-/* Pre-processing of the tracking, extracting object properties in current scene
- *
- * Input:
- * nSegmCutSize - minimum pixel count for objects to be processed
- * nDsWidth, nDsHeight - width and height of downsampled segment map
- * vnX, vnY, vnZ - coordinate values for point cloud
- * cvm_rgb_ds - downsampled image
- * stTrack - parameters of tracking process
- *
- * Output:
- * stSurf - properties for object surfaces for tracking (siehe struct SurfProp)
- * nSegmCnt - number of segments for tracking (reduced from the number of segmentes after the segmentation)
- */
-void Tracking_Pre (int nSegmCutSize, int nDsWidth, int nDsHeight, std::vector<float> vnX, std::vector<float> vnY, std::vector<float> vnZ, cv:: Mat cvm_rgb_ds, TrackProp stTrack,
-                  SurfProp &stSurf, int &nSurfCnt) {
     int final_cnt_new = 0;
     for (int i = 1; i < nSurfCnt; i++) {
-        if (stSurf.vnPtsCnt[i] < nSegmCutSize) continue;
+
+        if (stSurf.vnPtsCnt[i] < nSegmCutSize) {
+            continue;
+        }
+
         int rx_acc = 0, ry_acc = 0;
         int rx_min = nDsWidth, rx_max = 0, ry_min = nDsHeight, ry_max = 0;
         float cx_acc = 0, cy_acc = 0, cz_acc = 0;
         float cx_min = 99, cx_max = -99, cy_min = 99, cy_max = -99, cz_min = 99, cz_max = -99;
         for (int j = 0; j < stSurf.vnPtsCnt[i]; j++) {
+
             int rx_tmp, ry_tmp;
             GetPixelPos(stSurf.mnPtsIdx[i][j], nDsWidth, rx_tmp, ry_tmp);
-            rx_acc += rx_tmp; ry_acc += ry_tmp;
-            if (rx_tmp < rx_min) rx_min = rx_tmp;
-            if (rx_tmp > rx_max) rx_max = rx_tmp;
-            if (ry_tmp < ry_min) ry_min = ry_tmp;
-            if (ry_tmp > ry_max) ry_max = ry_tmp;
+
+            rx_acc += rx_tmp;
+            ry_acc += ry_tmp;
+
+            if (rx_tmp < rx_min) {
+
+                rx_min = rx_tmp;
+            }
+            if (rx_tmp > rx_max) {
+
+                rx_max = rx_tmp;
+            }
+            if (ry_tmp < ry_min) {
+
+                ry_min = ry_tmp;
+            }
+            if (ry_tmp > ry_max) {
+
+                ry_max = ry_tmp;
+            }
 
             float cx_tmp = vnX[stSurf.mnPtsIdx[i][j]], cy_tmp = vnY[stSurf.mnPtsIdx[i][j]], cz_tmp = vnZ[stSurf.mnPtsIdx[i][j]];
-            cx_acc += cx_tmp; cy_acc += cy_tmp; cz_acc += cz_tmp;
-            if (cx_tmp < cx_min) cx_min = cx_tmp;
-            if (cx_tmp > cx_max) cx_max = cx_tmp;
-            if (cy_tmp < cy_min) cy_min = cy_tmp;
-            if (cy_tmp > cy_max) cy_max = cy_tmp;
-            if (cz_tmp < cz_min) cz_min = cz_tmp;
-            if (cz_tmp > cz_max) cz_max = cz_tmp;
+            cx_acc += cx_tmp;
+            cy_acc += cy_tmp;
+            cz_acc += cz_tmp;
+
+            if (cx_tmp < cx_min) {
+                cx_min = cx_tmp;
+            }
+            if (cx_tmp > cx_max) {
+
+                cx_max = cx_tmp;
+            }
+            if (cy_tmp < cy_min) {
+
+                cy_min = cy_tmp;
+            }
+            if (cy_tmp > cy_max) {
+
+                cy_max = cy_tmp;
+            }
+            if (cz_tmp < cz_min) {
+
+                cz_min = cz_tmp;
+            }
+            if (cz_tmp > cz_max) {
+
+                cz_max = cz_tmp;
+            }
         }
         stSurf.vnPtsCnt[final_cnt_new] = stSurf.vnPtsCnt[i];
         stSurf.mnPtsIdx[final_cnt_new] = stSurf.mnPtsIdx[i];
@@ -583,21 +564,29 @@ void Tracking_Pre (int nSegmCutSize, int nDsWidth, int nDsHeight, std::vector<fl
         stSurf.vnMemCtr[final_cnt_new] = stTrack.CntMem - stTrack.CntStable;
         stSurf.vnStableCtr[final_cnt_new] = 0;
         stSurf.vnLostCtr[final_cnt_new] = stTrack.CntLost + 10;
-        Calc3DColorHistogram(cvm_rgb_ds, stSurf.mnPtsIdx[final_cnt_new], stTrack.HistoBin, stSurf.mnColorHist[final_cnt_new]);
+
+        Calc3DColorHistogram(cvm_rgb_ds,
+                             stSurf.mnPtsIdx[final_cnt_new],
+                             stTrack.HistoBin,
+                             stSurf.mnColorHist[final_cnt_new]);
 
         final_cnt_new++;
     }
     nSurfCnt = final_cnt_new;
 }
 
+void Tracking_OptPreFunc(int seg,
+                         int j_min,
+                         int nMemsCnt,
+                         int nObjsNrLimit,
+                         float nTrackDist,
+                         float huge,
+                         std::vector<int> &vnSurfCandCnt,
+                         std::vector<int> &vnMemsCandCnt,
+                         std::vector<int> &vnMemCandMin,
+                         std::vector<int> &vnMatchedSeg,
+                         std::vector<std::vector<float> > &mnDistTmp) {
 
-
-
-
-
-/* Sub-function of the pre-processing of the optimization of the tracking: elemination of the unique elements in Munkres-matrix
- */
-void Tracking_OptPreFunc (int seg, int j_min, int nMemsCnt, int nObjsNrLimit, float nTrackDist, float huge, std::vector<int> &vnSurfCandCnt, std::vector<int> &vnMemsCandCnt, std::vector<int> &vnMemCandMin, std::vector<int> &vnMatchedSeg, std::vector<std::vector<float> > &mnDistTmp) {
     for (int j = 0; j < nMemsCnt; j++) {
         if (j == j_min) continue;                       //
         if (mnDistTmp[seg][j] > nTrackDist) continue;   //
@@ -617,12 +606,17 @@ void Tracking_OptPreFunc (int seg, int j_min, int nMemsCnt, int nObjsNrLimit, fl
     }
 }
 
-
-/* Pre-Processing of the optimization of the tracking: elemination of the unique elements in Munkres-matrix
- */
-void Tracking_OptPre (int nMemsCnt, int nSurfCnt, int huge, int nObjsNrLimit,
+void Tracking_OptPre (int nMemsCnt,
+                      int nSurfCnt,
+                      int huge,
+                      int nObjsNrLimit,
                       const TrackProp &stTrack,
-                      std::vector<std::vector<float> > &mnDistTmp, std::vector<int> &vnSurfCandCnt, std::vector<int> &vnSegCandMin, std::vector<int> &vnMemsCandCnt, std::vector<int> &vnMemCandMin, std::vector<int> &vnMatchedSeg) {
+                      std::vector<std::vector<float> > &mnDistTmp,
+                      std::vector<int> &vnSurfCandCnt,
+                      std::vector<int> &vnSegCandMin,
+                      std::vector<int> &vnMemsCandCnt,
+                      std::vector<int> &vnMemCandMin,
+                      std::vector<int> &vnMatchedSeg) {
 
     float offset = 0.01;
     for (int i = 0; i < nSurfCnt; i++) {
@@ -663,13 +657,19 @@ void Tracking_OptPre (int nMemsCnt, int nSurfCnt, int huge, int nObjsNrLimit,
     }
 }
 
-
-
-/* Postprocessing of the tracking
-  */
-void Tracking_Post1(int nAttSizeMin, int nMemsCnt, int cnt_new, std::vector<int> objs_new_no, std::vector<bool> objs_old_flag,
-                   std::vector<int> vnMemsPtsCnt, std::vector<std::vector<int> > mnMemsRCenter, std::vector<int> vnSurfPtsCnt, std::vector<std::vector<int> > mnSurfRCenter,
-                   std::vector<std::vector<float> > &mnNewSize, std::vector<std::vector<float> > &mnNewPos, bool flag_mat, int framec) {
+void Tracking_Post1(int nAttSizeMin,
+                    int nMemsCnt,
+                    int cnt_new,
+                    const std::vector<int> &objs_new_no,
+                    const std::vector<bool> &objs_old_flag,
+                    const std::vector<int> &vnMemsPtsCnt,
+                    const std::vector<std::vector<int> > &mnMemsRCenter,
+                    const std::vector<int> &vnSurfPtsCnt,
+                    const std::vector<std::vector<int> > &mnSurfRCenter,
+                    std::vector<std::vector<float> > &mnNewSize,
+                    std::vector<std::vector<float> > &mnNewPos,
+                    bool flag_mat,
+                    int framec) {
 
     int cnt_lose = 0, huge = 10000;
     std::vector<int> aaaa;
@@ -711,10 +711,14 @@ void Tracking_Post1(int nAttSizeMin, int nMemsCnt, int cnt_new, std::vector<int>
     }
 }
 
-
-/* Postprocessing of the tracking
-  */
-void Tracking_Post2(int nMemsCnt, const TrackProp &stTrack, SurfProp stMemsOld, std::vector<int> &vnMemsValidIdx, std::vector<std::vector<float> > &mnMemsRelPose, SurfProp &stMems, int framec, bool flag_mat) {
+void Tracking_Post2(int nMemsCnt,
+                    const TrackProp &stTrack,
+                    const SurfProp &stMemsOld,
+                    std::vector<int> &vnMemsValidIdx,
+                    std::vector<std::vector<float> > &mnMemsRelPose,
+                    SurfProp &stMems,
+                    int framec,
+                    bool flag_mat) {
 
     std::vector<int> past_idx = vnMemsValidIdx;
     std::vector<std::vector<float> > past_pose = mnMemsRelPose;
@@ -762,19 +766,46 @@ void Tracking_Post2(int nMemsCnt, const TrackProp &stTrack, SurfProp stMemsOld, 
         for (int i = 0; i < valid; i++) {
             if (stMems.vnStableCtr[vnMemsValidIdx[i]] < stTrack.CntStable) continue;
             int i_past = -1;
-            for (int ii = 0; ii < past_idx.size(); ii++) {if (past_idx[ii] == vnMemsValidIdx[i]) {i_past = ii; break;}}
+
+            for (int ii = 0; ii < static_cast<int>(past_idx.size()); ii++) {
+
+                if (past_idx[ii] == vnMemsValidIdx[i]) {
+                    i_past = ii;
+                    break;
+                }
+            }
+
             if (i_past < 0) continue;
+
             size_diff[i] = abs(stMems.vnPtsCnt[vnMemsValidIdx[i]] - stMemsOld.vnPtsCnt[vnMemsValidIdx[i]]);
             posi_diff[i] = sqrt(pow(stMems.mnRCenter[vnMemsValidIdx[i]][0] - stMemsOld.mnRCenter[vnMemsValidIdx[i]][0], 2) + pow(stMems.mnRCenter[vnMemsValidIdx[i]][1] - stMemsOld.mnRCenter[vnMemsValidIdx[i]][1], 2));
             if (i == valid-1) continue;
             for (int j = i+1; j < valid; j++) {
-                if (stMems.vnStableCtr[vnMemsValidIdx[j]] < stTrack.CntStable) continue;
-                for (int jj = 0; jj < past_idx.size(); jj++) {
-                    if (past_idx[jj] != vnMemsValidIdx[j]) continue;
+
+                if (stMems.vnStableCtr[vnMemsValidIdx[j]] < stTrack.CntStable) {
+                    continue;
+                }
+
+                for (int jj = 0; jj < static_cast<int>(past_idx.size()); jj++) {
+
+                    if (past_idx[jj] != vnMemsValidIdx[j]) {
+                        continue;
+                    }
+
                     float pose = fabs(mnMemsRelPose[i][j] - past_pose[i_past][jj]);
-                    if (pose < pii/2) continue;
-                    if (pose > pii) pose = 2*pii + 0.01 - pose;
-                    if (pose < pii/2) continue;
+
+                    if (pose < pii/2) {
+                        continue;
+                    }
+
+                    if (pose > pii) {
+                        pose = 2*pii + 0.01 - pose;
+                    }
+
+                    if (pose < pii/2) {
+                        continue;
+                    }
+
                     comp_pose[i][j] = pose; comp_pose[j][i] = pose;
                     flag_ttemp = true;
                     break;
@@ -782,25 +813,41 @@ void Tracking_Post2(int nMemsCnt, const TrackProp &stTrack, SurfProp stMemsOld, 
             }
         }
 
-
         //* 1. Eleminating right elements from the pose-difference matrix*//
         std::vector<std::vector<float> > comp_pose1 = comp_pose;
         for (int i = 0; i < valid; i++) {
-            if (size_diff[i] > stMems.vnPtsCnt[vnMemsValidIdx[i]]*0.12 || posi_diff[i] > 18) continue;
+
+            if (size_diff[i] > stMems.vnPtsCnt[vnMemsValidIdx[i]]*0.12 || posi_diff[i] > 18) {
+                continue;
+            }
+
             for (int j = 0; j < valid; j++) {
-                if (comp_pose[i][j]) {comp_pose[i][j] = 0; comp_pose[j][i] = 0;}
+
+                if (comp_pose[i][j]) {
+
+                    comp_pose[i][j] = 0;
+                    comp_pose[j][i] = 0;
+                }
             }
         }
 
         //* 2. Sunstituting changed elements in the pose-difference matrix*//
         for (int i = 0; i < valid; i++) {
+
             if (posi_diff[i] > 8) {
+
                 float diff_min = 100;
                 int j_tmp = -1;
                 for (int j = 0; j < valid; j++) {
+
                     if (comp_pose[i][j]) {
+
                         float temp_diff = sqrt(pow(stMems.mnRCenter[vnMemsValidIdx[i]][0] - stMemsOld.mnRCenter[vnMemsValidIdx[j]][0], 2) + pow(stMems.mnRCenter[vnMemsValidIdx[i]][1] - stMemsOld.mnRCenter[vnMemsValidIdx[j]][1], 2));
-                        if (temp_diff < 8 && temp_diff < diff_min) {diff_min = temp_diff; j_tmp = j;}
+                        if (temp_diff < 8 && temp_diff < diff_min) {
+
+                            diff_min = temp_diff;
+                            j_tmp = j;
+                        }
                     }
                 }
                 if (j_tmp >= 0) {
@@ -809,49 +856,49 @@ void Tracking_Post2(int nMemsCnt, const TrackProp &stTrack, SurfProp stMemsOld, 
 
 
                     int tPtsCnt = stMems.vnPtsCnt[vnMemsValidIdx[i]];
-                    std::vector<int> tPtsIdx = stMems.mnPtsIdx[vnMemsValidIdx[i]];
-                    std::vector<int> tRect = stMems.mnRect[vnMemsValidIdx[i]];
-                    std::vector<int> tRCenter = stMems.mnRCenter[vnMemsValidIdx[i]];
-                    std::vector<float> tCubic = stMems.mnCubic[vnMemsValidIdx[i]];
+                    std::vector<int> tPtsIdx    = stMems.mnPtsIdx[vnMemsValidIdx[i]];
+                    std::vector<int> tRect      = stMems.mnRect[vnMemsValidIdx[i]];
+                    std::vector<int> tRCenter   = stMems.mnRCenter[vnMemsValidIdx[i]];
+                    std::vector<float> tCubic   = stMems.mnCubic[vnMemsValidIdx[i]];
                     std::vector<float> tCCenter = stMems.mnCCenter[vnMemsValidIdx[i]];
                     std::vector<float> tColorHist = stMems.mnColorHist[vnMemsValidIdx[i]];
-                    float tLength = stMems.vnLength[vnMemsValidIdx[i]];
-                    int tStableCtr = stMems.vnStableCtr[vnMemsValidIdx[i]];
-                    int tLostCtr = stMems.vnLostCtr[vnMemsValidIdx[i]];
-                    int tMemCtr = stMems.vnMemCtr[vnMemsValidIdx[i]];
-                    int tMemsFound = stMems.vnFound[vnMemsValidIdx[i]];
+                    float tLength   = stMems.vnLength[vnMemsValidIdx[i]];
+                    int tStableCtr  = stMems.vnStableCtr[vnMemsValidIdx[i]];
+                    int tLostCtr    = stMems.vnLostCtr[vnMemsValidIdx[i]];
+                    int tMemCtr     = stMems.vnMemCtr[vnMemsValidIdx[i]];
+                    int tMemsFound  = stMems.vnFound[vnMemsValidIdx[i]];
 
-                    stMems.vnPtsCnt[vnMemsValidIdx[i]] = stMems.vnPtsCnt[vnMemsValidIdx[j_tmp]];
-                    stMems.mnPtsIdx[vnMemsValidIdx[i]] = stMems.mnPtsIdx[vnMemsValidIdx[j_tmp]];
-                    stMems.mnRect[vnMemsValidIdx[i]] = stMems.mnRect[vnMemsValidIdx[j_tmp]];
+                    stMems.vnPtsCnt[vnMemsValidIdx[i]]  = stMems.vnPtsCnt[vnMemsValidIdx[j_tmp]];
+                    stMems.mnPtsIdx[vnMemsValidIdx[i]]  = stMems.mnPtsIdx[vnMemsValidIdx[j_tmp]];
+                    stMems.mnRect[vnMemsValidIdx[i]]    = stMems.mnRect[vnMemsValidIdx[j_tmp]];
                     stMems.mnRCenter[vnMemsValidIdx[i]] = stMems.mnRCenter[vnMemsValidIdx[j_tmp]];
-                    stMems.mnCubic[vnMemsValidIdx[i]] = stMems.mnCubic[vnMemsValidIdx[j_tmp]];
+                    stMems.mnCubic[vnMemsValidIdx[i]]   = stMems.mnCubic[vnMemsValidIdx[j_tmp]];
                     stMems.mnCCenter[vnMemsValidIdx[i]] = stMems.mnCCenter[vnMemsValidIdx[j_tmp]];
                     stMems.mnColorHist[vnMemsValidIdx[i]] = stMems.mnColorHist[vnMemsValidIdx[j_tmp]];
-                    stMems.vnLength[vnMemsValidIdx[i]] = stMems.vnLength[vnMemsValidIdx[j_tmp]];
+                    stMems.vnLength[vnMemsValidIdx[i]]  = stMems.vnLength[vnMemsValidIdx[j_tmp]];
                     stMems.vnStableCtr[vnMemsValidIdx[i]] = stMems.vnStableCtr[vnMemsValidIdx[j_tmp]];
                     stMems.vnLostCtr[vnMemsValidIdx[i]] = stMems.vnLostCtr[vnMemsValidIdx[j_tmp]];
-                    stMems.vnMemCtr[vnMemsValidIdx[i]] = stMems.vnMemCtr[vnMemsValidIdx[j_tmp]];
-                    stMems.vnFound[vnMemsValidIdx[i]] = stMems.vnFound[vnMemsValidIdx[j_tmp]];
+                    stMems.vnMemCtr[vnMemsValidIdx[i]]  = stMems.vnMemCtr[vnMemsValidIdx[j_tmp]];
+                    stMems.vnFound[vnMemsValidIdx[i]]   = stMems.vnFound[vnMemsValidIdx[j_tmp]];
 
-                    stMems.vnPtsCnt[vnMemsValidIdx[j_tmp]] = tPtsCnt;
-                    stMems.mnPtsIdx[vnMemsValidIdx[j_tmp]] = tPtsIdx;
-                    stMems.mnRect[vnMemsValidIdx[j_tmp]] = tRect;
+                    stMems.vnPtsCnt[vnMemsValidIdx[j_tmp]]  = tPtsCnt;
+                    stMems.mnPtsIdx[vnMemsValidIdx[j_tmp]]  = tPtsIdx;
+                    stMems.mnRect[vnMemsValidIdx[j_tmp]]    = tRect;
                     stMems.mnRCenter[vnMemsValidIdx[j_tmp]] = tRCenter;
-                    stMems.mnCubic[vnMemsValidIdx[j_tmp]] = tCubic;
+                    stMems.mnCubic[vnMemsValidIdx[j_tmp]]   = tCubic;
                     stMems.mnCCenter[vnMemsValidIdx[j_tmp]] = tCCenter;
                     stMems.mnColorHist[vnMemsValidIdx[j_tmp]] = tColorHist;
-                    stMems.vnLength[vnMemsValidIdx[j_tmp]] = tLength;
+                    stMems.vnLength[vnMemsValidIdx[j_tmp]]  = tLength;
                     stMems.vnStableCtr[vnMemsValidIdx[j_tmp]] = tStableCtr;
                     stMems.vnLostCtr[vnMemsValidIdx[j_tmp]] = tLostCtr;
-                    stMems.vnMemCtr[vnMemsValidIdx[j_tmp]] = tMemCtr;
-                    stMems.vnFound[vnMemsValidIdx[j_tmp]] = tMemsFound;
+                    stMems.vnMemCtr[vnMemsValidIdx[j_tmp]]  = tMemCtr;
+                    stMems.vnFound[vnMemsValidIdx[j_tmp]]   = tMemsFound;
                 }
             }
         }
 
-
         if (flag_mat) {
+
             char sText[128];
             std::ofstream finn1;
             std::string filename = "mmmatrix.txt";
@@ -877,28 +924,17 @@ void Tracking_Post2(int nMemsCnt, const TrackProp &stTrack, SurfProp stMemsOld, 
     }
 }
 
-
-
-
-
-
-/* Main tracking function - matching objects surfaces in current frame to object surfaces in Short-Term memory
- *
- * Input:
- * nSurfCnt - number of object surfaces in current scene
- * nObjsNrLimit - maximum number of object surfaces which can be handled by the system
- * dp_dia - position displacement
- * stTrack -  tracking parameters
- * bin - number of bins for color histogram
- * stSurf - object properties for tracking (siehe struct SurfProp)
- *
- * Output:
- * stMems - properties of object surfaces in the Short-Term Memory (SurfProp is self-defined struct)
- * nMemsCnt - number of object surfaces in Short-Term Memory
- */
-void Tracking (int nSurfCnt, int nObjsNrLimit, TrackProp stTrack, int bin, SurfProp stSurf, SurfProp &stMems, int &nMemsCnt,
-              std::vector<int> &vnMemsValidIdx, std::vector<std::vector<float> > &mnMemsRelPose, bool flag_mat, int framec) {
-
+void Tracking(int nSurfCnt,
+              int nObjsNrLimit,
+              const TrackProp &stTrack,
+              int bin,
+              const SurfProp &stSurf,
+              SurfProp &stMems,
+              int &nMemsCnt,
+              std::vector<int> &vnMemsValidIdx,
+              std::vector<std::vector<float> > &mnMemsRelPose,
+              bool flag_mat,
+              int framec) {
 
     int cnt_new = 0, cnt_old = 0;
     std::vector<int> objs_new_no(nSurfCnt, 0);
