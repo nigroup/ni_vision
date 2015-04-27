@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="ni_depth_segmentation" name="surface_segmentation_and_tracking" type="surface_segmentation_and_tracking_node" output="screen"/>
+</launch>

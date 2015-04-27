@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="ni_depth_segmentation" name="depth_segmentation" type="depth_segmentation_node" output="screen"/>
+</launch>
