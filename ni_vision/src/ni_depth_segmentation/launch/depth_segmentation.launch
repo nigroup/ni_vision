@@ -1,3 +1,18 @@
 <launch>
-  <node pkg="ni_depth_segmentation" name="depth_segmentation" type="depth_segmentation_node" output="screen"/>
+  <!-- declare arg to be passed in -->
+  <arg name="do_remote" default="0" /> 
+  <arg name="machine" default="" /> 
+  
+  <!-- if set to run remotely, load remote machine config -->
+  <group if="$(arg do_remote)">
+    <include file="$(find ni_depth_segmentation)/launch/$(arg machine).machine" />
+  </group>
+  
+  <group if="$(arg do_remote)">
+    <node machine="nivision" pkg="ni_depth_segmentation" name="depth_segmentation" type="depth_segmentation_node" output="screen"/>
+  </group>
+  <group unless="$(arg do_remote)">
+    <node pkg="ni_depth_segmentation" name="depth_segmentation" type="depth_segmentation_node" output="screen"/>
+  </group>
+
 </launch>
