@@ -286,27 +286,31 @@ protected:
 
     void configCallback(ni_depth_segmentation::NodeKVPConfig &config, uint32_t level)
     {
+        ROS_INFO("KVP change:");
         // Set class variables to new values. They should match what is input at the dynamic reconfigure GUI.
         std::string key = config.key;
         double a = config.a;
 
-        ROS_INFO("KVP change: %s:=%f", key.c_str(), a);
+        ROS_INFO("\t%s:=%f", key.c_str(), a);
 
-        if(key == DepthSegmentation::PARAM_MAX_GRAD) {
+        if(layers_.size() > 0) {
 
-            // 4
-            ///<@todo reconfigure layer without indexing
-            // Instantiate Depth segmentation layer
-            // applied on smoothed vertical gradient component
-            LayerConfig cfg;
+            if(key == DepthSegmentation::PARAM_MAX_GRAD) {
 
-            PTree params;
+                // 4
+                ///<@todo reconfigure layer without indexing
+                // Instantiate Depth segmentation layer
+                // applied on smoothed vertical gradient component
+                LayerConfig cfg;
 
-            float new_value = static_cast<float>(a);
-            params.put(DepthSegmentation::PARAM_MAX_GRAD, new_value);
-            cfg.Params(params);
+                PTree params;
 
-            layers_[4]->Reconfigure(cfg);
+                float new_value = static_cast<float>(a);
+                params.put(DepthSegmentation::PARAM_MAX_GRAD, new_value);
+                cfg.Params(params);
+
+                layers_[4]->Reconfigure(cfg);
+            }
         }
     }
 
