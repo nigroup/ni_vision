@@ -186,7 +186,6 @@ target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
 add_dependencies(${NODE_NAME} ${PROJECT_NAME}_gencfg)
 list(APPEND NODE_NAMES ${NODE_NAME})
 
-#status(${ELM_DEPS_LIBS})
 if(ELM_WITH_MATIO)
     set(NODE_NAME nyu_depth_v2_node)
     add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
@@ -207,6 +206,11 @@ add_dependencies(listener_node beginner_tutorials_generate_messages_cpp)
 status("")
 status("Build:")
 status("    nodes: ${NODE_NAMES}")
+
+status("")
+status("Dependencies:")
+status("    ELM: ${ELM_LIBS}")
+status("    ELM Deps: ${ELM_DEPS_LIBS}")
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
