@@ -34,6 +34,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   cv_bridge
+  OpenCV               # for complete link directories
   image_transport
   pcl_conversions
   pcl_ros
@@ -76,6 +77,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
    FILES
    Num.msg
+   NodeKVP.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -97,6 +99,10 @@ generate_messages(
   std_msgs
 )
 
+generate_dynamic_reconfigure_options(
+  cfg/gen_params_NodeKVP.cfg
+)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -110,7 +116,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ni_seg_track
 #  CATKIN_DEPENDS ni roscpp rospy std_msgs
-  CATKIN_DEPENDS message_runtime
+  CATKIN_DEPENDS dynamic_reconfigure message_runtime
 #  DEPENDS system_lib
 )
 
@@ -142,6 +148,8 @@ add_library(ni_depth_segmentation
 
 # Declare a cpp executable for nodes
 
+set(NODE_NAMES "")
+
 # glob node code only
 file(GLOB SRC_LIST src/*node.c*)
 file(GLOB HEADERS  src/*node.h*)
@@ -155,21 +163,37 @@ list_filterout(HEADERS  ${REGEX_EXCLUDE_FROM_MODULE})
 #  ${SRC_LIST}
 #  ${HEADERS}
 #)
+
 set(NODE_NAME depth_map_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
+list(APPEND NODE_NAMES ${NODE_NAME})
 
 set(NODE_NAME depth_segmentation_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
+add_dependencies(${NODE_NAME} ${PROJECT_NAME}_gencfg)
+list(APPEND NODE_NAMES ${NODE_NAME})
 
 set(NODE_NAME surface_tracking_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
+list(APPEND NODE_NAMES ${NODE_NAME})
 
 set(NODE_NAME surface_segmentation_and_tracking_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
+add_dependencies(${NODE_NAME} ${PROJECT_NAME}_gencfg)
+list(APPEND NODE_NAMES ${NODE_NAME})
+
+if(ELM_WITH_MATIO)
+    set(NODE_NAME nyu_depth_v2_node)
+    add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
+    target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS} ${ELM_DEPS_LIBS})
+    list(APPEND NODE_NAMES ${NODE_NAME})
+else(ELM_WITH_MATIO)
+    status("Skipping node: nyu_depth_v2_node")
+endif(ELM_WITH_MATIO)
 
 add_executable(talker_node src/talker_node.cpp)
 target_link_libraries(talker_node ${catkin_LIBRARIES})
@@ -178,6 +202,15 @@ add_dependencies(talker_node beginner_tutorials_generate_messages_cpp)
 add_executable(listener_node src/listener_node.cpp)
 target_link_libraries(listener_node ${catkin_LIBRARIES})
 add_dependencies(listener_node beginner_tutorials_generate_messages_cpp)
+
+status("")
+status("Build:")
+status("    nodes: ${NODE_NAMES}")
+
+status("")
+status("Dependencies:")
+status("    ELM: ${ELM_LIBS}")
+status("    ELM Deps: ${ELM_DEPS_LIBS}")
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes

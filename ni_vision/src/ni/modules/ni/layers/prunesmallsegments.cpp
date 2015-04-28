@@ -59,7 +59,7 @@ cv::Mat1f mask_vertex2(const cv::Mat1i& img, const cv::Mat &mask)
 
 void PruneSmallSegments::Activate(const Signal &signal)
 {
-    Mat1f map = signal.MostRecent(name_input_); // weighted gradient after thresholding
+    Mat1f map = signal.MostRecentMat1f(name_input_); // weighted gradient after thresholding
 
     GraphAttr seg_graph(map.clone(), map > 0);
 

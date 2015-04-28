@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "elm/core/exception.h"
+#include "elm/core/featuredata.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"
 #include "elm/ts/layer_assertions.h"

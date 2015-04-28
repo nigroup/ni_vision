@@ -6,7 +6,6 @@
 #include "elm/core/cv/lut.h"
 #include "elm/core/cv/mat_utils.h"
 #include "elm/core/exception.h"
-#include "elm/core/graph/graphmap.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"
 #include "elm/ts/layerattr_.h"
@@ -71,7 +70,7 @@ void DepthSegmentation::Reconfigure(const LayerConfig &config)
 
 void DepthSegmentation::Activate(const Signal &signal)
 {
-    Mat1f g = signal.MostRecent(name_input_); // weighted gradient after thresholding
+    Mat1f g = signal.MostRecentMat1f(name_input_); // weighted gradient after thresholding
 
     m_ = group(g);
 }

@@ -121,7 +121,7 @@ Mat1f MapAreaFilter::getSizes(const Mat1f &map, const VecI &seg_ids) const
 
 void MapAreaFilter::Activate(const Signal &signal)
 {
-    Mat1f map = signal.MostRecent(name_input_); // weighted gradient after thresholding
+    Mat1f map = signal.MostRecentMat1f(name_input_); // weighted gradient after thresholding
 
     GraphAttr seg_graph(map.clone(), map > DEFAULT_LABEL_UNASSIGNED);
 
