@@ -3,6 +3,7 @@
   <arg name="do_remote" default="0" /> 
   <arg name="machine" default="" />
   
+  <!-- max gradient for segmenting depth gradient -->
   <arg name="max_grad" default="0.003" />
   
   <!-- if set to run remotely, load remote machine config -->
