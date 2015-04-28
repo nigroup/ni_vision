@@ -77,6 +77,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
    FILES
    Num.msg
+   NodeKVP.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -98,6 +99,10 @@ generate_messages(
   std_msgs
 )
 
+generate_dynamic_reconfigure_options(
+  cfg/gen_params_NodeKVP.cfg
+)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -111,7 +116,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ni_seg_track
 #  CATKIN_DEPENDS ni roscpp rospy std_msgs
-  CATKIN_DEPENDS message_runtime
+  CATKIN_DEPENDS dynamic_reconfigure message_runtime
 #  DEPENDS system_lib
 )
 
@@ -167,6 +172,7 @@ list(APPEND NODE_NAMES ${NODE_NAME})
 set(NODE_NAME depth_segmentation_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
+add_dependencies(${NODE_NAME} ${PROJECT_NAME}_gencfg)
 list(APPEND NODE_NAMES ${NODE_NAME})
 
 set(NODE_NAME surface_tracking_node)
