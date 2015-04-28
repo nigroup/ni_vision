@@ -279,7 +279,8 @@ protected:
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);
             double nTimeTotal = double(timespecDiff(&t_total_end, &t_total_start)/1e9);
-            ELM_COUT_VAR(1./nTimeTotal);
+
+            ROS_INFO("running at %f Hz", 1./nTimeTotal);
         }
         mtx_.unlock (); // release mutex
     }
