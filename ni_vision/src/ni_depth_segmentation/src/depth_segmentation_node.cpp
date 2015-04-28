@@ -90,6 +90,8 @@ public:
         img_pub_gray_   = it_.advertise(name_out_map_gray_, 1);
     }
 
+protected:
+
     void initLayers(ros::NodeHandle &nh)
     {
         { // 0
@@ -200,8 +202,6 @@ public:
             layers_.push_back(LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
         }
     }
-
-protected:
 
     /**
      * @brief Point cloud callback
