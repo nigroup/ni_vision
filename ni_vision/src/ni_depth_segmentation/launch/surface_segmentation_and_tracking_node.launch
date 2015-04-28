@@ -1,7 +1,10 @@
 <launch>
   <!-- declare arg to be passed in -->
   <arg name="do_remote" default="0" /> 
-  <arg name="machine" default="" /> 
+  <arg name="machine" default="" />
+  
+  <!-- max gradient for segmenting depth gradient -->
+  <arg name="max_grad" default="0.003" />
   
   <!-- if set to run remotely, load remote machine config -->
   <group if="$(arg do_remote)">
@@ -9,10 +12,14 @@
   </group>
   
   <group if="$(arg do_remote)">
-    <node machine="nivision" pkg="ni_depth_segmentation" name="surface_segmentation_and_tracking" type="surface_segmentation_and_tracking_node" output="screen"/>
+    <node machine="nivision" pkg="ni_depth_segmentation" name="surface_segmentation_and_tracking" type="surface_segmentation_and_tracking_node" output="screen">
+      <param name="max_grad" type="double" value="$(arg max_grad)"/>
+    </node>
   </group>
   <group unless="$(arg do_remote)">
-    <node pkg="ni_depth_segmentation" name="surface_segmentation_and_tracking" type="surface_segmentation_and_tracking_node" output="screen"/>
+    <node pkg="ni_depth_segmentation" name="surface_segmentation_and_tracking" type="surface_segmentation_and_tracking_node" output="screen">
+      <param name="max_grad" type="double" value="$(arg max_grad)"/>
+    </node>
   </group>
 
 </launch>

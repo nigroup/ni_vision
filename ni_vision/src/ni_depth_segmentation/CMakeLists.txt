@@ -183,6 +183,7 @@ list(APPEND NODE_NAMES ${NODE_NAME})
 set(NODE_NAME surface_segmentation_and_tracking_node)
 add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
+add_dependencies(${NODE_NAME} ${PROJECT_NAME}_gencfg)
 list(APPEND NODE_NAMES ${NODE_NAME})
 
 #status(${ELM_DEPS_LIBS})
