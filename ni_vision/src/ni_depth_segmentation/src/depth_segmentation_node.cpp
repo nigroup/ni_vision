@@ -7,6 +7,8 @@
 #include <sensor_msgs/image_encodings.h>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
+#include <dynamic_reconfigure/server.h>
+#include <ni_depth_segmentation/NodeKVPConfig.h>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/contrib/contrib.hpp>          // applyColorMap()
@@ -31,6 +33,7 @@
 #include "ni/layers/mapareafilter.h"
 #include "ni/layers/layerfactoryni.h"
 #include "ni/legacy/timer.h"
+
 
 using namespace cv;
 using namespace elm;
@@ -73,6 +76,24 @@ public:
          */
         cloud_sub_ = nh.subscribe<CloudXYZ>(name_in_, 1, &DepthSegmentationNode::callback, this);
 
+        // Set up a dynamic reconfigure server.
+        // This should be done before reading parameter server values.
+        {
+            dynamic_reconfigure::Server<ni_depth_segmentation::NodeKVPConfig>::CallbackType cb;
+            cb = boost::bind(&DepthSegmentationNode::configCallback, this, _1, _2);
+            dr_srv_.setCallback(cb);
+        }
+
+        initLayers(nh);
+
+        img_pub_bgr_    = it_.advertise(name_out_map_color_, 1);
+        img_pub_gray_   = it_.advertise(name_out_map_gray_, 1);
+    }
+
+protected:
+
+    void initLayers(ros::NodeHandle &nh)
+    {
         { // 0
             // Instantiate DepthMap layer
             LayerConfig cfg;
@@ -146,13 +167,18 @@ public:
             io.Output(DepthGradientRectify::KEY_OUTPUT_RESPONSE, "depth_grad_y_smooth_r");
             layers_.push_back(LayerFactoryNI::CreateShared("DepthGradientRectify", cfg, io));
         }
-        {
+        {   // 4
             // Instantiate Depth segmentation layer
             // applied on smoothed vertical gradient component
+            double tmp;
+            double tmp_default = static_cast<double>(DepthSegmentation::DEFAULT_MAX_GRAD);
+            nh.param<double>(DepthSegmentation::PARAM_MAX_GRAD, tmp, tmp_default);
+            float max_grad = static_cast<float>(tmp);
+
             LayerConfig cfg;
 
             PTree params;
-            params.put(DepthSegmentation::PARAM_MAX_GRAD, 0.003f); // paper = 0.003
+            params.put(DepthSegmentation::PARAM_MAX_GRAD, max_grad); // paper = 0.003
             cfg.Params(params);
 
             LayerIONames io;
@@ -175,12 +201,7 @@ public:
             io.Output(MapAreaFilter::KEY_OUTPUT_RESPONSE, name_out_map_gray_);
             layers_.push_back(LayerFactoryNI::CreateShared("MapAreaFilter", cfg, io));
         }
-
-        img_pub_bgr_    = it_.advertise(name_out_map_color_, 1);
-        img_pub_gray_   = it_.advertise(name_out_map_gray_, 1);
     }
-
-protected:
 
     /**
      * @brief Point cloud callback
@@ -263,6 +284,36 @@ protected:
         mtx_.unlock (); // release mutex
     }
 
+    void configCallback(ni_depth_segmentation::NodeKVPConfig &config, uint32_t level)
+    {
+        ROS_INFO("KVP change:");
+        // Set class variables to new values. They should match what is input at the dynamic reconfigure GUI.
+        std::string key = config.key;
+        double a = config.a;
+
+        ROS_INFO("\t%s:=%f", key.c_str(), a);
+
+        if(layers_.size() > 0) {
+
+            if(key == DepthSegmentation::PARAM_MAX_GRAD) {
+
+                // 4
+                ///<@todo reconfigure layer without indexing
+                // Instantiate Depth segmentation layer
+                // applied on smoothed vertical gradient component
+                LayerConfig cfg;
+
+                PTree params;
+
+                float new_value = static_cast<float>(a);
+                params.put(DepthSegmentation::PARAM_MAX_GRAD, new_value);
+                cfg.Params(params);
+
+                layers_[4]->Reconfigure(cfg);
+            }
+        }
+    }
+
     typedef LayerFactoryNI::LayerShared LayerShared;
     typedef std::vector<LayerShared > VecLayerShared;
 
@@ -273,6 +324,8 @@ protected:
     image_transport::ImageTransport it_;    ///< faciliatate image publishers and subscribers
     image_transport::Publisher img_pub_bgr_;    ///< segmentation map image publisher colored
     image_transport::Publisher img_pub_gray_;    ///< segmentation map image publisher monochrome
+
+    dynamic_reconfigure::Server<ni_depth_segmentation::NodeKVPConfig> dr_srv_;
 
     boost::mutex mtx_;                      ///< mutex object for thread safety
 
@@ -310,7 +363,7 @@ int main(int argc, char** argv)
      * The first NodeHandle constructed will fully initialize this node, and the last
      * NodeHandle destructed will close down the node.
      */
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("~");
     ni::DepthSegmentationNode depth_segmentation_node(nh);
 
     /**
