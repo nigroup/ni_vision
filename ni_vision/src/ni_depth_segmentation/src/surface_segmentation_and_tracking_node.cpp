@@ -99,6 +99,17 @@ public:
                         &SurfaceSegAndTrackingNode::callback, this, _1, _2)
                     );
 
+        initLayers(nh);
+
+        // publishers
+        img_pub_bgr_ = it_.advertise(name_out_+"_color", 1);
+        img_pub_ = it_.advertise(name_out_, 1);
+    }
+
+protected:
+
+    void initLayers(ros::NodeHandle &nh)
+    {
         { // 0
             // Instantiate DepthMap layer
             LayerConfig cfg;
@@ -209,13 +220,7 @@ public:
             io.Output(SurfaceTracking::KEY_OUTPUT_RESPONSE, name_out_);
             layers_.push_back(LayerFactoryNI::CreateShared("SurfaceTracking", cfg, io));
         }
-
-        // publishers
-        img_pub_bgr_ = it_.advertise(name_out_+"_color", 1);
-        img_pub_ = it_.advertise(name_out_, 1);
     }
-
-protected:
 
 
     void callback(const CloudXYZ::ConstPtr& cld,
