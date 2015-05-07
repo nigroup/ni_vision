@@ -19,8 +19,6 @@ public:
 
     DepthGradientSmoothing();
 
-    DepthGradientSmoothing(const elm::LayerConfig &cfg);
-
     void Reconfigure(const elm::LayerConfig &cfg);
 
     void Activate(const elm::Signal &signal);

@@ -26,12 +26,10 @@ public:
 
     virtual void Reconfigure(const elm::LayerConfig &config);
 
-    virtual void Reset(const elm::LayerConfig &config);
-
     virtual void Activate(const elm::Signal &signal);
 
     /** Default constructor, still requires configurations
-      * \see Reconfigure
+      * @see Reconfigure, Reset, IONames
       */
     DepthMap();
 

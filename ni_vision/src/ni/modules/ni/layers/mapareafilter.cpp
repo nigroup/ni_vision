@@ -45,22 +45,9 @@ MapAreaFilter::MapAreaFilter()
     Clear();
 }
 
-MapAreaFilter::MapAreaFilter(const LayerConfig &config)
-    : base_FeatureTransformationLayer(config)
-{
-    Clear();
-    Reconfigure(config);
-    IONames(config);
-}
-
 void MapAreaFilter::Clear()
 {
     m_ = Mat1f();
-}
-
-void MapAreaFilter::Reset(const LayerConfig &config)
-{
-    Reconfigure(config);
 }
 
 void MapAreaFilter::Reconfigure(const LayerConfig &config)

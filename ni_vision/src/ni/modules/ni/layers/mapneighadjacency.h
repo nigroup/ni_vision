@@ -19,8 +19,6 @@ public:
 
     MapNeighAdjacency();
 
-    MapNeighAdjacency(const elm::LayerConfig &config);
-
     void Clear();
 
     void Reset(const elm::LayerConfig &config);

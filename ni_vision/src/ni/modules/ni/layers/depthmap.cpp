@@ -86,11 +86,6 @@ void DepthMap::Clear()
     m_ = Mat1f();
 }
 
-void DepthMap::Reset(const LayerConfig &config)
-{
-    Reconfigure(config);
-}
-
 void DepthMap::Reconfigure(const LayerConfig &config)
 {
     depth_max_ = config.Params().get<float>(PARAM_DEPTH_MAX, DEFAULT_DEPTH_MAX);
@@ -132,10 +127,3 @@ DepthMap::DepthMap()
     Clear();
 }
 
-DepthMap::DepthMap(const LayerConfig& config)
-    : base_FeatureTransformationLayer(config)
-{
-    Clear();
-    Reconfigure(config);
-    IONames(config);
-}

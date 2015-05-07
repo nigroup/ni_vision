@@ -8,8 +8,11 @@
 #include "elm/core/layerconfig.h"
 #include "elm/core/inputname.h"
 #include "elm/core/signal.h"
+#include "elm/ts/container.h"
 #include "elm/ts/layer_assertions.h"
+#include "elm/ts/mat_assertions.h"
 
+using std::string;
 using namespace cv;
 using namespace pcl;
 using namespace elm;
@@ -19,10 +22,10 @@ namespace {
 
 ELM_INSTANTIATE_LAYER_TYPED_TEST_CASE_P(SurfaceTracking);
 
-const std::string NAME_IN_BGR       = "bgr";
-const std::string NAME_IN_POINTS    = "points";
-const std::string NAME_IN_MAP       = "map";
-const std::string NAME_OUT_MAP_TRACKED = "map_tracked";
+const string NAME_IN_BGR       = "bgr";
+const string NAME_IN_POINTS    = "points";
+const string NAME_IN_MAP       = "map";
+const string NAME_OUT_MAP_TRACKED = "map_tracked";
 
 class SurfaceTrackingTest : public ::testing::Test
 {
@@ -90,7 +93,8 @@ protected:
         io.Input(SurfaceTracking::KEY_INPUT_MAP,        NAME_IN_MAP);
         io.Output(SurfaceTracking::KEY_OUTPUT_RESPONSE, NAME_OUT_MAP_TRACKED);
 
-        to_.reset(new SurfaceTracking(config_));
+        to_.reset(new SurfaceTracking());
+        to_->Reset(config_);
         to_->IONames(io);
 
         // Signal
@@ -165,12 +169,6 @@ public:
     SurfaceTrackingProtected()
         : SurfaceTracking()
     {}
-
-    SurfaceTrackingProtected(const LayerConfig &cfg)
-        : SurfaceTracking(cfg)
-    {
-        Reset(cfg);
-    }
 
     vector<Surface> getObserved() const
     {

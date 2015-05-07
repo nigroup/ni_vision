@@ -9,6 +9,7 @@
 #include "elm/core/signal.h"
 #include "elm/ts/layer_assertions.h"
 #include "elm/ts/layer_feat_transf_assertions.h"
+#include "elm/ts/mat_assertions.h"
 #include "elm/core/debug_utils.h"
 
 using namespace std;
@@ -39,7 +40,9 @@ protected:
         config_.Input(MapAreaFilter::KEY_INPUT_STIMULUS, NAME_IN_MAP);
         config_.Output(MapAreaFilter::KEY_OUTPUT_RESPONSE, NAME_OUT_MAP);
 
-        to_.reset(new MapAreaFilter(config_));
+        to_.reset(new MapAreaFilter);
+        to_->Reset(config_);
+        to_->IONames(config_);
     }
 
     shared_ptr<base_Layer> to_; ///< test object

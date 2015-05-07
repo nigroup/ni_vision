@@ -43,7 +43,9 @@ protected:
         config_.Output(DepthMap::KEY_OUTPUT_RESPONSE, NAME_DEPTH_MAP);
 
         // IO
-        to_.reset(new DepthMap(config_));
+        to_.reset(new DepthMap());
+        to_->Reset(config_);
+        to_->IONames(config_);
     }
 
     shared_ptr<base_Layer> to_; ///< test object

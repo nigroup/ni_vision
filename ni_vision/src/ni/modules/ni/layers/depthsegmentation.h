@@ -27,8 +27,6 @@ public:
 
     DepthSegmentation();
 
-    DepthSegmentation(const elm::LayerConfig &config);
-
     void Clear();
 
     void Reset(const elm::LayerConfig &config);

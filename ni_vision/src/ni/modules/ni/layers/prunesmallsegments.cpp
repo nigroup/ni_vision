@@ -29,11 +29,6 @@ PruneSmallSegments::PruneSmallSegments()
 {
 }
 
-PruneSmallSegments::PruneSmallSegments(const LayerConfig &config)
-    : base_FeatureTransformationLayer(config)
-{
-}
-
 void PruneSmallSegments::Clear()
 {
     m_ = Mat1f();
