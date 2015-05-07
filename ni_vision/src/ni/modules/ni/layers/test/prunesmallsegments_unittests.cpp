@@ -40,7 +40,8 @@ protected:
         io.Input(PruneSmallSegments::KEY_INPUT_STIMULUS, NAME_IN_MAP);
         io.Output(PruneSmallSegments::KEY_OUTPUT_RESPONSE, NAME_OUT_MAP);
 
-        to_.reset(new PruneSmallSegments(config_));
+        to_.reset(new PruneSmallSegments);
+        to_->Reset(config_);
         to_->IONames(io);
     }
 
