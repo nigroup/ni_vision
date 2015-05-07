@@ -43,14 +43,6 @@ DepthSegmentation::DepthSegmentation()
     Clear();
 }
 
-DepthSegmentation::DepthSegmentation(const LayerConfig &config)
-    : base_FeatureTransformationLayer(config)
-{
-    Clear();
-    Reconfigure(config);
-    IONames(config);
-}
-
 void DepthSegmentation::Clear()
 {
     m_ = Mat1f();

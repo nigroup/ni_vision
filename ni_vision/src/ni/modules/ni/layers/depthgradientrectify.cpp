@@ -35,12 +35,6 @@ DepthGradientRectify::DepthGradientRectify()
     Clear();
 }
 
-DepthGradientRectify::DepthGradientRectify(const LayerConfig &config)
-    : base_MatOutputLayer(config)
-{
-    Reset(config);
-}
-
 void DepthGradientRectify::Clear()
 {
     m_ = Mat1f();

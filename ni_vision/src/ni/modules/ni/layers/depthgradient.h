@@ -38,14 +38,9 @@ public:
     virtual void Response(elm::Signal &signal);
 
     /** Default constructor, still requires configurations
-      * \see Reconfigure
+      * @see Reconfigure
       */
     DepthGradient();
-
-    /** Constructor with configuration
-      * @param layer configuration
-      */
-    DepthGradient(const elm::LayerConfig& config);
 
 protected:
     /**

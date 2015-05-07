@@ -184,14 +184,6 @@ DepthGradient::DepthGradient()
     Clear();
 }
 
-DepthGradient::DepthGradient(const LayerConfig& config)
-    : base_SingleInputFeatureLayer(config)
-{
-    Clear();
-    Reconfigure(config);
-    IONames(config);
-}
-
 void DepthGradient::computeDerivative(const Mat1f &src, int dim, Mat1f &dst) const
 {
     Mat1f in_shift, in_crop, denom, diff;

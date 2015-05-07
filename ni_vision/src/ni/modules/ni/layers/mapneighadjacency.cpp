@@ -37,14 +37,6 @@ MapNeighAdjacency::MapNeighAdjacency()
     Clear();
 }
 
-MapNeighAdjacency::MapNeighAdjacency(const LayerConfig &config)
-    : base_FeatureTransformationLayer(config)
-{
-    Clear();
-    Reconfigure(config);
-    IONames(config);
-}
-
 void MapNeighAdjacency::Clear()
 {
     m_ = Mat1f();

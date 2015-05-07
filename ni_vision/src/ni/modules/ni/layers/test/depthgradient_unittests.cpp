@@ -45,7 +45,9 @@ protected:
         config_.Output(DepthGradient::KEY_OUTPUT_GRAD_X, NAME_GRAD_X);
         config_.Output(DepthGradient::KEY_OUTPUT_GRAD_Y, NAME_GRAD_Y);
 
-        to_.reset(new DepthGradient(config_));
+        to_.reset(new DepthGradient);
+        to_->Reset(config_);
+        to_->IONames(config_);
     }
 
     unique_ptr<base_Layer> to_; ///< test object
@@ -153,7 +155,9 @@ TEST_F(DepthGradientTest, Param_weight)
     PTree params;
     params.add(DepthGradient::PARAM_GRAD_WEIGHT, WEIGHT);
     config_.Params(params);
-    to_.reset(new DepthGradient(config_));
+    to_.reset(new DepthGradient());
+    to_->Reset(config_);
+    to_->IONames(config_);
 
     Mat1f in(2, 2, 1.f);
     in(0) = 0.f;

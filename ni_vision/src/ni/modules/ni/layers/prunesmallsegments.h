@@ -20,8 +20,6 @@ public:
 
     PruneSmallSegments();
 
-    PruneSmallSegments(const elm::LayerConfig &config);
-
     void Clear();
 
     void Reset(const elm::LayerConfig &config);

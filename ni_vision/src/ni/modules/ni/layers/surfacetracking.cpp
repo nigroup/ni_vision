@@ -59,12 +59,6 @@ SurfaceTracking::SurfaceTracking()
     Clear();
 }
 
-SurfaceTracking::SurfaceTracking(const LayerConfig &config)
-    : elm::base_MatOutputLayer(config)
-{
-    Reset(config);
-}
-
 void SurfaceTracking::Clear()
 {
     dist_ = Mat1f();

@@ -36,11 +36,7 @@ public:
 
     MapAreaFilter();
 
-    MapAreaFilter(const elm::LayerConfig &config);
-
     void Clear();
-
-    void Reset(const elm::LayerConfig &config);
 
     void Reconfigure(const elm::LayerConfig &config);
 

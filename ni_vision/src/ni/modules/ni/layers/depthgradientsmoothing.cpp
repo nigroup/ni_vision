@@ -26,12 +26,6 @@ DepthGradientSmoothing::DepthGradientSmoothing()
     Clear();
 }
 
-DepthGradientSmoothing::DepthGradientSmoothing(const LayerConfig &cfg)
-    : base_SmoothLayer(cfg)
-{
-    Reset(cfg);
-}
-
 void DepthGradientSmoothing::Reconfigure(const LayerConfig &cfg)
 {
     base_SmoothLayer::Reconfigure(cfg); // configures aperture size

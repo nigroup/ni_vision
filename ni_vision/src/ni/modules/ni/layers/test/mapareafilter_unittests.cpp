@@ -39,7 +39,9 @@ protected:
         config_.Input(MapAreaFilter::KEY_INPUT_STIMULUS, NAME_IN_MAP);
         config_.Output(MapAreaFilter::KEY_OUTPUT_RESPONSE, NAME_OUT_MAP);
 
-        to_.reset(new MapAreaFilter(config_));
+        to_.reset(new MapAreaFilter);
+        to_->Reset(config_);
+        to_->IONames(config_);
     }
 
     shared_ptr<base_Layer> to_; ///< test object
