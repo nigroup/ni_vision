@@ -44,7 +44,8 @@ protected:
         io.Input(DepthGradientRectify::KEY_INPUT_GRAD_SMOOTH, NAME_GRAD_SMOOTH);
         io.Output(DepthGradientRectify::KEY_OUTPUT_RESPONSE, NAME_OUT_GRAD_RECT);
 
-        to_.reset(new DepthGradientRectify(config_));
+        to_.reset(new DepthGradientRectify());
+        to_->Reset(config_);
         to_->IONames(io);
     }
 
