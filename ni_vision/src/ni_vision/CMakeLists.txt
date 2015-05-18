@@ -141,7 +141,7 @@ list_filterout(SRC_LIST ${REGEX_EXCLUDE_FROM_MODULE})
 list_filterout(HEADERS  ${REGEX_EXCLUDE_FROM_MODULE})
 
 add_executable(ni_vision ${SRC_LIST} ${HEADERS})
-target_link_libraries(ni_vision ${catkin_LIBRARIES} siftfast terminal_tools ${OpenCV_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
+target_link_libraries(ni_vision ${catkin_LIBRARIES} terminal_tools ${OpenCV_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
 
 ## Declare a cpp library
 # add_library(ni_vision

@@ -20,7 +20,7 @@
 
 
 // Fast SIFT and FLANN Library
-#include "siftfast/siftfast.h"
+#include "ni/3rdparty/siftfast/siftfast.h"
 #include "flann/flann.h"
 
 
@@ -39,7 +39,7 @@
 #include "ni/legacy/func_preproc.h"
 #include "ni/legacy/func_segmentation.h"
 #include "func_segmentation_gb.hpp"
-#include "func_recognition.hpp"
+#include "ni/legacy/func_recognition.h"
 #include "func_etc.hpp"
 
 
@@ -749,7 +749,45 @@ void updateImage() {
                     Recognition (nCandID, nImgScale, nDsWidth, nTimeRatio, nMemsCnt, nTrackHistoBin_max, cvm_rgb_org, cvm_rec_org, cvm_rec_ds,
                                     stMems, stTrack.CntLost, nCandCnt, veCandClrDist[nCandID].first, nFoundCnt, nFoundNr, nFoundFrame,
                                     nCandKeyCnt, nCandRX, nCandRY, nCandRW, nCandRH,
-                                    t_rec_found_start, t_rec_found_end, bSwitchRecordTime, nRecogRtNr, vnRecogRating_tmp, cvm_cand);
+                                    t_rec_found_start, t_rec_found_end, bSwitchRecordTime, nRecogRtNr, vnRecogRating_tmp, cvm_cand,
+                                 bTimeSift,
+                                 bTimeFlann,
+                                 bRecogClrMask,
+                                 stTrack,
+                                 mnColorHistY_lib,
+                                 nSiftScales,
+                                 nSiftInitSigma,
+                                 nSiftPeakThrs,
+                                 nTimeSift,
+                                 tcount,
+                                 nFlannKnn,
+                                 nFlannLibCols_sift,
+                                 nFlannMatchFac,
+                                 mnSiftExtraFeatures,
+                                 FlannIdx_Sift,
+                                 FLANNParam,
+                                 T_numb,
+                                 T_orient,
+                                 T_scale,
+                                 nDeltaBinNo,
+                                 nFlannMatchCnt,
+                                 nRecogDClr,
+                                 nTimeRecFound,
+                                 nCtrFrame,
+                                 nCtrFrame_tmp,
+                                 vbFlagTask,
+                                 stTID,
+                                 mnTimeMeas1,
+                                 mnTimeMeas2,
+                                 nCtrRecCycle,
+                                 nTimeRecFound_max,
+                                 nTimeRecFound_min,
+                                 nTimeFlann,
+                                 nRecordMode,
+                                 c_red,
+                                 c_white,
+                                 c_blue,
+                                 c_lemon);
 
                     nTmpAttKeyCnt = nCandKeyCnt; nTmpAttWidth = nCandRW; nTmpAttHeight = nCandRH;
 

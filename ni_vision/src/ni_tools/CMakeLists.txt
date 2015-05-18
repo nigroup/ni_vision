@@ -4,7 +4,9 @@ project(ni_tools)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS
+  ni
+)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -89,6 +91,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 # include_directories(include)
+include_directories(${catkin_INCLUDE_DIRS})
 
 ## Declare a cpp library
 # add_library(ni_tools
@@ -105,10 +108,10 @@ find_package(ni_vision)
 include_directories(${ni_vision_INCLUDE_DIRS})
 
 add_executable(libmake src/libmake.cpp)
-target_link_libraries(libmake siftfast terminal_tools ${OpenCV_LIBRARIES})
+target_link_libraries(libmake ni_3rdparty terminal_tools ${OpenCV_LIBRARIES})
 
 add_executable(libmake_color src/libmake_color.cpp)
-target_link_libraries(libmake_color siftfast terminal_tools ${OpenCV_LIBRARIES})
+target_link_libraries(libmake_color ni_3rdparty terminal_tools ${OpenCV_LIBRARIES})
 
 
 ## Declare a cpp executable

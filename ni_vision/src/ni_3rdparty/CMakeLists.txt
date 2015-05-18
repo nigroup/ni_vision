@@ -91,7 +91,6 @@ catkin_package(
  include_directories(include)
  include_directories(src)
 
-add_library(siftfast src/siftfast/libsiftfast.cpp)
 add_library(terminal_tools src/terminal_tools/print.cpp src/terminal_tools/parse.cpp)
 
 ## Declare a cpp library

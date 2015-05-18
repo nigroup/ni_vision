@@ -1,31 +1,14 @@
-/*
- * Function for attention and recognition
- */
+#include "ni/legacy/func_recognition.h"
 
-
-
-// Fast SIFT Library
-//#include "siftfast/siftfast.h"
-
-///////////
-//#include "flann/flann.h"
-#include "func_recognition_flann.hpp"
-#include "ni/legacy/timer.h"
-
-#define PI 3.1415926536
-
-
-/* Getting SIFT keypoints from input image (computed by libsiftfast)
- *
- * Input:
- * input - input image
- * nSiftScales, nSiftInitSigma, nSiftPeakThrs - SIFT parameter
- * x,y,width,height - coordinates of input area
- *
- * Output:
- * keypts - SIFT keypoints (format Keypoint from Libsiftfast)
- */
-void GetSiftKeypoints(cv::Mat input, int nSiftScales, double nSiftInitSigma, double nSiftPeakThrs, int x, int y, int width, int height, Keypoint &keypts) {
+void GetSiftKeypoints(const cv::Mat &input,
+                      int nSiftScales,
+                      double nSiftInitSigma,
+                      double nSiftPeakThrs,
+                      int x,
+                      int y,
+                      int width,
+                      int height,
+                      Keypoint &keypts) {
 
     Image img_sift = CreateImage(width, height);
 
@@ -45,26 +28,18 @@ void GetSiftKeypoints(cv::Mat input, int nSiftScales, double nSiftInitSigma, dou
     DestroyAllResources();
 }
 
+void CalcDeltaScaleOri(const std::vector<int> &input_idx,
+                       const std::vector<double> &vnDeltaScale,
+                       const std::vector<double> &vnDeltaOri,
+                       double& nDeltaScale,
+                       int nDeltaBinNo,
+                       double nMaxDeltaOri,
+                       double nMinDeltaOri,
+                       double T_orient,
+                       double T_scale,
+                       int& nTruePositives,
+                       std::vector<bool>& output_flag) {
 
-
-
-/* Calculating delta scale orientation (by Sahil)
- *
- * Input:
- * input_idx - indices of input SIFT keypoints
- * vnDeltaScale, vnDeltaOri - delta scale, delta orientation of input keypoints
- * nDeltaBinNo - number of bins
- * nMaxDeltaOri, nMinDeltaOri - range of delta orientation
- * T_orient, T_scale -
- *
- * Output:
- * nDeltaScale - output scale (think of an "average value")
- * nTruePositives - count of true-positive keypoints
- * output_flag - flag for true-positive keypoints
- */
-void CalcDeltaScaleOri(std::vector<int> input_idx, std::vector<double> vnDeltaScale, std::vector<double> vnDeltaOri, double& nDeltaScale,
-                       int nDeltaBinNo, double nMaxDeltaOri, double nMinDeltaOri, double T_orient, double T_scale, int& nTruePositives, std::vector<bool>& output_flag)
-{
     //Put nDeltaBinNo = 12
     //int keycount = 0;
     std::vector <int>  vnHist(nDeltaBinNo,0);
@@ -146,25 +121,16 @@ void CalcDeltaScaleOri(std::vector<int> input_idx, std::vector<double> vnDeltaSc
 //    printf("\t\tOriginal Matches :%d  Orientation matches: %d  Scale Matches(final matches) :%d\n", (int)vnDeltaScale.size(), (int)vnRectDeltaScale.size(),nTruePositives);
 }
 
+void ResetMemory (int nObjsNrLimit,
+                  int nTrackHistoBin_max,
+                  int nRecogRtNr,
+                  SurfProp &stMems,
+                  int &nMemsCnt,
+                  int &nProtoNr,
+                  int &nFoundCnt,
+                  int &nFoundNr,
+                  std::vector<int> &vnRecogRating) {
 
-/* Resetting properties of object surfaces
- *
- * Input:
- * nObjsNrLimit - maximum number of object surfaces that can be processed
- * nTrackHistoBin_max - (number of bins)^number of channels
- * nRecogRtNr -
- *
- * Output:
- * stMems - properties of object surfaces in the Short-Term Memory (SurfProp is self-defined struct)
- * nMemsCnt - count of object surfaces
- * nProtoNr - number of current object surface
- * nFoundCnt - count of found object surfaces
- * nFoundNr - number of found object surface
- * vnRecogRating - recognition rating (like a priority) of object surfaces
- */
-void ResetMemory (int nObjsNrLimit, int nTrackHistoBin_max, int nRecogRtNr,
-                  SurfProp &stMems, int &nMemsCnt, int &nProtoNr, int &nFoundCnt, int &nFoundNr, std::vector<int> &vnRecogRating)
-{
     stMems.vnIdx.assign(nObjsNrLimit, 0);
     stMems.vnPtsCnt.assign(nObjsNrLimit, 0);
     stMems.mnPtsIdx.assign(nObjsNrLimit, std::vector<int>(0, 0));
@@ -186,19 +152,11 @@ void ResetMemory (int nObjsNrLimit, int nTrackHistoBin_max, int nRecogRtNr,
     vnRecogRating.assign(nRecogRtNr, 0);
 }
 
+void Attention_TopDown (std::vector<bool> &vbProtoCand,
+                        SurfProp &stMems,
+                        int nMemsCnt,
+                        std::vector<std::pair<float, int> > &veCandClrDist) {
 
-
-/* Attention: Top-Down guidance - Reordering all properties of object surfaces in the memory after priority
- *
- * Output:
- * vbProtoCand - candidate flag for object surfaces (true, then candidate for attention)
- * stMems - properties of object surfaces in the Short-Term Memory (SurfProp is self-defined struct)
- * vnMemsFound - found flag for objects surfaces
- * nMemsCnt - count of object surfaces
- * vnCandClrDist - color differences of objects surfaces (to target object)
- */
-void Attention_TopDown (std::vector<bool> &vbProtoCand, SurfProp &stMems, int nMemsCnt, std::vector<std::pair<float, int> > &veCandClrDist)
-{
     std::sort(veCandClrDist.begin(), veCandClrDist.end(), boost::bind(&std::pair<float,int>::first, _1) < boost::bind(&std::pair<float,int>::first, _2));
 
     std::vector<bool> vbTmpProtoCand = vbProtoCand;
@@ -222,21 +180,10 @@ void Attention_TopDown (std::vector<bool> &vbProtoCand, SurfProp &stMems, int nM
     }
 }
 
-
-
-
-
-/* Selection of a candidate object surface
- *
- * Input:
- * nMemsCnt - count of candidate object surfaces
- * vbProtoCand - flag for candidate object surfaces
- *
- * Output:
- * vMemsFound - state of candidate; 0: not inspected & not found, 1:not inspected & found, 2: inspected & not found, 3: inspected & found
- * nCandID - ID of selected candidate object surface
- */
-void Attention_Selection (int nMemsCnt, std::vector<bool> vbProtoCand, std::vector<int> &vnMemsFound, int &nCandID) {
+void Attention_Selection (int nMemsCnt,
+                          const std::vector<bool> &vbProtoCand,
+                          std::vector<int> &vnMemsFound,
+                          int &nCandID) {
 
     for (int i = 0; i < nMemsCnt; i++) {
         if (!vbProtoCand[i]) continue;
@@ -249,26 +196,14 @@ void Attention_Selection (int nMemsCnt, std::vector<bool> vbProtoCand, std::vect
     }
 }
 
-
-
-
-/* Extraction of pixel indices for the selected candidate object surface from original image
- * (before that the indices are from the downsampled image)
- *
- * Input:
- * nCandID - ID of selected candidate object surface
- * nImgScale - ratio between original and downsampled image
- * nDsWidth - width of downsampled image
- * vnMemsPtsCnt - count of pixel which belong to the object surface (of downsampled image)
- * cvm_rgb_org - original image
- * mnMemsPtsIdx - indices of pixel which belong to the object surfae (of downsampled image)
- *
- * Output:
- * cvm_cand_tmp - image of candidate object surface
- * vnIdxTmp - indices of pixel which belong to the object surfae (of original image)
- */
-void Recognition_Attention (int nCandID, int nImgScale, int nDsWidth, std::vector<int> vnMemsPtsCnt, cv::Mat cvm_rgb_org,
-                       cv::Mat &cvm_cand_tmp, std::vector<std::vector<int> > mnMemsPtsIdx, std::vector<int> &vnIdxTmp) {
+void Recognition_Attention (int nCandID,
+                            int nImgScale,
+                            int nDsWidth,
+                            const std::vector<int> &vnMemsPtsCnt,
+                            const cv::Mat &cvm_rgb_org,
+                            cv::Mat &cvm_cand_tmp,
+                            const std::vector<std::vector<int> > &mnMemsPtsIdx,
+                            std::vector<int> &vnIdxTmp) {
     int pts_cnt = 0;
     int xx, yy;
     if (nImgScale > 1) {
@@ -299,31 +234,24 @@ void Recognition_Attention (int nCandID, int nImgScale, int nDsWidth, std::vecto
     }
 }
 
+void Recognition_Flann (int tcount,
+                        int nFlannKnn,
+                        int nFlannLibCols_sift,
+                        double nFlannMatchFac,
+                        const std::vector <std::vector <float> > &mnSiftExtraFeatures,
+                        flann_index_t FlannIdx_Sift,
+                        struct FLANNParameters FLANNParam, //struct...
+                        Keypoint keypts,
+                        int &nKeyptsCnt,
+                        int &nFlannIM,
+                        std::vector<int> &vnSiftMatched,
+                        std::vector<double> &vnDeltaScale,
+                        std::vector<double> &vnDeltaOri,
+                        double &nMaxDeltaOri,
+                        double &nMinDeltaOri,
+                        double &nMaxDeltaScale,
+                        double &nMinDeltaScale) {
 
-
-/* FLANN (fast library for approximate nearest neighbor) matching SIFT keypoints to find target object
- *
- * Input:
- * tcount -
- * nFlannKnn - parameter of FLANN
- * nFlannLibCols_sift - dimension of library which stores the sift trajectories
- * nFlannMatchFac - merge factor (parameter of FLANN)
- * mnSiftExtraFeatures - matrix which stores sift trajectories (from training)
- * FlannIdx_Sift - FLANN index (type is from flann library)
- * FlannParam - flann parameters (struct from flann lib)
- * keypts - input SIFT keypoints
- *
- * Output:
- * nKeyptsCnt - count of matched SIFT keypoints
- * nFlannIM - count of initial matched keypoints after flann matching
- * vnSiftMatched - matched sift keypoints
- * vnDeltaScale - delta scale of keypoints
- * vnDeltaOri - delta orientation of keypoints
- * nMaxDeltaOri, nMinDeltaOri - max and min delta orientation
- * nMaxDeltaScale, nMinDeltaScale - max and min Scale orientation
- */
-void Recognition_Flann (int tcount, int nFlannKnn, int nFlannLibCols_sift, double nFlannMatchFac, std::vector <std::vector <float> > mnSiftExtraFeatures, flann_index_t FlannIdx_Sift, struct FLANNParameters FLANNParam,
-                          Keypoint keypts, int &nKeyptsCnt, int &nFlannIM, std::vector<int> &vnSiftMatched, std::vector<double> &vnDeltaScale, std::vector<double> &vnDeltaOri, double &nMaxDeltaOri, double &nMinDeltaOri, double &nMaxDeltaScale, double &nMinDeltaScale) {
     while (keypts) {
         float *f1;
         float *testset;
@@ -379,43 +307,75 @@ void Recognition_Flann (int tcount, int nFlannKnn, int nFlannLibCols_sift, doubl
     }
 }
 
+void Recognition (int nCandID,
+                  int nImgScale,
+                  int nDsWidth,
+                  int nTimeRatio,
+                  int nMemsCnt,
+                  int nTrackHistoBin_max,
+                  const cv::Mat &cvm_rgb_org,
+                  cv::Mat &cvm_rec_org,
+                  cv::Mat &cvm_rec_ds,
+                  SurfProp &stMems,
+                  int nTrackCntLost,
+                  int &nCandCnt,
+                  float nCandClrDist,
+                  int &nFoundCnt,
+                  int &nFoundNr,
+                  int &nFoundFrame,
+                  int &nCandKeyCnt,
+                  int &nCandRX,
+                  int &nCandRY,
+                  int &nCandRW,
+                  int &nCandRH,
+                  struct timespec t_rec_found_start,
+                  struct timespec t_rec_found_end,
+                  bool bSwitchRecordTime,
+                  int nRecogRtNr,
+                  std::vector<int> &vnRecogRating_tmp,
+                  cv::Mat cvm_cand,
+                  //
+                  bool &bTimeSift,
+                  bool &bTimeFlann,
+                  const bool bRecogClrMask,
+                  const TrackProp &stTrack,
+                  const std::vector<std::vector<float > > &mnColorHistY_lib,
+                  const int nSiftScales,
+                  const double nSiftInitSigma,
+                  const double nSiftPeakThrs,
+                  double &nTimeSift,
+                  const int tcount,
+                  const int nFlannKnn,
+                  const int nFlannLibCols_sift,
+                  const double nFlannMatchFac,
+                  const std::vector <std::vector <float> > mnSiftExtraFeatures,
+                  const flann_index_t FlannIdx_Sift,
+                  const struct FLANNParameters FLANNParam,
+                  const int T_numb,
+                  const double T_orient,
+                  const double T_scale,
+                  const int nDeltaBinNo,
+                  const int nFlannMatchCnt,
+                  const double nRecogDClr,
+                  double &nTimeRecFound,
+                  const int nCtrFrame,
+                  const int nCtrFrame_tmp,
+                  const std::vector<bool> &vbFlagTask,
+                  const TaskID &stTID,
+                  std::vector<std::vector<int> > &mnTimeMeas1,
+                  std::vector<std::vector<float> > &mnTimeMeas2,
+                  const int nCtrRecCycle,
+                  double &nTimeRecFound_max,
+                  double &nTimeRecFound_min,
+                  double &nTimeFlann,
+                  const int nRecordMode,
+                  const cv::Scalar &c_red,
+                  const cv::Scalar &c_white,
+                  const cv::Scalar &c_blue,
+                  const cv::Scalar &c_lemon) {
 
-
-/* Recognition process of a selected candidate. Determines if a selected object is the target object
- *
- * Input:
- * nCandID - ID of the candidate in the list candidate object surfaces
- * nImgScale - ratio of original and downsampled image
- * nTimeRatio - ratio of milli- and nanoseconds (i.e. 10⁶)
- * nMemsCnt - number of object surfaces
- * nTrackHistoBin_max - (number of bin)^(number of channels)
- * sTimeDir - path to save time measurement to
- * sImgExt - extension of image file
- * cvm_rgb_org - original rgb image
- * cvm_rgb_ds - downsampled rgb image
- * cvm_rec_org - original image for recognition process
- * cvm_rec_ds - downsampled original image for recognition process
- * nTrackCntLost - threshold for vnMemsLostCnt
- *
- * Output:
- * nCandCnt - number of candidate object surfaces
- * nCandClrDist - buffer of color histogram difference between the current candidate and the target object
- * nFoundCnt - count of found objects in a recognition cycle
- * nFoundNr - number of found object
- * nFoundFrame - number of frame where the object was found
- * nCandKeyCnt - count of keypoints for the current candidate
- * nCandRX, nCandRY, nCandRW, nCandRH - coordinates of the 2D-bounding box for the current candidate
- * t_rec_found_start, t_rec_found_end - variable for time measurement
- * bSwitchRecordTime - flag for time measurement
- * nRecogRtNr - count of frames to record
- * vnRecogRating_tmp - vector of results for time measurement
- * cvm_cand - image of the current candidate
- */
-void Recognition (int nCandID, int nImgScale, int nDsWidth, int nTimeRatio, int nMemsCnt, int nTrackHistoBin_max,
-                     cv::Mat cvm_rgb_org, cv::Mat &cvm_rec_org, cv::Mat &cvm_rec_ds, SurfProp &stMems,
-                     int nTrackCntLost, int &nCandCnt, float nCandClrDist, int &nFoundCnt, int &nFoundNr, int &nFoundFrame,
-                     int &nCandKeyCnt, int &nCandRX, int &nCandRY, int &nCandRW, int &nCandRH,
-                     struct timespec t_rec_found_start, struct timespec t_rec_found_end, bool bSwitchRecordTime, int nRecogRtNr, std::vector<int> &vnRecogRating_tmp, cv::Mat cvm_cand) {
+    using std::max;
+    using std::min;
 
     nCandCnt++;
     // Initialize
@@ -628,4 +588,3 @@ void Recognition (int nCandID, int nImgScale, int nDsWidth, int nTimeRatio, int 
         }
     }
 }
-
