@@ -38,14 +38,12 @@ TEST_F(BoundingBox3DTest, construct_from_point_cloud)
     cv::Mat1f cog = to_.centralPoint();
 
     EXPECT_EQ(1, cog.rows) << "Expecting row matrix.";
-    EXPECT_EQ(3+1, cog.cols) << "COG is 3-dimensional, 4th column is for SSE padding.";
+    EXPECT_EQ(3, cog.cols) << "COG is 3-dimensional, 4th column is for SSE padding.";
 
-    for(int i=0; i<cog.cols-1; i++) {
+    for(int i=0; i<cog.cols; i++) {
 
         EXPECT_FLOAT_EQ(6.f/4.f, cog(i)) << "Unexpected value for coordinate i=" << i;
     }
-
-    EXPECT_FLOAT_EQ(1.f, cog(cog.cols-1)) << "Unexpected value for padding column.";
 }
 
 TEST_F(BoundingBox3DTest, construct_from_point_cloud_empty)
@@ -61,6 +59,33 @@ TEST_F(BoundingBox3DTest, construct_from_point_cloud_empty)
 
 TEST_F(BoundingBox3DTest, diagonal)
 {
-    EXPECT_THROW(BoundingBox3D().diagonal(), ExceptionNotImpl) << "update when ready";
+    CloudXYZPtr cld(new CloudXYZ());
+    cld->push_back(PointXYZ(0.f, 0.f, 0.f));
+    cld->push_back(PointXYZ(1.f, 0.f, 0.f));
+    cld->push_back(PointXYZ(-1.f, 0.f, 0.f));
+    cld->push_back(PointXYZ(0.f, -2.f, 0.f));
+    cld->push_back(PointXYZ(0.f, 2.f, 0.f));
+    cld->push_back(PointXYZ(0.f, 0.f, -3.f));
+    cld->push_back(PointXYZ(0.f, 0.f, 3.f));
+
+    to_ = BoundingBox3D(cld);
+
+    EXPECT_FLOAT_EQ(sqrt(4+16+36), to_.diagonal());
+}
+
+TEST_F(BoundingBox3DTest, volume)
+{
+    CloudXYZPtr cld(new CloudXYZ());
+    cld->push_back(PointXYZ(0.f, 0.f, 0.f));
+    cld->push_back(PointXYZ(1.f, 0.f, 0.f));
+    cld->push_back(PointXYZ(-1.f, 0.f, 0.f));
+    cld->push_back(PointXYZ(0.f, -2.f, 0.f));
+    cld->push_back(PointXYZ(0.f, 2.f, 0.f));
+    cld->push_back(PointXYZ(0.f, 0.f, -3.f));
+    cld->push_back(PointXYZ(0.f, 0.f, 3.f));
+
+    to_ = BoundingBox3D(cld);
+
+    EXPECT_FLOAT_EQ(2*4*6, to_.volume());
 }
 

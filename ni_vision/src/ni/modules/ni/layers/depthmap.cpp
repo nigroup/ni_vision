@@ -1,6 +1,10 @@
 #include "ni/layers/depthmap.h"
 
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+
 #include "elm/core/exception.h"
+#include "elm/core/featuredata.h"
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"
 #include "elm/ts/layerattr_.h"\
@@ -15,7 +19,7 @@ using namespace ni;
 /** Define parameters and I/O keys
   */
 const string DepthMap::PARAM_DEPTH_MAX = "depth_min";
-const float DepthMap::DEFAULT_DEPTH_MAX = 3.f;
+const float DepthMap::DEFAULT_DEPTH_MAX = 5.f;
 
 /** @todo why does define guard lead to undefined reference error?
  */
@@ -82,14 +86,9 @@ void DepthMap::Clear()
     m_ = Mat1f();
 }
 
-void DepthMap::Reset(const LayerConfig &config)
-{
-    Reconfigure(config);
-}
-
 void DepthMap::Reconfigure(const LayerConfig &config)
 {
-    depth_max_ = config.Params().get<float>(PARAM_DEPTH_MAX, 3.f);
+    depth_max_ = config.Params().get<float>(PARAM_DEPTH_MAX, DEFAULT_DEPTH_MAX);
 }
 
 void DepthMap::Activate(const Signal &signal)
@@ -128,10 +127,3 @@ DepthMap::DepthMap()
     Clear();
 }
 
-DepthMap::DepthMap(const LayerConfig& config)
-    : base_FeatureTransformationLayer(config)
-{
-    Clear();
-    Reconfigure(config);
-    IONames(config);
-}

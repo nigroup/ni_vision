@@ -11,12 +11,15 @@
  * represent the button.
  */
 
+#include "ni/legacy/surfprop.h"
+#include "ni/legacy/trackprop.h"
+
 ////////// System Paramters ///////////////////////////////////////
 bool bDepthDispMode = false, bDepthDispMode_default = false;
 double nDLimit = 0, nDLimit_default = 3;
 
 
-double nDSegmDThres = 0, nDSegmDThres_default = 0.04;
+double nSegmDThres = 0, nSegmDThres_default = 0.04;
 double nDGradConst = 0, nDGradConst_default = 0.2;
 int nDGradFilterMode = 0, nDGradFilterMode_default = 2;
 int nDGradFilterSize = 0, nDGradFilterSize_default = 5;
@@ -28,19 +31,15 @@ int nDGradSmthBnd1 = 0;
 int nDGradSmthBnd2 = 0;
 double nDGradSmthFac = 3.0, nDGradSmthFac_default = 1.0;
 
-int nDSegmSizeThres = 0, nDSegmSizeThres_default = 200;
-double nDSegmGradDist = 0, nDSegmGradDist_default = 0.005;
-int nDSegmCutSize = 0, nDSegmCutSize_default = 10;
+int nSegmSizeThres = 0, nSegmSizeThres_default = 200;
+double nSegmGradDist = 0, nSegmGradDist_default = 0.005;
+int nSegmCutSize = 0, nSegmCutSize_default = 10;
 
 double nGSegmSigma = 0, nGSegmSigma_default = 0.8;
 int nGSegmGrThrs = 0, nGSegmGrThrs_default = 500;
 int nGSegmMinSize = 0, nGSegmMinSize_default = 450;
 
-struct TrackProp {
-    int Mode, ClrMode, HistoBin;
-    double DPos, DSize, DClr, Dist, FPos, FSize, FClr, MFac;
-    int CntMem, CntStable, CntDisap;
-}; TrackProp stTrack, stTrack_default;
+TrackProp stTrack, stTrack_default;
 
 int nAttTDMode = 0, nAttTDMode_default = 0;
 int nAttSizeMax = 0, nAttSizeMax_default = 350;
@@ -70,14 +69,6 @@ int nSnapFormat = 0, nSnapFormat_default = 0;
 int flag_pcd = 0; // Flag for printing color distance
 
 std::string sDataDir;
-
-
-struct ProtoProp {
-    std::vector<std::vector<int> > mnRect, mnRCenter; std::vector<std::vector<float> > mnCubic, mnCCenter;
-    std::vector<float> vnLength; std::vector<std::vector<float> > mnColorHist;
-    std::vector<int> vnMemoryCnt, vnStableCnt, vnDisapCnt;
-};
-
 
 /////// for User Interface /////////////////////////
 int nFont = CV_FONT_HERSHEY_SIMPLEX;
@@ -118,28 +109,41 @@ cv::Scalar c_kakki(0, 127, 127);
 cv::Scalar c_pink(127, 0, 255);
 cv::Scalar c_violet(255, 0, 127);
 
+
+
+/////// for Time Measurements /////////////////////////
+std::vector<std::vector<int> > mnTimeMeas1;
+std::vector<std::vector<float> > mnTimeMeas2;
+std::vector<std::vector<float> > mnTimeMeas3;
+
+std::vector<float> mnTimeMeasGbSegm;
+std::vector<std::vector<float> > mnTimeMeasSiftWhole;
+
+
+
 ////////// ID of Tasks //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct TaskID {
     int nRgbOrg, nRgbDs, nDepth, nInfo, nRecVideo, nSnap;
-    int nSegmentation, nDSegm, nGSegm, nTrack, nProto;
+    int nSegmentation, nSegm, nGSegm, nTrack, nAtt;
     int nRecognition, nRecogOrg, nRecogDs, nSIFT;
     int nRecTime, nRstTime, nPrmInfo, nPrmSett, nPrmSegm, nPrmRecog, nRstPrm;
-}; struct TaskID stTID;
+    int nRes1, nRes2;
+}; TaskID stTID;
 
 
 //// for time estimation ////
-int nCntFrame = 1, nCntFrame_tmp = 0;
-int nCntDepth = 0, nCntBlur = 0;
+int nCtrFrame = 1, nCtrFrame_tmp = 0;
+int nCtrDepth = 0, nCtrBlur = 0;
 bool bTimeDepth, bTimeBlur;
 double nTimePre, nTimeDepth, nTimeBlur, nTimeTotal, nTimeFrame;
 double nTimePre_acc = 0, nTimeDepth_acc = 0, nTimeBlur_acc = 0, nTimeTotal_acc = 0, nTimeFrame_acc;
 double nTimePre_avr = 0, nTimeDepth_avr = 0, nTimeBlur_avr = 0, nTimeTotal_avr = 0, nTimeFrame_avr = 0, nFrameRate_avr = 0;
 bool bTimeSegm, bTimeTrack, bTimeRec, bTimeSift, bTimeFlann;
-int nCntSegm = 0, nCntTrack = 0, nCntRec = 0, nCntSift = 0, nCntFlann = 0;
+int nCtrSegm = 0, nCtrTrack = 0, nCtrRec = 0, nCtrSift = 0, nCtrFlann = 0;
 double nTimeSegm, nTimeTrack, nTimeAtt, nTimeRec, nTimeSift, nTimeFlann;
 double nTimeSegm_acc = 0, nTimeTrack_acc = 0, nTimeAtt_acc = 0, nTimeRec_acc = 0, nTimeSift_acc = 0, nTimeFlann_acc = 0;
 double nTimeSegm_avr = 0, nTimeTrack_avr = 0, nTimeAtt_avr = 0, nTimeRec_avr = 0, nTimeSift_avr = 0, nTimeFlann_avr = 0;
-int nCntRecCycle = 0, nCntGbSegm = 0, nCntSiftWhole = 0;
+int nCtrRecCycle = 0, nCtrGbSegm = 0, nCtrSiftWhole = 0;
 bool bTimeRecogCycle, bTimeGbSegm, bTimeSiftWhole;
 double nTimeRecCycle, nTimeRecFound, nTimeGbSegm, nTimeSiftWhole, nTimeSiftDrawWhole, nTimeFlannWhole;
 double nTimeRecCycle_acc = 0, nTimeRecFound_acc = 0, nTimeGbSegm_acc = 0, nTimeSiftWhole_acc = 0, nTimeFlannWhole_acc = 0;
@@ -304,7 +308,6 @@ void BuildFlannIndex (int libnr, std::string sLibFileName) {   //Read the librar
  */
 void InitParameter (int argc, char** argv) {
 
-    stTrack.Mode = 0, stTrack_default.Mode = 0;
     stTrack.ClrMode = 0, stTrack_default.ClrMode = 1;
     stTrack.HistoBin = 0, stTrack_default.HistoBin = 8;
     stTrack.DPos = 0, stTrack_default.DPos = 0.2;
@@ -317,7 +320,7 @@ void InitParameter (int argc, char** argv) {
     stTrack.MFac = 0, stTrack_default.MFac = 100;
     stTrack.CntMem = 0, stTrack_default.CntMem = 5;
     stTrack.CntStable = 0, stTrack_default.CntStable = 2;
-    stTrack.CntDisap = 0, stTrack_default.CntDisap = 1;
+    stTrack.CntLost = 0, stTrack_default.CntLost = 1;
 
     terminal_tools::parse_argument (argc, argv, "-ddmod", bDepthDispMode);
     if(bDepthDispMode == 0) bDepthDispMode = 0; bDepthDispMode_default = bDepthDispMode;
@@ -337,16 +340,16 @@ void InitParameter (int argc, char** argv) {
     terminal_tools::parse_argument (argc, argv, "-dgtauf2", nDGradSmthBThres2);
     if(nDGradSmthBThres2 == 0) nDGradSmthBThres2 = nDGradSmthBThres2_default; nDGradSmthBThres2_default = nDGradSmthBThres2;
 
-    terminal_tools::parse_argument (argc, argv, "-dstaud", nDSegmDThres);
-    if(nDSegmDThres == 0) nDSegmDThres = nDSegmDThres_default; nDSegmDThres_default = nDSegmDThres;
-    terminal_tools::parse_argument (argc, argv, "-dstaug", nDSegmGradDist);
-    if(nDSegmGradDist == 0) nDSegmGradDist = nDSegmGradDist_default; nDSegmGradDist_default = nDSegmGradDist;
-    terminal_tools::parse_argument (argc, argv, "-dsgcs", nDSegmCutSize);
-    if(nDSegmCutSize == 0) nDSegmCutSize = nDSegmCutSize_default; nDSegmCutSize_default = nDSegmCutSize;
-    terminal_tools::parse_argument (argc, argv, "-dstaus", nDSegmSizeThres);
-    if(nDSegmSizeThres == 0) nDSegmSizeThres = nDSegmSizeThres_default; nDSegmSizeThres_default = nDSegmSizeThres;
+    terminal_tools::parse_argument (argc, argv, "-sgtaud", nSegmDThres);
+    if(nSegmDThres == 0) nSegmDThres = nSegmDThres_default; nSegmDThres_default = nSegmDThres;
+    terminal_tools::parse_argument (argc, argv, "-sgtaug", nSegmGradDist);
+    if(nSegmGradDist == 0) nSegmGradDist = nSegmGradDist_default; nSegmGradDist_default = nSegmGradDist;
+    terminal_tools::parse_argument (argc, argv, "-sggcs", nSegmCutSize);
+    if(nSegmCutSize == 0) nSegmCutSize = nSegmCutSize_default; nSegmCutSize_default = nSegmCutSize;
+    terminal_tools::parse_argument (argc, argv, "-sgtaus", nSegmSizeThres);
+    if(nSegmSizeThres == 0) nSegmSizeThres = nSegmSizeThres_default; nSegmSizeThres_default = nSegmSizeThres;
 
-    nDGradSmthBnd1 = nDGradSmthBThres1*254/nDSegmDThres/2; nDGradSmthBnd2 = nDGradSmthBThres2*254/nDSegmDThres/2;
+    nDGradSmthBnd1 = nDGradSmthBThres1*254/nSegmDThres/2; nDGradSmthBnd2 = nDGradSmthBThres2*254/nSegmDThres/2;
 
     terminal_tools::parse_argument (argc, argv, "-gssigma", nGSegmSigma);
     if(nGSegmSigma == 0) nGSegmSigma = nGSegmSigma_default; nGSegmSigma_default = nGSegmSigma;
@@ -356,8 +359,6 @@ void InitParameter (int argc, char** argv) {
     if(nGSegmMinSize == 0) nGSegmMinSize = nGSegmMinSize_default; nGSegmMinSize_default = nGSegmMinSize;
 
 
-    terminal_tools::parse_argument (argc, argv, "-trkmod", stTrack.Mode);
-    if(stTrack.Mode == 0) stTrack.Mode = stTrack_default.Mode; stTrack_default.Mode = stTrack.Mode;
     terminal_tools::parse_argument (argc, argv, "-trkcmod", stTrack.ClrMode);
     if(stTrack.ClrMode == 0) stTrack.ClrMode = stTrack_default.ClrMode; stTrack_default.ClrMode = stTrack.ClrMode;
 
@@ -382,16 +383,16 @@ void InitParameter (int argc, char** argv) {
     if(stTrack.CntMem == 0) stTrack.CntMem = stTrack_default.CntMem; stTrack_default.CntMem = stTrack.CntMem;
     terminal_tools::parse_argument (argc, argv, "-trkcs", stTrack.CntStable);
     if(stTrack.CntStable == 0) stTrack.CntStable = stTrack_default.CntStable; stTrack_default.CntStable = stTrack.CntStable;
-    terminal_tools::parse_argument (argc, argv, "-trkcd", stTrack.CntDisap);
-    if(stTrack.CntDisap == 0) stTrack.CntDisap = stTrack_default.CntDisap; stTrack_default.CntDisap = stTrack.CntDisap;
+    terminal_tools::parse_argument (argc, argv, "-trkcl", stTrack.CntLost);
+    if(stTrack.CntLost == 0) stTrack.CntLost = stTrack_default.CntLost; stTrack_default.CntLost = stTrack.CntLost;
 
     terminal_tools::parse_argument (argc, argv, "-natttd", nAttTDMode);
     if(nAttTDMode == 0) nAttTDMode = nAttTDMode_default; nAttTDMode_default = nAttTDMode;
-    terminal_tools::parse_argument (argc, argv, "-candmax", nAttSizeMax);
+    terminal_tools::parse_argument (argc, argv, "-attmax", nAttSizeMax);
     if(nAttSizeMax == 0) nAttSizeMax = nAttSizeMax_default; nAttSizeMax_default = nAttSizeMax;
-    terminal_tools::parse_argument (argc, argv, "-candmin", nAttSizeMin);
+    terminal_tools::parse_argument (argc, argv, "-attmin", nAttSizeMin);
     if(nAttSizeMin == 0) nAttSizeMin = nAttSizeMin_default; nAttSizeMin_default = nAttSizeMin;
-    terminal_tools::parse_argument (argc, argv, "-candpm", nAttPtsMin);
+    terminal_tools::parse_argument (argc, argv, "-attpm", nAttPtsMin);
     if(nAttPtsMin == 0) nAttPtsMin = nAttPtsMin_default; nAttPtsMin_default = nAttPtsMin;
 
 
@@ -464,9 +465,9 @@ void InitParameter (int argc, char** argv) {
     printf ("\n");
 
     printf ("== Segmentation Parameter ==\n");
-    printf ("Segmentation - Distance Threshold: .............. %5.0f mm\n", nDSegmDThres*1000);
-    printf ("Segmentation - Distance gradient threshold: ..... %7.1f mm/pixel\n", nDSegmGradDist*1000);
-    printf ("Segmentation - Cut out small segments: .......... %5d pixels\n", nDSegmCutSize);
+    printf ("Segmentation - Distance Threshold: .............. %5.0f mm\n", nSegmDThres*1000);
+    printf ("Segmentation - Distance gradient threshold: ..... %7.1f mm/pixel\n", nSegmGradDist*1000);
+    printf ("Segmentation - Cut out small segments: .......... %5d pixels\n", nSegmCutSize);
     printf ("Tracking - Position displacement threshold: ..... %8.2f\n", stTrack.DPos);
     printf ("Tracking - Size difference threshold: ........... %8.2f %%\n", stTrack.DSize*100);
     printf ("Tracking - Color difference threshold: .......... %8.2f\n", stTrack.DClr);
@@ -506,7 +507,7 @@ void ResetParameter () {
     bDepthDispMode = bDepthDispMode_default;
     nDLimit = nDLimit_default;
 
-    nDSegmDThres = nDSegmDThres_default;
+    nSegmDThres = nSegmDThres_default;
     nDGradConst = nDGradConst_default;
     nDGradFilterMode = nDGradFilterMode_default;
     nDGradFilterSize = nDGradFilterSize_default;
@@ -514,19 +515,18 @@ void ResetParameter () {
     nDGradSmthCenter = nDGradSmthCenter_default;
     nDGradSmthBThres1 = nDGradSmthBThres1_default;
     nDGradSmthBThres2 = nDGradSmthBThres2_default;
-    nDGradSmthBnd1 = nDGradSmthBThres1*254/nDSegmDThres/2; nDGradSmthBnd2 = nDGradSmthBThres2*254/nDSegmDThres/2;
+    nDGradSmthBnd1 = nDGradSmthBThres1*254/nSegmDThres/2; nDGradSmthBnd2 = nDGradSmthBThres2*254/nSegmDThres/2;
     nDGradSmthFac = nDGradSmthFac_default;
 
-    nDSegmSizeThres = nDSegmSizeThres_default;
-    nDSegmGradDist = nDSegmGradDist_default;
-    nDSegmCutSize = nDSegmCutSize_default;
+    nSegmSizeThres = nSegmSizeThres_default;
+    nSegmGradDist = nSegmGradDist_default;
+    nSegmCutSize = nSegmCutSize_default;
 
     nGSegmSigma = nGSegmSigma_default;
     nGSegmGrThrs = nGSegmGrThrs_default;
     nGSegmMinSize = nGSegmMinSize_default;
 
 
-    stTrack.Mode = stTrack_default.Mode;
     stTrack.ClrMode = stTrack_default.ClrMode;
     //stTrack.HistoBin = stTrack_default.HistoBin;
     stTrack.DPos = stTrack_default.DPos;
@@ -539,7 +539,7 @@ void ResetParameter () {
     stTrack.MFac = stTrack_default.MFac;
     stTrack.CntMem = stTrack_default.CntMem;
     stTrack.CntStable = stTrack_default.CntStable;
-    stTrack.CntDisap = stTrack_default.CntDisap;
+    stTrack.CntLost = stTrack_default.CntLost;
 
 
     nAttSizeMax = nAttSizeMax_default;
@@ -565,7 +565,6 @@ void ResetParameter () {
     flag_pcd = 0;
 
     if (vbFlagWnd[stTID.nPrmSegm]) {
-        cvSetTrackbarPos(vsTrackbarName[20].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.Mode);
         //cvSetTrackbarPos(vsTrackbarName[21].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.ClrMode);
         cvSetTrackbarPos(vsTrackbarName[22].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.DPos*100);
         cvSetTrackbarPos(vsTrackbarName[23].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.DSize*100);
@@ -576,7 +575,7 @@ void ResetParameter () {
         cvSetTrackbarPos(vsTrackbarName[28].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.Dist*100);
 
         //cvSetTrackbarPos(vsTrackbarName[38].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.CntStable);
-        //cvSetTrackbarPos(vsTrackbarName[39].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.CntDisap);
+        //cvSetTrackbarPos(vsTrackbarName[39].data(), vsWndName[stTID.nPrmSegm].data(), stTrack.CntLost);
         cvSetTrackbarPos(vsTrackbarName[31].data(), vsWndName[stTID.nPrmSegm].data(), nAttSizeMax);
         cvSetTrackbarPos(vsTrackbarName[32].data(), vsWndName[stTID.nPrmSegm].data(), nAttSizeMin);
         cvSetTrackbarPos(vsTrackbarName[33].data(), vsWndName[stTID.nPrmSegm].data(), nAttPtsMin);
@@ -614,17 +613,21 @@ void InitVariables () {
     cv::namedWindow(sTitle); cvMoveWindow(sTitle.data(), 80, 20);
 
     stTID.nRgbOrg = 0, stTID.nRgbDs = 1, stTID.nDepth = 2, stTID.nInfo = 3, stTID.nRecVideo = 7, stTID.nSnap = 8;
-    stTID.nSegmentation = 10, stTID.nDSegm = 12, stTID.nGSegm = 13, stTID.nTrack = 15, stTID.nProto = 16;
+    stTID.nSegmentation = 10, stTID.nSegm = 12, stTID.nGSegm = 13, stTID.nTrack = 15, stTID.nAtt = 16;
     stTID.nRecognition = 20, stTID.nRecogOrg = 21, stTID.nRecogDs = 22, stTID.nSIFT = 23;
     stTID.nRecTime = 31, stTID.nRstTime = 33, stTID.nPrmInfo = 34, stTID.nPrmSett = 35, stTID.nPrmSegm = 36, stTID.nPrmRecog = 37, stTID.nRstPrm = 38;
+
+    //////////////////////////////////////////////////////////////
+    stTID.nRes1 = 28; vsBtnName[stTID.nRes1] = "";
+    //////////////////////////////////////////////////////////////
 
     vsWndName[stTID.nRgbOrg] = "Original RGB";
     vsWndName[stTID.nRgbDs] = "Downsampled RGB";
     vsWndName[stTID.nDepth] = "Depth Image";
     vsWndName[stTID.nGSegm] = "Graph-based Segments";
-    vsWndName[stTID.nDSegm] = "Segments";
+    vsWndName[stTID.nSegm] = "Segments";
     vsWndName[stTID.nTrack] = "Tracked Object";
-    vsWndName[stTID.nProto] = "Object";
+    vsWndName[stTID.nAtt] = "Object";
     vsWndName[stTID.nRecogOrg] = "Recognition";
     vsWndName[stTID.nRecogDs] = "Recognition down-sampled";
     vsWndName[stTID.nSIFT] = "SIFT on whole Image";
@@ -638,9 +641,9 @@ void InitVariables () {
     vsBtnName[stTID.nInfo] = "Info";
     vsBtnName[stTID.nSegmentation] = "Segmentation";
     vsBtnName[stTID.nGSegm] = "GB Seg";
-    vsBtnName[stTID.nDSegm] = "Segmts";
+    vsBtnName[stTID.nSegm] = "Segmts";
     vsBtnName[stTID.nTrack] = "Track";
-    vsBtnName[stTID.nProto] = "Objects";
+    vsBtnName[stTID.nAtt] = "Objects";
     vsBtnName[stTID.nRecognition] = "Recognition";
     vsBtnName[stTID.nRecogOrg] = "Rec Org";
     vsBtnName[stTID.nRecogDs] = "Rec DS";
@@ -670,7 +673,6 @@ void InitVariables () {
     vsTrackbarName[3]  = "Filter size (3-27 pixels)               ";
     vsTrackbarName[11] = "AAA            ";
     vsTrackbarName[12] = "BBB";
-    vsTrackbarName[20] = "Tracking mode                                ";
     vsTrackbarName[21] = "Color mode (0-4)                          ";
     vsTrackbarName[22] = "Pos. dist. limit (0-1)       ";
     vsTrackbarName[23] = "Size dist. limit (0-1)       ";
@@ -754,12 +756,12 @@ void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, i
     nBtnH = nBtnSize - 4*nBtnOffset;
     nBtnW = nBtnSize - 1.5*nBtnOffset;
     nPadSecX = nBtnOffset;
-    nTaskNr = stTID.nDSegm; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
+    nTaskNr = stTID.nSegm; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecX += nBtnW + nBtnOffset;
     nTaskNr = stTID.nTrack; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecY += nBtnH + nBtnOffset;
     nPadSecX = nBtnOffset;
-    nTaskNr = stTID.nProto; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
+    nTaskNr = stTID.nAtt; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecX += nBtnW + nBtnOffset;
     nTaskNr = stTID.nDepth; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
     nPadSecY += nBtnH + nBtnOffset;
@@ -785,7 +787,15 @@ void SetPad(int nBtnSize, std::vector<std::vector<int> >& mnBtnPos, int &row1, i
     nPadSecY += nBtnH + nBtnOffset;
     nPadSecX = nBtnOffset;
     nTaskNr = stTID.nSIFT; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
+
+    /////////////////////////////////////////
+    nPadSecX += nBtnW + nBtnOffset;
+    nTaskNr = stTID.nRes1; SetBtnPos(nTaskNr, nPadSecX, nPadSecY, nBtnW, nBtnH, mnBtnPos);
+    /////////////////////////////////////////
+
     nPadSecY += nBtnH + 4*nBtnOffset;
+
+
 
     row1 = nPadSecY + 15;
 
@@ -882,11 +892,11 @@ void DrawPad(cv::Mat &cvm_input, std::vector<int> vnBtnProp, int nPadRow1, int n
 
 /* Draws information about time measurements on the left side of the gui.
  */
-void DrawInfo(cv::Mat &cvm_input, int nSegNr, int nPadRow1, int nPadCol1, int nCntFrame_tmp, double nTimeTotal,
-              double nTimePre, double nTimeDepth, double nTimeBlur, double nTimePre_avr, double nTimeDepth_avr, double nTimeBlur_avr,
+void DrawInfo(cv::Mat &cvm_input, int nSurfCnt, int nPadCol1, double nTimeTotal,
+              double nTimePre_avr, double nTimeDepth_avr, double nTimeBlur_avr,
               double nTimeSegm, double nTimeTrack, double nTimeAtt, double nTimeRec, double nTimeSift, double nTimeFlann,
               double nTimeSegm_avr, double nTimeTrack_avr, double nTimeAtt_avr, double nTimeRec_avr, double nTimeSift_avr, double nTimeFlann_avr,
-              double nTimeRecCycle, int nFoundCnt, double nTimeRecFound, double nTimeRecCycle_avr, double nTimeRecFound_avr,
+              double nTimeRecCycle, int nFoundCnt, double nTimeRecFound,
               double nTimeGbSegm, double nTimeSiftWhole, double nTimeSiftDrawWhole, double nTimeFlannWhole, double nTimeGbSegm_avr, double nTimeSiftWhole_avr, double nTimeFlannWhole_avr)
 {
     char sText[128];
@@ -917,7 +927,7 @@ void DrawInfo(cv::Mat &cvm_input, int nSegNr, int nPadRow1, int nPadCol1, int nC
     sprintf(sText, "%8.2f", nTimeTotal); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_magenta, 1);
 
     sprintf(sText, "N0. of segments:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=30)), nFont, nFontSize, c_green, 1);
-    sprintf(sText, "%6d", nSegNr); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_green, 1);
+    sprintf(sText, "%6d", nSurfCnt); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_green, 1);
     sprintf(sText, "Recognition cycle:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_green, 1);
     sprintf(sText, "%8.2f", nTimeRecCycle); cv::putText(cvm_input, sText, cv::Point(nTab, nPosY), nFont, nFontSize, c_green, 1);
     sprintf(sText, "Recognition Found:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_green, 1);
@@ -995,8 +1005,6 @@ void DrawSettings(cv::Mat &cvm_input, int IX, int nSnapFormat, double nDLimit, i
 
 
     sprintf(sText, "Tracking"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=25)), nFont, nFontSize, c_magenta, 1);
-    sprintf(sText, "Tracking mode:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
-    if (stTrack.Mode) sprintf(sText, "normal"); else sprintf(sText, "optimized"); cv::putText(cvm_input, sText, cv::Point(nTab+25, nPosY), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Color mode:"); cv::putText(cvm_input, sText, cv::Point(nPosX, (nPosY+=15)), nFont, nFontSize, c_lemon, 1);
     sprintf(sText, "Normalized rgb"); cv::putText(cvm_input, sText, cv::Point(nTab+25, nPosY), nFont, nFontSize, c_lemon, 1);
 
@@ -1105,15 +1113,15 @@ void OpenWindow (int wnd_nr) {if(!vbFlagWnd[wnd_nr]) SetFlagWnd (wnd_nr);}
 /* Reset time values for recognition only.
  */
 void ResetRecTime () {
-    nCntRec = 0; nTimeRec_acc = 0; nTimeRec_avr = 0;
+    nCtrRec = 0; nTimeRec_acc = 0; nTimeRec_avr = 0;
     nTimeAtt_acc = 0; nTimeAtt_avr = 0;
-    nCntSift = 0; nTimeSift_acc = 0; nTimeSift_avr = 0;
-    nCntFlann = 0; nTimeFlann_acc = 0; nTimeFlann_avr = 0;
+    nCtrSift = 0; nTimeSift_acc = 0; nTimeSift_avr = 0;
+    nCtrFlann = 0; nTimeFlann_acc = 0; nTimeFlann_avr = 0;
 
-    nCntRecCycle = 0; nTimeRecCycle_acc = 0; nTimeRecCycle_avr = 0;
+    nCtrRecCycle = 0; nTimeRecCycle_acc = 0; nTimeRecCycle_avr = 0;
     nTimeRecFound_acc = 0; nTimeRecFound_avr = 0;
 
-    nCntFrame_tmp = 0; nTimeTotal_acc = 0; nTimeTotal_avr = 0; nTimeFrame_acc = 0; nTimeFrame_avr = 0;
+    nCtrFrame_tmp = 0; nTimeTotal_acc = 0; nTimeTotal_avr = 0; nTimeFrame_acc = 0; nTimeFrame_avr = 0;
 
     nTimeRecCycle = 0; nTimeRecFound = 0; nTimeRecFound_max = 0; nTimeRecFound_min = 10000;
 }
@@ -1122,15 +1130,15 @@ void ResetRecTime () {
 /* Resets all time values both displayed and not displayed.
  */
 void ResetTime () {
-    nCntGbSegm = 0; nTimeGbSegm_acc = 0; nTimeGbSegm_avr = 0;
-    nCntSiftWhole = 0; nTimeSiftWhole_acc = 0; nTimeSiftWhole_avr = 0;
+    nCtrGbSegm = 0; nTimeGbSegm_acc = 0; nTimeGbSegm_avr = 0;
+    nCtrSiftWhole = 0; nTimeSiftWhole_acc = 0; nTimeSiftWhole_avr = 0;
     nTimeFlannWhole_acc = 0; nTimeFlannWhole_avr = 0;
 
-    nCntDepth = 0; nTimeDepth_acc = 0; nTimeDepth_avr = 0;
-    nCntBlur = 0; nTimeBlur_acc = 0; nTimeBlur_avr = 0;
+    nCtrDepth = 0; nTimeDepth_acc = 0; nTimeDepth_avr = 0;
+    nCtrBlur = 0; nTimeBlur_acc = 0; nTimeBlur_avr = 0;
 
-    nCntSegm = 0; nTimeSegm_acc = 0; nTimeSegm_avr = 0;
-    nCntTrack = 0; nTimeTrack_acc = 0; nTimeTrack_avr = 0;
+    nCtrSegm = 0; nTimeSegm_acc = 0; nTimeSegm_avr = 0;
+    nCtrTrack = 0; nTimeTrack_acc = 0; nTimeTrack_avr = 0;
 
     ResetRecTime ();
 }

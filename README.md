@@ -33,7 +33,15 @@ ELM source and build can go outside your catkin workspace.
 * git clone git@github.com:kashefy/elm.git
 * mkdir -p ~/build/elm/ros_static
 * cd ~/build/elm/ros_static
+
+For CMake >= 2.8.9:
+
 * cmake -DBUILD_SHARED_LIBS=OFF -DGTEST_ROOT=~/src/gtest-1.7.0 ~/src/elm
+
+For earlier versions of CMake:
+
+* cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_FLAGS="-fPIC" -DGTEST_ROOT=~/src/gtest-1.7.0 -DOpenCV_DIR=/opt/ros/hydro/share/OpenCV/OpenCVConfig.cmake ~/src/elm
+
 * make -j2
 
 Building the NI Vision Libraries and packages:

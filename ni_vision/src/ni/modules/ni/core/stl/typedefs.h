@@ -5,6 +5,8 @@
 
 #include <vector>
 
+#include "elm/core/stl/typedefs.h"
+
 namespace ni {
 
 typedef std::vector<int> VecI;  ///< convinience typedef for vector of integers

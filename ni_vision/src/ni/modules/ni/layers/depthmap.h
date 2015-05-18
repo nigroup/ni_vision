@@ -20,18 +20,16 @@ public:
     static const std::string PARAM_DEPTH_MAX;   ///< min. depth value
 
     // default values
-    static const float DEFAULT_DEPTH_MAX;   ///< max. depth (3.)
+    static const float DEFAULT_DEPTH_MAX;   ///< max. depth (5.)
 
     virtual void Clear();
 
     virtual void Reconfigure(const elm::LayerConfig &config);
 
-    virtual void Reset(const elm::LayerConfig &config);
-
     virtual void Activate(const elm::Signal &signal);
 
     /** Default constructor, still requires configurations
-      * \see Reconfigure
+      * @see Reconfigure, Reset, IONames
       */
     DepthMap();
 

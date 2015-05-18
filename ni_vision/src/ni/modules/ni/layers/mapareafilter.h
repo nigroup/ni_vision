@@ -3,7 +3,17 @@
 
 #include "elm/layers/layers_interim/base_featuretransformationlayer.h"
 
+#include "elm/core/typedefs_sfwd.h"
+
+namespace elm {
+
+class GraphAttr;
+
+} // namespace elm
+
 namespace ni {
+
+class Surface;
 
 /**
  * @brief Layer class for small map areas and merging them with largest neighbor
@@ -26,17 +36,22 @@ public:
 
     MapAreaFilter();
 
-    MapAreaFilter(const elm::LayerConfig &config);
-
     void Clear();
-
-    void Reset(const elm::LayerConfig &config);
 
     void Reconfigure(const elm::LayerConfig &config);
 
     void Activate(const elm::Signal &signal);
 
 protected:
+    int getNeighbors(int vtx_id, const elm::GraphAttr &seg_graph, std::vector<Surface> &neighbors, elm::VecF &neigh_sizes) const;
+
+    /**
+     * @brief get sizes of all segments from map
+     * @param map
+     * @param ids
+     * @return row vector of sizes, follows order in ids vector
+     */
+    cv::Mat1f getSizes(const cv::Mat1f &map, const elm::VecI &ids) const;
 
     // members
     int tau_size_;

@@ -1,10 +1,30 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ni_vision)
 
+# ----------------------------------------------------------------------------
+# Set global CMake variables
+# ----------------------------------------------------------------------------
+# Print all warnings and enable C++11 support
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++0x")
+set(CMAKE_VERBOSE ON CACHE BOOL "Verbose mode")
+
+# ----------------------------------------------------------------------------
+# NI Libraries
+# ----------------------------------------------------------------------------
+set(NI_LIBS ni_3rdparty ni_core ni_layers ni_legacy)
+
+# ----------------------------------------------------------------------------
+# ELM Libraries (must preceed OpenCV)
+# ----------------------------------------------------------------------------
+# ELM Layers describe the model pipeline
+# ----------------------------------------------------------------------------
+include(../ni/cmake/DetectELM.cmake)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  ni
   pcl_conversions
   pcl_ros
   roscpp
@@ -112,8 +132,16 @@ include_directories(${ni_tools_INCLUDE_DIRS})
 #add_library(func_operation src/func_operation.cpp)
 #target_link_libraries(func_operation ${OpenCV_LIBRARIES})
 
-add_executable(ni_vision src/ni_vision.cpp)
-target_link_libraries(ni_vision ${catkin_LIBRARIES} siftfast terminal_tools ${OpenCV_LIBRARIES})
+file(GLOB_RECURSE SRC_LIST src/*.c*)
+file(GLOB_RECURSE HEADERS  src/*.h*)
+
+# Filter out test related sources
+set(REGEX_EXCLUDE_FROM_MODULE "(.*test.*)|(.*~.*)|(.*matrix.cpp)")
+list_filterout(SRC_LIST ${REGEX_EXCLUDE_FROM_MODULE})
+list_filterout(HEADERS  ${REGEX_EXCLUDE_FROM_MODULE})
+
+add_executable(ni_vision ${SRC_LIST} ${HEADERS})
+target_link_libraries(ni_vision ${catkin_LIBRARIES} siftfast terminal_tools ${OpenCV_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
 
 ## Declare a cpp library
 # add_library(ni_vision

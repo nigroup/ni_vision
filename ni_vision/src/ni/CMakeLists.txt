@@ -27,7 +27,7 @@ include(cmake/MessageUtils.cmake)
 # Set global CMake variables
 # ----------------------------------------------------------------------------
 # Print all warnings and enable C++11 support
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++0x")
 set(CMAKE_VERBOSE ON CACHE BOOL "Verbose mode")
 
 ## Find catkin macros and libraries
@@ -226,6 +226,13 @@ build_tests("run_${ROOT_PROJECT}_unittests" "*unittest*")
 
 status("")
 
+status("Build settings:")
+status("")
+status("    Build type:\t${CMAKE_BUILD_TYPE}")
+status("    C Flags:\t${CMAKE_C_FLAGS}")
+status("    C++ Flags:\t${CMAKE_CXX_FLAGS}")
+
+status("")
 status("Build:")
 set(MODULE_NAMES ${${ROOT_PROJECT}_MODULES})
 strip_lib_prefix(MODULE_NAMES ${MODULE_NAMES})

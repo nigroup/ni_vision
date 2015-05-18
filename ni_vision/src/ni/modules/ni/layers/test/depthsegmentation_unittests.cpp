@@ -42,7 +42,9 @@ protected:
         config_.Input(DepthSegmentation::KEY_INPUT_STIMULUS, NAME_GRAD_Y);
         config_.Output(DepthSegmentation::KEY_OUTPUT_RESPONSE, NAME_OUT_SEG_MAP);
 
-        to_.reset(new DepthSegmentation(config_));
+        to_.reset(new DepthSegmentation());
+        to_->Reset(config_);
+        to_->IONames(config_);
     }
 
     shared_ptr<base_Layer> to_; ///< test object
@@ -106,14 +108,6 @@ public:
         Clear();
     }
 
-    DepthSegmentationExposeProtected(const LayerConfig &config)
-        : DepthSegmentation(config)
-    {
-        Clear();
-        Reconfigure(config);
-        IONames(config);
-    }
-
     bool comparePixels(float current, float neighbor) const
     {
         return DepthSegmentation::comparePixels(current, neighbor);
@@ -148,7 +142,9 @@ protected:
         config_.Input(DepthSegmentation::KEY_INPUT_STIMULUS, NAME_GRAD_Y);
         config_.Output(DepthSegmentation::KEY_OUTPUT_RESPONSE, NAME_OUT_SEG_MAP);
 
-        to_.reset(new DepthSegmentationExposeProtected(config_));
+        to_.reset(new DepthSegmentationExposeProtected());
+        to_->Reset(config_);
+        to_->IONames(config_);
     }
 
     shared_ptr<DepthSegmentationExposeProtected> to_; ///< test object

@@ -37,14 +37,6 @@ MapNeighAdjacency::MapNeighAdjacency()
     Clear();
 }
 
-MapNeighAdjacency::MapNeighAdjacency(const LayerConfig &config)
-    : base_FeatureTransformationLayer(config)
-{
-    Clear();
-    Reconfigure(config);
-    IONames(config);
-}
-
 void MapNeighAdjacency::Clear()
 {
     m_ = Mat1f();
@@ -65,7 +57,7 @@ void MapNeighAdjacency::Reconfigure(const LayerConfig &config)
 
 void MapNeighAdjacency::Activate(const Signal &signal)
 {
-    Mat1f map = signal.MostRecent(name_input_); // weighted gradient after thresholding
+    Mat1f map = signal.MostRecentMat1f(name_input_); // weighted gradient after thresholding
 
     GraphAttr seg_graph(map, map > DEFAULT_LABEL_UNASSIGNED);
 
