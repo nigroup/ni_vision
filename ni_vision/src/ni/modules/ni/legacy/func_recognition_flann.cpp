@@ -1,7 +1,5 @@
 #include "ni/legacy/func_recognition_flann.h"
 
-int flann_distance_order = 3;
-
 void flann_log_verbosity(int level)
 {
     flann::log_verbosity(level);
