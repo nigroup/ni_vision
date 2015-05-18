@@ -13,6 +13,7 @@
 
 #include "ni/legacy/surfprop.h"
 #include "ni/legacy/trackprop.h"
+#include "ni/legacy/taskid.h"
 
 ////////// System Paramters ///////////////////////////////////////
 bool bDepthDispMode = false, bDepthDispMode_default = false;
@@ -119,16 +120,7 @@ std::vector<std::vector<float> > mnTimeMeas3;
 std::vector<float> mnTimeMeasGbSegm;
 std::vector<std::vector<float> > mnTimeMeasSiftWhole;
 
-
-
-////////// ID of Tasks //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-struct TaskID {
-    int nRgbOrg, nRgbDs, nDepth, nInfo, nRecVideo, nSnap;
-    int nSegmentation, nSegm, nGSegm, nTrack, nAtt;
-    int nRecognition, nRecogOrg, nRecogDs, nSIFT;
-    int nRecTime, nRstTime, nPrmInfo, nPrmSett, nPrmSegm, nPrmRecog, nRstPrm;
-    int nRes1, nRes2;
-}; TaskID stTID;
+TaskID stTID;
 
 
 //// for time estimation ////
