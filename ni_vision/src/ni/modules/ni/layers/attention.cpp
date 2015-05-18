@@ -134,29 +134,50 @@ void Attention::Activate(const Signal &signal)
 
     int nSurfCnt = static_cast<int>(observed_.size());
 
-    {
-        int nTrackHistoBin_max = nb_bins_ * nb_bins_ * nb_bins_;
+    int nTrackHistoBin_max = nb_bins_ * nb_bins_ * nb_bins_;
 
-        SurfProp stSurf;
-        stSurf.vnIdx.resize(nSurfCnt, 0);
-        stSurf.vnPtsCnt.resize(nSurfCnt, 0);
-        stSurf.mnPtsIdx.resize(nSurfCnt,    VecI());
-        stSurf.mnRect.assign(nSurfCnt,      VecI(4,0));
-        stSurf.mnRCenter.assign(nSurfCnt,   VecI(2,0));
-        stSurf.mnCubic.assign(nSurfCnt,     VecF(6,0));
-        stSurf.mnCCenter.assign(nSurfCnt,   VecF(3,0));
-        stSurf.vnLength.resize(nSurfCnt, 0);
-        stSurf.mnColorHist.resize(nSurfCnt, VecF(nTrackHistoBin_max, 0));
-        stSurf.vnMemCtr.resize(nSurfCnt, stTrack.CntMem - stTrack.CntStable);
-        stSurf.vnStableCtr.resize(nSurfCnt, 0);
-        stSurf.vnLostCtr.resize(nSurfCnt, stTrack.CntLost + 10);
+    SurfProp stSurf;
+    stSurf.vnIdx.resize(nSurfCnt, 0);
+    stSurf.vnPtsCnt.resize(nSurfCnt, 0);
+    stSurf.mnPtsIdx.resize(nSurfCnt,    VecI());
+    stSurf.mnRect.assign(nSurfCnt,      VecI(4,0));
+    stSurf.mnRCenter.assign(nSurfCnt,   VecI(2,0));
+    stSurf.mnCubic.assign(nSurfCnt,     VecF(6,0));
+    stSurf.mnCCenter.assign(nSurfCnt,   VecF(3,0));
+    stSurf.vnLength.resize(nSurfCnt, 0);
+    stSurf.mnColorHist.resize(nSurfCnt, VecF(nTrackHistoBin_max, 0));
+    stSurf.vnMemCtr.resize(nSurfCnt, stTrack.CntMem - stTrack.CntStable);
+    stSurf.vnStableCtr.resize(nSurfCnt, 0);
+    stSurf.vnLostCtr.resize(nSurfCnt, stTrack.CntLost + 10);
 
-        VecSurfacesToSurfProp(observed_, stSurf);
+    VecSurfacesToSurfProp(observed_, stSurf);
+
+    // Top-down guidance
+
+    // Sorting Objects
+
+    float tmp_diff = 100;
+    std::vector<std::pair<float, int> > veCandClrDist(nMemsCnt);
+    std::vector<bool> vbProtoCand(nObjsNrLimit, false);
+    // Top-down Selection
+
+    for (int i = 0; i < nMemsCnt; i++) {
+        veCandClrDist[i].second = i;
+        if (stMems.vnStableCtr[i] < stTrack.CntStable || stMems.vnLostCtr[i] > stTrack.CntLost) {veCandClrDist[i].first = tmp_diff++; continue;}
+        if (stMems.vnLength[i]*1000 > nAttSizeMax || stMems.vnLength[i]*1000 < nAttSizeMin || stMems.vnPtsCnt[i] < nAttPtsMin) {veCandClrDist[i].first = tmp_diff++; continue;}
+
+        vbProtoCand[i] = true;
+        float dc = 0;
+        for (int j = 0; j < nTrackHistoBin_tmp; j++) {
+            if (mnColorHistY_lib.size() == 1) dc += fabs(mnColorHistY_lib[0][j] - stMems.mnColorHist[i][j]);
+            else dc += fabs(mnColorHistY_lib[stTrack.ClrMode][j] - stMems.mnColorHist[i][j]);
+        }
+        veCandClrDist[i].first = dc/2;
+    } // surface
+
+    Attention_TopDown (vbProtoCand, stMems, nMemsCnt, veCandClrDist);
 
 
-    }
-
-    framec++;
 }
 
 void Attention::extractFeatures(
