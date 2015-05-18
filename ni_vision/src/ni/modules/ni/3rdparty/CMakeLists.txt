@@ -10,9 +10,14 @@ file(GLOB_RECURSE SRC_LIST *.c*)
 file(GLOB_RECURSE HEADERS  *.h*)
 
 # Filter out test related sources
-set(REGEX_EXCLUDE_FROM_MODULE "(.*test.*)|(.*~.*)|(.*matrix.cpp)")
+set(REGEX_EXCLUDE_FROM_MODULE "(.*test.*)|(.*~.*)|(.*matrix.cpp)|(.*siftfast.*)")
 list_filterout(SRC_LIST ${REGEX_EXCLUDE_FROM_MODULE})
 list_filterout(HEADERS  ${REGEX_EXCLUDE_FROM_MODULE})
+
+list(APPEND SRC_LIST siftfast/libsiftfast.cpp)
+list(APPEND HEADERS ${CMAKE_CURRENT_LIST_DIR}/siftfast/siftfast.h)
+
+status("HEADERS:${HEADERS}")
 
 add_library(${MODULE_NAME} ${SRC_LIST} ${HEADERS})
 target_link_libraries(${MODULE_NAME} ${${ROOT_PROJECT}_LIBS})

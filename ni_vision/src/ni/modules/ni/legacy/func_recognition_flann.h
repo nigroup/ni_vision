@@ -1,8 +1,9 @@
-/*
- * Funktions for computing the flann, copied from the FLANN library
+/** @file Functions for computing the flann, copied from the FLANN library
  */
+#ifndef _NI_LEGACY_FUNC_RECOGNITION_FLANN_H_
+#define _NI_LEGACY_FUNC_RECOGNITION_FLANN_H_
 
-
+#include "flann/flann.h"
 
 flann_distance_t flann_distance_type = FLANN_DIST_EUCLIDEAN;
 int flann_distance_order = 3;
@@ -219,3 +220,5 @@ int flann_find_nearest_neighbors_index_int(flann_index_t index_ptr, int* testset
 {
     return _flann_find_nearest_neighbors_index(index_ptr, testset, tcount, result, dists, nn, flann_params);
 }
+
+#endif // _NI_LEGACY_FUNC_RECOGNITION_FLANN_H_

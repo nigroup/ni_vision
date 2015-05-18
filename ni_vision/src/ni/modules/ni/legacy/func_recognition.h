@@ -1,16 +1,20 @@
-/*
- * Function for attention and recognition
+/** @file Function for attention and recognition
  */
+#ifndef _NI_LEGACY_FUNC_RECOGNITION_H_
+#define _NI_LEGACY_FUNC_RECOGNITION_H_
 
+#include <boost/bind.hpp>
 
+#include <opencv2/core/core.hpp>
 
-// Fast SIFT Library
-//#include "siftfast/siftfast.h"
+#include "ni/3rdparty/siftfast/siftfast.h"
 
-///////////
-//#include "flann/flann.h"
+#include "ni/legacy/func_operations.h"
 #include "ni/legacy/func_recognition_flann.h"
 #include "ni/legacy/timer.h"
+#include "ni/legacy/surfprop.h"
+#include "ni/legacy/trackprop.h"
+#include "ni/legacy/taskid.h"
 
 #define PI 3.1415926536
 
@@ -415,7 +419,48 @@ void Recognition (int nCandID, int nImgScale, int nDsWidth, int nTimeRatio, int 
                      cv::Mat cvm_rgb_org, cv::Mat &cvm_rec_org, cv::Mat &cvm_rec_ds, SurfProp &stMems,
                      int nTrackCntLost, int &nCandCnt, float nCandClrDist, int &nFoundCnt, int &nFoundNr, int &nFoundFrame,
                      int &nCandKeyCnt, int &nCandRX, int &nCandRY, int &nCandRW, int &nCandRH,
-                     struct timespec t_rec_found_start, struct timespec t_rec_found_end, bool bSwitchRecordTime, int nRecogRtNr, std::vector<int> &vnRecogRating_tmp, cv::Mat cvm_cand) {
+                     struct timespec t_rec_found_start, struct timespec t_rec_found_end, bool bSwitchRecordTime, int nRecogRtNr, std::vector<int> &vnRecogRating_tmp, cv::Mat cvm_cand,
+                  bool &bTimeSift,
+                  bool &bTimeFlann,
+                  const bool bRecogClrMask,
+                  const TrackProp &stTrack,
+                  const std::vector<std::vector<float > > &mnColorHistY_lib,
+                  const int nSiftScales,
+                  const double nSiftInitSigma,
+                  const double nSiftPeakThrs,
+                  double &nTimeSift,
+                  const int tcount,
+                  const int nFlannKnn,
+                  const int nFlannLibCols_sift,
+                  const double nFlannMatchFac,
+                  const std::vector <std::vector <float> > mnSiftExtraFeatures,
+                  const flann_index_t FlannIdx_Sift,
+                  const struct FLANNParameters FLANNParam,
+                  const int T_numb,
+                  const double T_orient,
+                  const double T_scale,
+                  const int nDeltaBinNo,
+                  const int nFlannMatchCnt,
+                  const double nRecogDClr,
+                  double &nTimeRecFound,
+                  const int nCtrFrame,
+                  const int nCtrFrame_tmp,
+                  const std::vector<bool> &vbFlagTask,
+                  const TaskID &stTID,
+                  std::vector<std::vector<int> > &mnTimeMeas1,
+                  std::vector<std::vector<float> > &mnTimeMeas2,
+                  const int nCtrRecCycle,
+                  double &nTimeRecFound_max,
+                  double &nTimeRecFound_min,
+                  double &nTimeFlann,
+                  const int nRecordMode,
+                  const cv::Scalar &c_red,
+                  const cv::Scalar &c_white,
+                  const cv::Scalar &c_blue,
+                  const cv::Scalar &c_lemon) {
+
+    using std::max;
+    using std::min;
 
     nCandCnt++;
     // Initialize
@@ -629,3 +674,4 @@ void Recognition (int nCandID, int nImgScale, int nDsWidth, int nTimeRatio, int 
     }
 }
 
+#endif // _NI_LEGACY_FUNC_RECOGNITION_H_

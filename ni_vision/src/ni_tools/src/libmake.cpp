@@ -45,7 +45,7 @@
 #include "opencv2/imgproc/imgproc_c.h"
 
 
-#include "siftfast/siftfast.h"
+#include "ni/3rdparty/siftfast/siftfast.h"
 
 #include "terminal_tools/parse.h"
 
