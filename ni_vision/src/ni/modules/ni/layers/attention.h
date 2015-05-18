@@ -64,9 +64,6 @@ protected:
     void computeFeatureDistance(const std::vector<ni::Surface> &surfaces,
                                 const std::vector<ni::Surface> &mem);
 
-    void SurfPropToVecSurfaces(const SurfProp &surf_prop, std::vector<ni::Surface> &surfaces) const;
-    void VecSurfacesToSurfProp(const std::vector<ni::Surface> &surfaces, SurfProp &surf_prop) const;
-
     // members
     std::string input_name_bgr_;
     std::string input_name_cloud_;
