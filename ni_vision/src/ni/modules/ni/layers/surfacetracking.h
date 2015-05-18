@@ -25,10 +25,10 @@ class SurfaceTracking : public elm::base_MatOutputLayer
 {
 public:
     // params
-    static const std::string PARAM_HIST_BINS;
-    static const std::string PARAM_WEIGHT_COLOR;
-    static const std::string PARAM_WEIGHT_POS;
-    static const std::string PARAM_WEIGHT_SIZE;
+    static const std::string PARAM_HIST_BINS;       ///< no. of bins in color histogram
+    static const std::string PARAM_WEIGHT_COLOR;    ///< color contribution
+    static const std::string PARAM_WEIGHT_POS;      ///< position contribution
+    static const std::string PARAM_WEIGHT_SIZE;     ///< size contribution
     static const std::string PARAM_MAX_COLOR;       ///< upper threshold for similarly colored surfaces
     static const std::string PARAM_MAX_POS;         ///< upper threshold for similarly positioned surfaces
     static const std::string PARAM_MAX_SIZE;        ///< upper threshold for similarly sized surfaces
