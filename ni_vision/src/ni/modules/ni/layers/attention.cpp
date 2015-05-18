@@ -357,14 +357,4 @@ void Attention::extractFeatures(
     }
 }
 
-void Attention::computeFeatureDistance(const vector<Surface> &surfaces,
-                                             const vector<Surface> &mem)
-{
-    int nb_surfaces = static_cast<int>(surfaces.size());
-    int nb_mem = static_cast<int>(mem.size());
-
-    const int DIM = max(nb_surfaces, nb_mem);
-
-    dist_       = Mat1f(DIM, DIM, DISTANCE_HUGE);
-}
 

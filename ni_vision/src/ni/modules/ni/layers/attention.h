@@ -61,9 +61,6 @@ protected:
                          const cv::Mat1f &map,
                          std::vector<Surface> &surfaces);
 
-    void computeFeatureDistance(const std::vector<ni::Surface> &surfaces,
-                                const std::vector<ni::Surface> &mem);
-
     // members
     std::string input_name_bgr_;
     std::string input_name_cloud_;
