@@ -9,7 +9,7 @@
 
 ///////////
 //#include "flann/flann.h"
-#include "func_recognition_flann.hpp"
+#include "ni/legacy/func_recognition_flann.h"
 #include "ni/legacy/timer.h"
 
 #define PI 3.1415926536
