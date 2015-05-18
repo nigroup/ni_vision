@@ -155,29 +155,27 @@ void Attention::Activate(const Signal &signal)
     // Top-down guidance
 
     // Sorting Objects
+//    int nObjsNrLimit = 1000;
+//    float tmp_diff = 100;
+//    std::vector<std::pair<float, int> > veCandClrDist(nMemsCnt);
+//    std::vector<bool> vbProtoCand(nObjsNrLimit, false);
+//    // Top-down Selection
 
-    float tmp_diff = 100;
-    std::vector<std::pair<float, int> > veCandClrDist(nMemsCnt);
-    std::vector<bool> vbProtoCand(nObjsNrLimit, false);
-    // Top-down Selection
+//    for (int i = 0; i < nMemsCnt; i++) {
+//        veCandClrDist[i].second = i;
+//        if (stMems.vnStableCtr[i] < stTrack.CntStable || stMems.vnLostCtr[i] > stTrack.CntLost) {veCandClrDist[i].first = tmp_diff++; continue;}
+//        if (stMems.vnLength[i]*1000 > nAttSizeMax || stMems.vnLength[i]*1000 < nAttSizeMin || stMems.vnPtsCnt[i] < nAttPtsMin) {veCandClrDist[i].first = tmp_diff++; continue;}
 
-    for (int i = 0; i < nMemsCnt; i++) {
-        veCandClrDist[i].second = i;
-        if (stMems.vnStableCtr[i] < stTrack.CntStable || stMems.vnLostCtr[i] > stTrack.CntLost) {veCandClrDist[i].first = tmp_diff++; continue;}
-        if (stMems.vnLength[i]*1000 > nAttSizeMax || stMems.vnLength[i]*1000 < nAttSizeMin || stMems.vnPtsCnt[i] < nAttPtsMin) {veCandClrDist[i].first = tmp_diff++; continue;}
+//        vbProtoCand[i] = true;
+//        float dc = 0;
+//        for (int j = 0; j < nTrackHistoBin_tmp; j++) {
+//            if (mnColorHistY_lib.size() == 1) dc += fabs(mnColorHistY_lib[0][j] - stMems.mnColorHist[i][j]);
+//            else dc += fabs(mnColorHistY_lib[stTrack.ClrMode][j] - stMems.mnColorHist[i][j]);
+//        }
+//        veCandClrDist[i].first = dc/2;
+//    } // surface
 
-        vbProtoCand[i] = true;
-        float dc = 0;
-        for (int j = 0; j < nTrackHistoBin_tmp; j++) {
-            if (mnColorHistY_lib.size() == 1) dc += fabs(mnColorHistY_lib[0][j] - stMems.mnColorHist[i][j]);
-            else dc += fabs(mnColorHistY_lib[stTrack.ClrMode][j] - stMems.mnColorHist[i][j]);
-        }
-        veCandClrDist[i].first = dc/2;
-    } // surface
-
-    Attention_TopDown (vbProtoCand, stMems, nMemsCnt, veCandClrDist);
-
-
+//    Attention_TopDown (vbProtoCand, stMems, nMemsCnt, veCandClrDist);//////////** Top-down guidance **/////////////////
 }
 
 void Attention::extractFeatures(
