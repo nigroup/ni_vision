@@ -26,8 +26,9 @@ using namespace elm;
 using namespace ni;
 
 const string Attention::PARAM_HIST_BINS       = "bins";
-const string Attention::PARAM_WEIGHT_COLOR    = "weight_color";
-const string Attention::PARAM_WEIGHT_POS      = "weight_pos";
+const string Attention::PARAM_SIZE_MAX        = "att_size_max";
+const string Attention::PARAM_SIZE_MIN        = "att_size_min";
+const string Attention::PARAM_PTS_MIN         = "att_pts_min";
 const string Attention::PARAM_WEIGHT_SIZE     = "weight_size";
 const string Attention::PARAM_MAX_COLOR       = "max_color";
 const string Attention::PARAM_MAX_POS         = "max_pos";
@@ -87,7 +88,6 @@ void Attention::Reset(const LayerConfig &config)
     stMems.vnFound.resize(nObjsNrLimit,     0);
 
     framec = 0;
-    nMemsCnt = 0;
 
     Reconfigure(config);
 }
@@ -96,6 +96,10 @@ void Attention::Reconfigure(const LayerConfig &config)
 {
     PTree p = config.Params();
     nb_bins_ = p.get<int>(PARAM_HIST_BINS);
+
+    nAttSizeMax = p.get<int>(PARAM_SIZE_MAX);
+    nAttSizeMin = p.get<int>(PARAM_SIZE_MIN);
+    nAttPtsMin  = p.get<int>(PARAM_PTS_MIN);
 
     // initialize legacy members
     stTrack.ClrMode = 1;
@@ -134,7 +138,29 @@ void Attention::Activate(const Signal &signal)
 
     int nSurfCnt = static_cast<int>(observed_.size());
 
+    int nMemsCnt = nSurfCnt;
+
     int nTrackHistoBin_max = nb_bins_ * nb_bins_ * nb_bins_;
+
+    // The value of nTrackHistoBin_tmp depends on the number of channels of the selected color model
+    int nTrackHistoBin_tmp;
+    switch(stTrack.ClrMode) {
+
+    case 0:
+    case 1:
+    case 2: nTrackHistoBin_tmp = nTrackHistoBin_max;
+        break;
+    case 3: nTrackHistoBin_tmp = stTrack.HistoBin * stTrack.HistoBin;
+        break;
+    case 4:
+    case 5:
+    case 6: nTrackHistoBin_tmp = nTrackHistoBin_max;
+        break;
+    case 7: nTrackHistoBin_tmp = stTrack.HistoBin * stTrack.HistoBin;
+        break;
+    default:
+        nTrackHistoBin_tmp = nTrackHistoBin_max;
+    }
 
     SurfProp stSurf;
     stSurf.vnIdx.resize(nSurfCnt, 0);
@@ -155,25 +181,45 @@ void Attention::Activate(const Signal &signal)
     // Top-down guidance
 
     // Sorting Objects
-//    int nObjsNrLimit = 1000;
-//    float tmp_diff = 100;
-//    std::vector<std::pair<float, int> > veCandClrDist(nMemsCnt);
-//    std::vector<bool> vbProtoCand(nObjsNrLimit, false);
-//    // Top-down Selection
+    int nObjsNrLimit = 1000;
+    float tmp_diff = 100;
+    std::vector<std::pair<float, int> > veCandClrDist(nMemsCnt);
+    std::vector<bool> vbProtoCand(nObjsNrLimit, false);
+    // Top-down Selection
 
-//    for (int i = 0; i < nMemsCnt; i++) {
-//        veCandClrDist[i].second = i;
-//        if (stMems.vnStableCtr[i] < stTrack.CntStable || stMems.vnLostCtr[i] > stTrack.CntLost) {veCandClrDist[i].first = tmp_diff++; continue;}
-//        if (stMems.vnLength[i]*1000 > nAttSizeMax || stMems.vnLength[i]*1000 < nAttSizeMin || stMems.vnPtsCnt[i] < nAttPtsMin) {veCandClrDist[i].first = tmp_diff++; continue;}
+    for (int i = 0; i < nMemsCnt; i++) {
 
-//        vbProtoCand[i] = true;
+        veCandClrDist[i].second = i;
+
+        if (stMems.vnStableCtr[i] < stTrack.CntStable || stMems.vnLostCtr[i] > stTrack.CntLost) {
+
+            veCandClrDist[i].first = tmp_diff++;
+            continue;
+        }
+
+        if (stMems.vnLength[i]*1000 > nAttSizeMax ||
+                stMems.vnLength[i]*1000 < nAttSizeMin ||
+                stMems.vnPtsCnt[i] < nAttPtsMin) {
+
+            veCandClrDist[i].first = tmp_diff++;
+            continue;
+        }
+
+        vbProtoCand[i] = true;
+
 //        float dc = 0;
 //        for (int j = 0; j < nTrackHistoBin_tmp; j++) {
-//            if (mnColorHistY_lib.size() == 1) dc += fabs(mnColorHistY_lib[0][j] - stMems.mnColorHist[i][j]);
-//            else dc += fabs(mnColorHistY_lib[stTrack.ClrMode][j] - stMems.mnColorHist[i][j]);
+
+//            if (mnColorHistY_lib.size() == 1) {
+
+//                dc += fabs(mnColorHistY_lib[0][j] - stMems.mnColorHist[i][j]);
+//            }
+//            else {
+//                dc += fabs(mnColorHistY_lib[stTrack.ClrMode][j] - stMems.mnColorHist[i][j]);
+//            }
 //        }
-//        veCandClrDist[i].first = dc/2;
-//    } // surface
+//        veCandClrDist[i].first = dc/2.f;
+    } // surface
 
 //    Attention_TopDown (vbProtoCand, stMems, nMemsCnt, veCandClrDist);//////////** Top-down guidance **/////////////////
 }

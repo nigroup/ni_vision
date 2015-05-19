@@ -26,8 +26,9 @@ class Attention : public elm::base_MatOutputLayer
 public:
     // params
     static const std::string PARAM_HIST_BINS;
-    static const std::string PARAM_WEIGHT_COLOR;
-    static const std::string PARAM_WEIGHT_POS;
+    static const std::string PARAM_SIZE_MAX;        ///< upper threshold for size (cube diagonal) [mm]
+    static const std::string PARAM_SIZE_MIN;        ///< lower threshold for size (cube diagonal) [mm]
+    static const std::string PARAM_PTS_MIN;         ///< lower threshold for area [pixels]
     static const std::string PARAM_WEIGHT_SIZE;
     static const std::string PARAM_MAX_COLOR;       ///< upper threshold for similarly colored surfaces
     static const std::string PARAM_MAX_POS;         ///< upper threshold for similarly positioned surfaces
@@ -73,8 +74,10 @@ protected:
     std::vector<ni::Surface> observed_;
 
     // legacy members
+    int nAttSizeMax;        ///< upper threshold for size (cube diagonal) [mm]
+    int nAttSizeMin;        ///< lower threshold for size (cube diagonal) [mm]
+    int nAttPtsMin;         ///< lower threshold for area [pixels]
     SurfProp stMems;
-    int nMemsCnt;
     TrackProp stTrack;
     VecI vnMemsValidIdx;
     std::vector<elm::VecF > mnMemsRelPose;
