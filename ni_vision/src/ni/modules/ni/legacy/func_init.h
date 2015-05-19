@@ -43,14 +43,14 @@ float* ReadFlannDataset_SiftOnePos (const cv::Mat &mFeatureSet,
  *
  * Read the library file
  *
- * @param[in] libnr
+ * @param[in] libnr 1: Color histogram, 2: SIFT for one view-point
  * @param[in] sLibFileName full path to library filename
  * @param mnColorHistY_lib
  * @param stTrack
  * @param nFlannLibCols_sift
  * @param FLANNParam
  * @param nFlannDataset
- * @param nRecogFeature
+ * @param[in] nRecogFeature
  * @param mnSiftExtraFeatures
  * @param FlannIdx_Sift
  */
