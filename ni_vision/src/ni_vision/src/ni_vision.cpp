@@ -1447,8 +1447,26 @@ int main(int argc, char** argv)
 
     switch (nRecogFeature) {
     case 20:
-        BuildFlannIndex(1, sColorLibFileName); printf("Color FLANN Index Computed.\n\n");
-        BuildFlannIndex(2, sSIFTLibFileName); printf("SIFT FLANN Index Computed.\n\n");
+        BuildFlannIndex(1, sColorLibFileName,
+                        mnColorHistY_lib,
+                        stTrack,
+                        nFlannLibCols_sift,
+                        FLANNParam,
+                        nFlannDataset,
+                        nRecogFeature,
+                        mnSiftExtraFeatures,
+                        FlannIdx_Sift);
+        printf("Color FLANN Index Computed.\n\n");
+        BuildFlannIndex(2, sSIFTLibFileName,
+                        mnColorHistY_lib,
+                        stTrack,
+                        nFlannLibCols_sift,
+                        FLANNParam,
+                        nFlannDataset,
+                        nRecogFeature,
+                        mnSiftExtraFeatures,
+                        FlannIdx_Sift);
+        printf("SIFT FLANN Index Computed.\n\n");
         break;
     }
 

@@ -14,6 +14,7 @@
 #include "ni/legacy/surfprop.h"
 #include "ni/legacy/trackprop.h"
 #include "ni/legacy/taskid.h"
+#include "ni/legacy/func_init.h"
 
 ////////// System Paramters ///////////////////////////////////////
 bool bDepthDispMode = false, bDepthDispMode_default = false;
@@ -164,133 +165,6 @@ int nDeltaBinNo;
 int T_numb;
 double T_orient;
 double T_scale;
-
-
-/* BUILDING COLOR INDEX
- * This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address.
- *
- * Input:
- * mFeatureSet - matrix of features which was extracted from the lib file
- *
- * Output:
- * Pointer to the first address of the feature vector
- */
-float* ReadFlannDataset_Color (cv::Mat mFeatureSet) {
-    float *data;
-    float *p;
-    int i,j;
-    data = (float*) malloc (mFeatureSet.rows * mFeatureSet.cols * sizeof(float));
-    if (!data) {printf("Cannot allocate memory.\n"); exit(1);}
-
-    printf("Memory allocated for Color FLANN: %d * float\n", mFeatureSet.rows * mFeatureSet.cols);
-    p = data;
-
-    mnColorHistY_lib.resize(mFeatureSet.rows);
-    for (i = 0; i < mFeatureSet.rows; ++i) {
-        mnColorHistY_lib[i].resize(mFeatureSet.cols);
-        for (j = 0; j < mFeatureSet.cols; ++j) {
-            float tmp = mFeatureSet.at<float>(i, j);
-            *p = tmp;
-            p++;
-            mnColorHistY_lib[i][j] = mFeatureSet.at<float>(i, j);
-        }
-    }
-
-    stTrack.HistoBin = round(pow(mFeatureSet.cols,(1/3.0)));
-    return data;
-}
-
-
-
-/* BUILDING SIFT INDEX
- * This function stores the feature vectors from the lib file in row major form and returns a pointer to the first address.
- *
- * Input:
- * mFeatureSet - matrix of features which was extracted from the lib file
- *
- * Output:
- * Pointer to the first address of the feature vector
- */
-float* ReadFlannDataset_SiftOnePos (cv::Mat mFeatureSet) {
-
-    nFlannLibCols_sift = 128;
-
-    float *data;
-    float *p;
-    int i,j;
-
-    switch (nRecogFeature) {
-    case 20: {
-        data = (float*) malloc(mFeatureSet.rows * nFlannLibCols_sift * sizeof(float));
-        mnSiftExtraFeatures.resize(mFeatureSet.rows, std::vector<float> (5,0));
-        if (!data) {printf("Cannot allocate memory.\n"); exit(1);}
-
-        printf("Memory allocated for FLANN: %d * float\n",mFeatureSet.rows * nFlannLibCols_sift);
-        p = data;
-
-        for (i = 0; i < mFeatureSet.rows; ++i) {
-            for (j = 0; j < nFlannLibCols_sift; ++j) {
-                float tmp = mFeatureSet.at<float>(i,j);
-                *p=tmp;
-                p++;
-            }
-
-            mnSiftExtraFeatures[i][0] = mFeatureSet.at<float>(i,128); //row
-            mnSiftExtraFeatures[i][1] = mFeatureSet.at<float>(i,129); //col
-            mnSiftExtraFeatures[i][2] = mFeatureSet.at<float>(i,130); //scale
-            mnSiftExtraFeatures[i][3] = mFeatureSet.at<float>(i,131); //ori
-            mnSiftExtraFeatures[i][4] = mFeatureSet.at<float>(i,132); //fpyramidscale
-        }
-    } break;
-    case 30:
-        break;
-    }
-
-    return data;
-}
-
-
-
-/* Build Flann Index
- */
-void BuildFlannIndex (int libnr, std::string sLibFileName) {   //Read the library file
-    cv::Mat mFeatureSet;
-    cv::FileStorage fs(sLibFileName, cv::FileStorage::READ);
-    fs["TestObjectFeatureVectors"] >> mFeatureSet;
-    fs.release();
-    float speedup;
-
-    FLANNParameters DEFAULT_FLANN_PARAMETERS_USR = {
-        FLANN_INDEX_KDTREE,
-        32, 0.2f, 0.0f,
-        4, 4,
-        32, 11, FLANN_CENTERS_RANDOM,
-        0.9f, 0.01f, 0, 0.1f,
-        FLANN_LOG_NONE, 0
-    };
-
-    //FLANNParam = DEFAULT_FLANN_PARAMETERS;
-    FLANNParam = DEFAULT_FLANN_PARAMETERS_USR;
-    FLANNParam.algorithm = FLANN_INDEX_KDTREE;
-    FLANNParam.trees = 8;
-    FLANNParam.log_level = FLANN_LOG_INFO;
-    FLANNParam.checks = 64;
-    FLANNParam.target_precision = 0.9;
-
-    switch (libnr) {        // 1: Color histogram, 2: SIFT for one view-point
-    case 1:
-        nFlannDataset = ReadFlannDataset_Color(mFeatureSet);  //Store the Input file into memory!
-        //FlannIdx_Color = flann_build_index(nFlannDataset, mFeatureSet.rows, mFeatureSet.rows, &speedup, &FLANNParam);
-        break;
-    case 2:
-        nFlannDataset = ReadFlannDataset_SiftOnePos(mFeatureSet);  //Store the Input file into memory!
-        FlannIdx_Sift = flann_build_index(nFlannDataset, mFeatureSet.rows, nFlannLibCols_sift, &speedup, &FLANNParam);
-        break;
-    }
-}
-
-
-
 
 /* Initialize parameter with the console input
  *
