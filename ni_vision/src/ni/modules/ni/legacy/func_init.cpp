@@ -93,7 +93,6 @@ void BuildFlannIndex (int libnr,
     cv::FileStorage fs(sLibFileName, cv::FileStorage::READ);
     fs["TestObjectFeatureVectors"] >> mFeatureSet;
     fs.release();
-    float speedup;
 
     FLANNParameters DEFAULT_FLANN_PARAMETERS_USR = {
         FLANN_INDEX_KDTREE,
@@ -119,6 +118,7 @@ void BuildFlannIndex (int libnr,
         break;
     case 2:
         nFlannDataset = ReadFlannDataset_SiftOnePos(mFeatureSet, nRecogFeature, nFlannLibCols_sift, mnSiftExtraFeatures);  //Store the Input file into memory!
+        float speedup;
         FlannIdx_Sift = flann_build_index(nFlannDataset, mFeatureSet.rows, nFlannLibCols_sift, &speedup, &FLANNParam);
         break;
     }
