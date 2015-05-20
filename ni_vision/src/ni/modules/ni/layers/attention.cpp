@@ -1,7 +1,11 @@
 #include "ni/layers/attention.h"
+
 #include <opencv2/highgui/highgui.hpp>
 #include "elm/core/debug_utils.h"
+
 #include <set>
+
+#include <boost/filesystem.hpp>
 
 #include "elm/core/cv/mat_vector_utils.h"
 #include "elm/core/cv/mat_vector_utils_inl.h"
@@ -17,10 +21,12 @@
 #include "ni/core/boundingbox3d.h"
 #include "ni/core/colorhistogram.h"
 
-#include "ni/legacy/func_segmentation.h"
+#include "ni/legacy/func_init.h"
+#include "ni/legacy/func_recognition.h"
 #include "ni/legacy/surfprop_utils.h"
 
 using namespace std;
+namespace bfs=boost::filesystem;
 using namespace cv;
 using namespace elm;
 using namespace ni;
@@ -29,11 +35,8 @@ const string Attention::PARAM_HIST_BINS       = "bins";
 const string Attention::PARAM_SIZE_MAX        = "att_size_max";
 const string Attention::PARAM_SIZE_MIN        = "att_size_min";
 const string Attention::PARAM_PTS_MIN         = "att_pts_min";
-const string Attention::PARAM_WEIGHT_SIZE     = "weight_size";
-const string Attention::PARAM_MAX_COLOR       = "max_color";
-const string Attention::PARAM_MAX_POS         = "max_pos";
-const string Attention::PARAM_MAX_SIZE        = "max_size";
-const string Attention::PARAM_MAX_DIST        = "max_dist";
+const string Attention::PARAM_PATH_COLOR      = "path_color";
+const string Attention::PARAM_PATH_SIFT       = "path_sift";
 
 const string Attention::KEY_INPUT_BGR_IMAGE   = "bgr";
 const string Attention::KEY_INPUT_CLOUD       = "points";
@@ -68,7 +71,7 @@ void Attention::Clear()
 void Attention::Reset(const LayerConfig &config)
 {
     // reset legacy members
-    int nTrackHistoBin_max = nb_bins_ * nb_bins_ * nb_bins_;
+    //int nTrackHistoBin_max = nb_bins_ * nb_bins_ * nb_bins_;
     int nObjsNrLimit = 1000;
 
     stMems.vnIdx.resize(nObjsNrLimit,       0);
@@ -88,6 +91,49 @@ void Attention::Reset(const LayerConfig &config)
     stMems.vnFound.resize(nObjsNrLimit,     0);
 
     framec = 0;
+
+    PTree p = config.Params();
+
+    bfs::path path_color = p.get<bfs::path>(PARAM_PATH_COLOR);
+
+    if(!bfs::is_regular_file(path_color)) {
+
+        stringstream s;
+        s << "Invalid path for attention layer (" << path_color << ")";
+        ELM_THROW_FILEIO_ERROR(s.str());
+    }
+
+    bfs::path path_sift = p.get<bfs::path>(PARAM_PATH_SIFT);
+
+    if(!bfs::is_regular_file(path_sift)) {
+
+        stringstream s;
+        s << "Invalid path for attention layer (" << path_sift << ")";
+        ELM_THROW_FILEIO_ERROR(s.str());
+    }
+
+    mnColorHistY_lib.clear();
+    mnSiftExtraFeatures.clear();
+
+    int nRecogFeature = 20;
+    BuildFlannIndex(1, path_color.string(),
+                    mnColorHistY_lib,
+                    stTrack,
+                    nFlannLibCols_sift,
+                    FLANNParam,
+                    nFlannDataset,
+                    nRecogFeature,
+                    mnSiftExtraFeatures,
+                    FlannIdx_Sift);
+    BuildFlannIndex(2, path_sift.string(),
+                    mnColorHistY_lib,
+                    stTrack,
+                    nFlannLibCols_sift,
+                    FLANNParam,
+                    nFlannDataset,
+                    nRecogFeature,
+                    mnSiftExtraFeatures,
+                    FlannIdx_Sift);
 
     Reconfigure(config);
 }
@@ -191,11 +237,11 @@ void Attention::Activate(const Signal &signal)
 
         veCandClrDist[i].second = i;
 
-        if (stMems.vnStableCtr[i] < stTrack.CntStable || stMems.vnLostCtr[i] > stTrack.CntLost) {
+//        if (stMems.vnStableCtr[i] < stTrack.CntStable || stMems.vnLostCtr[i] > stTrack.CntLost) {
 
-            veCandClrDist[i].first = tmp_diff++;
-            continue;
-        }
+//            veCandClrDist[i].first = tmp_diff++;
+//            continue;
+//        }
 
         if (stMems.vnLength[i]*1000 > nAttSizeMax ||
                 stMems.vnLength[i]*1000 < nAttSizeMin ||
@@ -207,21 +253,29 @@ void Attention::Activate(const Signal &signal)
 
         vbProtoCand[i] = true;
 
-//        float dc = 0;
-//        for (int j = 0; j < nTrackHistoBin_tmp; j++) {
+        float dc = 0;
+        for (int j = 0; j < nTrackHistoBin_tmp; j++) {
 
-//            if (mnColorHistY_lib.size() == 1) {
+            if (mnColorHistY_lib.size() == 1) {
 
-//                dc += fabs(mnColorHistY_lib[0][j] - stMems.mnColorHist[i][j]);
-//            }
-//            else {
-//                dc += fabs(mnColorHistY_lib[stTrack.ClrMode][j] - stMems.mnColorHist[i][j]);
-//            }
-//        }
-//        veCandClrDist[i].first = dc/2.f;
+                dc += fabs(mnColorHistY_lib[0][j] - stMems.mnColorHist[i][j]);
+            }
+            else {
+                dc += fabs(mnColorHistY_lib[stTrack.ClrMode][j] - stMems.mnColorHist[i][j]);
+            }
+        }
+        veCandClrDist[i].first = dc/2.f;
     } // surface
 
-//    Attention_TopDown (vbProtoCand, stMems, nMemsCnt, veCandClrDist);//////////** Top-down guidance **/////////////////
+    Attention_TopDown (vbProtoCand,
+                       stMems,
+                       nMemsCnt,
+                       veCandClrDist);
+
+    for(int i=0; i<nMemsCnt; i++) {
+
+
+    }
 }
 
 void Attention::extractFeatures(
