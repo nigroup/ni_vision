@@ -88,7 +88,7 @@ public:
         using namespace message_filters; // Subscriber, sync_policies
 
         // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-        int queue_size = 30;
+        int queue_size = 60;
         sync_ptr_ = new Synchronizer<MySyncPolicy>(MySyncPolicy(queue_size),
                                                    cloud_sub_,
                                                    img_sub_,
@@ -115,8 +115,15 @@ protected:
             p.put(Attention::PARAM_SIZE_MIN,  100);
             p.put(Attention::PARAM_PTS_MIN,   200);
 
-            boost::filesystem::path path_color("/home/kashefy/nivision/models/Lib8B/simplelib_3dch_DanKlorix.yaml");
-            boost::filesystem::path path_sift("/home/kashefy/nivision/models/Lib8B/lib_sift_DanKlorix_0015.yaml");
+            std::string tmp;
+            nh.getParam(Attention::PARAM_PATH_COLOR, tmp);
+            boost::filesystem::path path_color(tmp);
+
+            nh.getParam(Attention::PARAM_PATH_SIFT, tmp);
+            boost::filesystem::path path_sift(tmp);
+
+            //boost::filesystem::path path_color("/home/kashefy/nivision/models/Lib8B/simplelib_3dch_DanKlorix.yaml");
+            //boost::filesystem::path path_sift("/home/kashefy/nivision/models/Lib8B/lib_sift_DanKlorix_0015.yaml");
 
             p.put<boost::filesystem::path>(Attention::PARAM_PATH_COLOR, path_color);
             p.put<boost::filesystem::path>(Attention::PARAM_PATH_SIFT,  path_sift);
@@ -247,14 +254,14 @@ int main(int argc, char** argv)
      * You must call one of the versions of ros::init() before using any other
      * part of the ROS system.
      */
-    ros::init(argc, argv, "surface_tracking");
+    ros::init(argc, argv, "attention");
 
     /**
      * NodeHandle is the main access point to communications with the ROS system.
      * The first NodeHandle constructed will fully initialize this node, and the last
      * NodeHandle destructed will close down the node.
      */
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("~");
     ni::AttentionNode attention_node(nh);
 
     /**
