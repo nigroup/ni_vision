@@ -46,6 +46,7 @@ typedef Registor_<base_Layer>::Registry LayerRegistry;
 #define LAYER_REGISTRY_PAIR(NewInstance) REGISTRY_PAIR(LayerRegistor, NewInstance)
 
 LayerRegistry g_layerRegistry = map_list_of
+        LAYER_REGISTRY_PAIR( Attention )
         LAYER_REGISTRY_PAIR( AttentionWindow )
         LAYER_REGISTRY_PAIR( DepthGradient )
         LAYER_REGISTRY_PAIR( DepthGradientRectify )
