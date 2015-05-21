@@ -191,7 +191,7 @@ protected:
                 layers_[i]->Response(sig_);
             }
 
-            //Mat1f response = sig_.MostRecentMat1f(name_out_);
+            Mat1f response = sig_.MostRecentMat1f(name_out_);
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);
             double nTimeTotal = double(timespecDiff(&t_total_end, &t_total_start)/1e9);

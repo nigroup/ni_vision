@@ -267,20 +267,26 @@ void Attention::Activate(const Signal &signal)
                        nMemsCnt,
                        veCandClrDist);
 
-    cv::Mat img(240, 320, CV_8UC1);
-    img.setTo(Scalar(0));
+    m_ = Mat1f(1, nMemsCnt, -1.f);
     for(int i=0; i<nMemsCnt; i++) {
 
-        Point2i p(stMems.mnRCenter[i][0], stMems.mnRCenter[i][1]);
-
-        stringstream s;
-        s << i << " " << stMems.vnIdx[i];
-
-        cv::putText(img, s.str(), p, CV_FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
+        m_(i) = static_cast<float>(stMems.vnIdx[i]);
     }
 
-    cv::imshow("att", img);
-    cv::waitKey(1);
+//    cv::Mat img(240, 320, CV_8UC1);
+//    img.setTo(Scalar(0));
+//    for(int i=0; i<nMemsCnt; i++) {
+
+//        Point2i p(stMems.mnRCenter[i][0], stMems.mnRCenter[i][1]);
+
+//        stringstream s;
+//        s << i << " " << stMems.vnIdx[i];
+
+//        cv::putText(img, s.str(), p, CV_FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
+//    }
+
+//    cv::imshow("att", img);
+//    cv::waitKey(1);
 }
 
 void Attention::extractFeatures(
