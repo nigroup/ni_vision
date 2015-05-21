@@ -21,6 +21,7 @@
 #include "elm/layers/triangulation.h"
 #include "elm/layers/weightedsum.h"
 
+#include "ni/layers/attention.h"
 #include "ni/layers/mapareafilter.h"
 #include "ni/layers/mapneighadjacency.h"
 #include "ni/layers/depthgradient.h"
