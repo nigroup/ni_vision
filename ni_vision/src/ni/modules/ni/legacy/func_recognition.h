@@ -105,12 +105,12 @@ void Attention_TopDown (std::vector<bool> &vbProtoCand,
  * @brief Selection of a candidate object surface
  * @param[in] nMemsCnt count of candidate object surfaces
  * @param[in] vbProtoCand flag for candidate object surfaces
- * @param[out] vnMemsFound state of candidate; 0: not inspected & not found, 1:not inspected & found, 2: inspected & not found, 3: inspected & found
+ * @param[in] vnMemsFound state of candidate; 0: not inspected & not found, 1:not inspected & found, 2: inspected & not found, 3: inspected & found
  * @param[out] nCandID ID of selected candidate object surface
  */
 void Attention_Selection (int nMemsCnt,
                           const std::vector<bool> &vbProtoCand,
-                          std::vector<int> &vnMemsFound,
+                          const std::vector<int> &vnMemsFound,
                           int &nCandID);
 
 /**

@@ -182,11 +182,14 @@ void Attention_TopDown (std::vector<bool> &vbProtoCand,
 
 void Attention_Selection (int nMemsCnt,
                           const std::vector<bool> &vbProtoCand,
-                          std::vector<int> &vnMemsFound,
+                          const std::vector<int> &vnMemsFound,
                           int &nCandID) {
 
     for (int i = 0; i < nMemsCnt; i++) {
-        if (!vbProtoCand[i]) continue;
+        if (!vbProtoCand[i]) {
+
+            continue;
+        }
 
         // Selecting the most relevant candidate from not inspected candidate pool
         if (vnMemsFound[i] < 2) {
