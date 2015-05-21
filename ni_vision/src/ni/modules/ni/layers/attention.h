@@ -85,9 +85,6 @@ protected:
 
     SurfProp stMems;
     TrackProp stTrack;
-    VecI vnMemsValidIdx;
-    std::vector<elm::VecF > mnMemsRelPose;
-    int framec;
 };
 
 } // namespace ni

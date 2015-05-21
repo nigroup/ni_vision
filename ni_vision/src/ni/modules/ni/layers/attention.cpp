@@ -90,8 +90,6 @@ void Attention::Reset(const LayerConfig &config)
     stMems.vnLostCtr.resize(nObjsNrLimit,   0);
     stMems.vnFound.resize(nObjsNrLimit,     0);
 
-    framec = 0;
-
     PTree p = config.Params();
 
     bfs::path path_color = p.get<bfs::path>(PARAM_PATH_COLOR);
@@ -182,9 +180,7 @@ void Attention::Activate(const Signal &signal)
     observed_.clear();
     extractFeatures(cloud, bgr, map, observed_);
 
-    int nSurfCnt = static_cast<int>(observed_.size());
-
-    int nMemsCnt = nSurfCnt;
+    int nMemsCnt = static_cast<int>(observed_.size());
 
     int nTrackHistoBin_max = nb_bins_ * nb_bins_ * nb_bins_;
 
@@ -208,21 +204,20 @@ void Attention::Activate(const Signal &signal)
         nTrackHistoBin_tmp = nTrackHistoBin_max;
     }
 
-    SurfProp stSurf;
-    stSurf.vnIdx.resize(nSurfCnt, 0);
-    stSurf.vnPtsCnt.resize(nSurfCnt, 0);
-    stSurf.mnPtsIdx.resize(nSurfCnt,    VecI());
-    stSurf.mnRect.assign(nSurfCnt,      VecI(4,0));
-    stSurf.mnRCenter.assign(nSurfCnt,   VecI(2,0));
-    stSurf.mnCubic.assign(nSurfCnt,     VecF(6,0));
-    stSurf.mnCCenter.assign(nSurfCnt,   VecF(3,0));
-    stSurf.vnLength.resize(nSurfCnt, 0);
-    stSurf.mnColorHist.resize(nSurfCnt, VecF(nTrackHistoBin_max, 0));
-    stSurf.vnMemCtr.resize(nSurfCnt, stTrack.CntMem - stTrack.CntStable);
-    stSurf.vnStableCtr.resize(nSurfCnt, 0);
-    stSurf.vnLostCtr.resize(nSurfCnt, stTrack.CntLost + 10);
+    stMems.vnIdx.resize(nMemsCnt, 0);
+    stMems.vnPtsCnt.resize(nMemsCnt, 0);
+    stMems.mnPtsIdx.resize(nMemsCnt,    VecI());
+    stMems.mnRect.assign(nMemsCnt,      VecI(4,0));
+    stMems.mnRCenter.assign(nMemsCnt,   VecI(2,0));
+    stMems.mnCubic.assign(nMemsCnt,     VecF(6,0));
+    stMems.mnCCenter.assign(nMemsCnt,   VecF(3,0));
+    stMems.vnLength.resize(nMemsCnt, 0);
+    stMems.mnColorHist.resize(nMemsCnt, VecF(nTrackHistoBin_max, 0));
+    stMems.vnMemCtr.resize(nMemsCnt, stTrack.CntMem - stTrack.CntStable);
+    stMems.vnStableCtr.resize(nMemsCnt, 0);
+    stMems.vnLostCtr.resize(nMemsCnt, stTrack.CntLost + 10);
 
-    VecSurfacesToSurfProp(observed_, stSurf);
+    VecSurfacesToSurfProp(observed_, stMems);
 
     // Top-down guidance
 
@@ -272,10 +267,20 @@ void Attention::Activate(const Signal &signal)
                        nMemsCnt,
                        veCandClrDist);
 
+    cv::Mat img(240, 320, CV_8UC1);
+    img.setTo(Scalar(0));
     for(int i=0; i<nMemsCnt; i++) {
 
+        Point2i p(stMems.mnRCenter[i][0], stMems.mnRCenter[i][1]);
 
+        stringstream s;
+        s << i << " " << stMems.vnIdx[i];
+
+        cv::putText(img, s.str(), p, CV_FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
     }
+
+    cv::imshow("att", img);
+    cv::waitKey(1);
 }
 
 void Attention::extractFeatures(
