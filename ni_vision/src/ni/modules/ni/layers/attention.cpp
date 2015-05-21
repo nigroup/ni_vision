@@ -97,7 +97,7 @@ void Attention::Reset(const LayerConfig &config)
     if(!bfs::is_regular_file(path_color)) {
 
         stringstream s;
-        s << "Invalid path for attention layer (" << path_color << ")";
+        s << "Invalid path to color model for attention layer (" << path_color << ")";
         ELM_THROW_FILEIO_ERROR(s.str());
     }
 
@@ -106,7 +106,7 @@ void Attention::Reset(const LayerConfig &config)
     if(!bfs::is_regular_file(path_sift)) {
 
         stringstream s;
-        s << "Invalid path for attention layer (" << path_sift << ")";
+        s << "Invalid path to sift model for attention layer (" << path_sift << ")";
         ELM_THROW_FILEIO_ERROR(s.str());
     }
 
