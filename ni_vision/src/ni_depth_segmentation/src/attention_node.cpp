@@ -3,6 +3,7 @@
 
 #include <set>
 
+#include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/mutex.hpp>
 
@@ -30,8 +31,7 @@
 
 #include "ni/core/color_utils.h"
 #include "ni/core/surface.h"
-#include "ni/layers/depthmap.h"
-#include "ni/layers/surfacetracking.h"
+#include "ni/layers/attention.h"
 #include "ni/layers/layerfactoryni.h"
 #include "ni/legacy/timer.h"
 
@@ -106,12 +106,29 @@ protected:
     void initLayers(ros::NodeHandle &nh)
     {
         { // 0
-            // Instantiate DepthMap layer
+            // Instantiate top-down attention
             LayerConfig cfg;
+
+            PTree p;
+            p.put(Attention::PARAM_HIST_BINS,   8);
+            p.put(Attention::PARAM_SIZE_MAX,  400);
+            p.put(Attention::PARAM_SIZE_MIN,  100);
+            p.put(Attention::PARAM_PTS_MIN,   200);
+
+            boost::filesystem::path path_color("/home/kashefy/nivision/models/Lib8B/simplelib_3dch_DanKlorix.yaml");
+            boost::filesystem::path path_sift("/home/kashefy/nivision/models/Lib8B/lib_sift_DanKlorix_0015.yaml");
+
+            p.put<boost::filesystem::path>(Attention::PARAM_PATH_COLOR, path_color);
+            p.put<boost::filesystem::path>(Attention::PARAM_PATH_SIFT,  path_sift);
+
+            cfg.Params(p);
+
             LayerIONames io;
-            io.Input(DepthMap::KEY_INPUT_STIMULUS, name_in_cld_);
-            io.Output(DepthMap::KEY_OUTPUT_RESPONSE, "depth_map");
-            layers_.push_back(LayerFactoryNI::CreateShared("DepthMap", cfg, io));
+            io.Input(Attention::KEY_INPUT_BGR_IMAGE, name_in_img_);
+            io.Input(Attention::KEY_INPUT_CLOUD, name_in_cld_);
+            io.Input(Attention::KEY_INPUT_MAP, name_in_seg_);
+            io.Output(Attention::KEY_OUTPUT_RESPONSE, name_out_);
+            layers_.push_back(LayerFactoryNI::CreateShared("Attention", cfg, io));
         }
     }
 
