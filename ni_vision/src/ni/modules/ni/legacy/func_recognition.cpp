@@ -603,17 +603,17 @@ void Recognition (int nCandID,
             if (y_max_tmp > cvm_rgb_org.cols - 1) y_max_tmp = cvm_rgb_org.cols;
 
             bool draw = true;
-            for (int k = 0; k < j; k++) {
+//            for (int k = 0; k < j; k++) {
 
-                if (stMems.vnFound[k] != 1 && stMems.vnFound[k] != 3) continue;
-                int x_overlapp_min = max(stMems.mnRect[j][0], stMems.mnRect[k][0]);
-                int y_overlapp_min = max(stMems.mnRect[j][1], stMems.mnRect[k][1]);
-                int x_overlapp_max = min(stMems.mnRect[j][2], stMems.mnRect[k][2]);
-                int y_overlapp_max = min(stMems.mnRect[j][3], stMems.mnRect[k][3]);
+//                if (stMems.vnFound[k] != 1 && stMems.vnFound[k] != 3) continue;
+//                int x_overlapp_min = max(stMems.mnRect[j][0], stMems.mnRect[k][0]);
+//                int y_overlapp_min = max(stMems.mnRect[j][1], stMems.mnRect[k][1]);
+//                int x_overlapp_max = min(stMems.mnRect[j][2], stMems.mnRect[k][2]);
+//                int y_overlapp_max = min(stMems.mnRect[j][3], stMems.mnRect[k][3]);
 //                int size_overlapp = (x_overlapp_max - x_overlapp_min)*(y_overlapp_max - y_overlapp_min);
 //                int size_curr = (stMems.mnRect[j][2] - stMems.mnRect[j][0])*(stMems.mnRect[j][3] - stMems.mnRect[j][1]);
 //                int size_past = (stMems.mnRect[k][2] - stMems.mnRect[k][0])*(stMems.mnRect[k][3] - stMems.mnRect[k][1]);
-            }
+//            }
 
             if (draw) {
 
