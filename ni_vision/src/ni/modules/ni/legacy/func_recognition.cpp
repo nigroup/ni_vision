@@ -615,12 +615,21 @@ void Recognition (int nCandID,
 //                int size_past = (stMems.mnRect[k][2] - stMems.mnRect[k][0])*(stMems.mnRect[k][3] - stMems.mnRect[k][1]);
             }
 
-            if (draw) cv::rectangle(cvm_rec_org, cv::Point(x_min_tmp -offset, y_min_tmp -offset), cv::Point(x_max_tmp +offset, y_max_tmp +offset), c_lemon, line_thickness);
+            if (draw) {
+
+                cv::rectangle(cvm_rec_org,
+                              cv::Point(x_min_tmp-offset, y_min_tmp-offset),
+                              cv::Point(x_max_tmp +offset, y_max_tmp +offset),
+                              c_lemon,
+                              line_thickness);
+            }
         }
     }
 
     if (vbFlagTask[stTID.nRecogDs] || ((vbFlagTask[stTID.nRecogOrg] || vbFlagTask[stTID.nRecVideo]) && nRecordMode)) {
+
         for (int j = 0; j < stMems.vnPtsCnt[nCandID]; j++) {
+
             cvm_rec_ds.data[stMems.mnPtsIdx[nCandID][j]*3] = 0;
             cvm_rec_ds.data[stMems.mnPtsIdx[nCandID][j]*3+1] = 0;
             cvm_rec_ds.data[stMems.mnPtsIdx[nCandID][j]*3+2] = 255;
@@ -629,6 +638,7 @@ void Recognition (int nCandID,
         int offset = 2;
         int line_thickness = cvm_rec_ds.cols/128;
         for (int j = 0; j < nMemsCnt; j++) {
+
             if (stMems.vnFound[j] != 1 && stMems.vnFound[j] != 3) continue;
 
             if (stMems.vnLostCtr[j] > nTrackCntLost) continue;
@@ -647,7 +657,13 @@ void Recognition (int nCandID,
                 if (size_overlapp > size_curr*0.6 || size_overlapp > size_past*0.6) draw = false;
             }
 
-            if (draw) cv::rectangle(cvm_rec_ds, cv::Point(stMems.mnRect[j][0] -offset, stMems.mnRect[j][1] -offset), cv::Point(stMems.mnRect[j][2] +offset, stMems.mnRect[j][3] +offset), c_lemon, line_thickness);
+            if (draw) {
+                cv::rectangle(cvm_rec_ds,
+                              cv::Point(stMems.mnRect[j][0]-offset, stMems.mnRect[j][1]-offset),
+                        cv::Point(stMems.mnRect[j][2]+offset, stMems.mnRect[j][3]+offset),
+                        c_lemon,
+                        line_thickness);
+            }
         }
     }
 }
