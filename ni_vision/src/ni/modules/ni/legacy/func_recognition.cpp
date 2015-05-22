@@ -423,8 +423,21 @@ void Recognition (int nCandID,
     int y_min_org = stMems.mnRect[nCandID][1] * nImgScale - nImgScale+1;
     int x_max_org = stMems.mnRect[nCandID][2] * nImgScale + nImgScale-1;
     int y_max_org = stMems.mnRect[nCandID][3] * nImgScale;
-    if (x_min_org < 0) x_min_org = 0; if (x_max_org > cvm_rgb_org.cols - 1) x_min_org = cvm_rgb_org.cols;
-    if (y_min_org < 0) y_min_org = 0; if (y_max_org > cvm_rgb_org.cols - 1) y_max_org = cvm_rgb_org.cols;
+    if (x_min_org < 0) {
+        x_min_org = 0;
+    }
+    if (x_max_org > cvm_rgb_org.cols - 1) {
+
+        x_min_org = cvm_rgb_org.cols; ///< @todo BUG? Should this be x_max_org?
+    }
+    if (y_min_org < 0) {
+
+        y_min_org = 0;
+    }
+    if (y_max_org > cvm_rgb_org.cols - 1) {
+
+        y_max_org = cvm_rgb_org.cols;
+    }
 
     nCandRX = x_min_org;
     nCandRY = y_min_org;
@@ -434,11 +447,14 @@ void Recognition (int nCandID,
     Keypoint keypts, keypts_tmp;
     GetSiftKeypoints(cvm_cand, nSiftScales, nSiftInitSigma, nSiftPeakThrs, nCandRX, nCandRY, nCandRW, nCandRH, keypts);
     keypts_tmp = keypts;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &t_sift_end); nTimeSift = double(timespecDiff(&t_sift_end, &t_sift_start)/nTimeRatio);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t_sift_end);
+    nTimeSift = double(timespecDiff(&t_sift_end, &t_sift_start)/nTimeRatio);
     cvm_cand.release();
 
     /////** Flann searching **//////////////////////////////
-    struct timespec t_flann_start, t_flann_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_flann_start); bTimeFlann = true;
+    struct timespec t_flann_start, t_flann_end;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t_flann_start);
+    bTimeFlann = true;
 
     std::vector<int> vnSiftMatched;
     std::vector <double> vnDeltaScale;
@@ -504,6 +520,7 @@ void Recognition (int nCandID,
     }
 
     if(nFlannTP >= nFlannMatchCnt && nColorDist < nRecogDClr) {
+
         //If the number of matches for the current object are more than or equal to the threshhold for matches
         clock_gettime(CLOCK_MONOTONIC_RAW, &t_rec_found_end);
         nTimeRecFound = double(timespecDiff(&t_rec_found_end, &t_rec_found_start)/nTimeRatio);
@@ -556,7 +573,8 @@ void Recognition (int nCandID,
             stMems.vnFound[nCandID] = 2;
     }
 
-    clock_gettime(CLOCK_MONOTONIC_RAW, &t_flann_end); nTimeFlann = double(timespecDiff(&t_flann_end, &t_flann_start)/nTimeRatio);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t_flann_end);
+    nTimeFlann = double(timespecDiff(&t_flann_end, &t_flann_start)/nTimeRatio);
 
     if (vbFlagTask[stTID.nRecogOrg] || (vbFlagTask[stTID.nRecVideo] && nRecordMode)) {
 
