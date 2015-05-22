@@ -385,33 +385,43 @@ void Recognition (int nCandID,
     if (stMems.vnFound[nCandID] < 1) stMems.vnFound[nCandID] = 2;
     else stMems.vnFound[nCandID] = 3;
 
+    // Extracting SIFT key-points
+    struct timespec t_sift_start, t_sift_end;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t_sift_start);
+    bTimeSift = true;
 
-
-    ////////////** Extracting SIFT key-points **////////////////////////////////////////////////////////
-    struct timespec t_sift_start, t_sift_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_sift_start); bTimeSift = true;
-
-    //////*  Extracting object surface from original image  */////////////////////////
+    ////  Extracting object surface from original image
     cvm_cand = cv::Scalar(0, 0, 0);
     std::vector<int> vnIdxTmp(stMems.vnPtsCnt[nCandID]*nImgScale*nImgScale, 0);
 
-    Recognition_Attention (nCandID, nImgScale, nDsWidth, stMems.vnPtsCnt, cvm_rgb_org, cvm_cand, stMems.mnPtsIdx, vnIdxTmp);
+    Recognition_Attention (nCandID,
+                           nImgScale,
+                           nDsWidth,
+                           stMems.vnPtsCnt,
+                           cvm_rgb_org,
+                           cvm_cand,
+                           stMems.mnPtsIdx,
+                           vnIdxTmp);
 
-
-    //////** 1. Estimating histogram-distance **//////////////////////////////
+    // 1. Estimate histogram-distance
     float nColorDistMaskOrg = 0;
     if (bRecogClrMask) {
-        ///// Calc3DColorHistogram computes the same color models but it is more robust ///////
+
+        // Calc3DColorHistogram computes the same color models but it is more robust
         std::vector<float> vnHistTmp(nTrackHistoBin_max, 0);
         Calc3DColorHistogram (cvm_rgb_org, vnIdxTmp, stTrack.HistoBin, vnHistTmp);
 
-
         for (int i = 0; i< nTrackHistoBin_max; i++) {
+
             if (mnColorHistY_lib.size() == 1) {
+
                 nColorDistMaskOrg += fabs(mnColorHistY_lib[0][i] - vnHistTmp[i]);
             }
-            else nColorDistMaskOrg += fabs(mnColorHistY_lib[stTrack.ClrMode][i] - vnHistTmp[i]);
+            else {
+                nColorDistMaskOrg += fabs(mnColorHistY_lib[stTrack.ClrMode][i] - vnHistTmp[i]);
+            }
         }
-        nColorDistMaskOrg = nColorDistMaskOrg/2;
+        nColorDistMaskOrg = nColorDistMaskOrg/2; ///< @todo integer division intentional?
     }
     //////////////////////* End of the estimating histogram-distance *////////////////////////
 
@@ -423,6 +433,7 @@ void Recognition (int nCandID,
     int y_min_org = stMems.mnRect[nCandID][1] * nImgScale - nImgScale+1;
     int x_max_org = stMems.mnRect[nCandID][2] * nImgScale + nImgScale-1;
     int y_max_org = stMems.mnRect[nCandID][3] * nImgScale;
+
     if (x_min_org < 0) {
         x_min_org = 0;
     }
