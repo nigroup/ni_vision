@@ -92,8 +92,8 @@ void ResetMemory (int nObjsNrLimit,
  * @brief Attention: Top-Down guidance - Reordering all properties of object surfaces in the memory after priority
  *
  * @param[out] vbProtoCand candidate flag for object surfaces (true, then candidate for attention)
- * @param stMems properties of object surfaces in the Short-Term Memory
- * @param[out] nMemsCnt count of object surfaces
+ * @param[out] stMems properties of object surfaces in the Short-Term Memory
+ * @param[in] nMemsCnt count of object surfaces
  * @param[out] veCandClrDist color differences of objects surfaces (to target object)
  */
 void Attention_TopDown (std::vector<bool> &vbProtoCand,
