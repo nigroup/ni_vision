@@ -437,17 +437,35 @@ void Recognition (int nCandID,
     clock_gettime(CLOCK_MONOTONIC_RAW, &t_sift_end); nTimeSift = double(timespecDiff(&t_sift_end, &t_sift_start)/nTimeRatio);
     cvm_cand.release();
 
-
-
     /////** Flann searching **//////////////////////////////
     struct timespec t_flann_start, t_flann_end; clock_gettime(CLOCK_MONOTONIC_RAW, &t_flann_start); bTimeFlann = true;
 
-    std::vector<int> vnSiftMatched; std::vector <double> vnDeltaScale; std::vector <double> vnDeltaOri;
-    double nMaxDeltaOri = -999; double nMaxDeltaScale = -999;
+    std::vector<int> vnSiftMatched;
+    std::vector <double> vnDeltaScale;
+    std::vector <double> vnDeltaOri;
+    double nMaxDeltaOri = -999;
+    double nMaxDeltaScale = -999;
     double nMinDeltaOri = 999; //double nMinDeltaScale = 999;
-    int nKeyptsCnt = 0; int nFlannIM=0;
+    int nKeyptsCnt = 0;
+    int nFlannIM=0;
 
-    Recognition_Flann (tcount, nFlannKnn, nFlannLibCols_sift, nFlannMatchFac, mnSiftExtraFeatures, FlannIdx_Sift, FLANNParam, keypts, nKeyptsCnt, nFlannIM, vnSiftMatched, vnDeltaScale, vnDeltaOri, nMaxDeltaOri, nMinDeltaOri, nMaxDeltaScale, nMinDeltaOri);
+    Recognition_Flann (tcount,
+                       nFlannKnn,
+                       nFlannLibCols_sift,
+                       nFlannMatchFac,
+                       mnSiftExtraFeatures,
+                       FlannIdx_Sift,
+                       FLANNParam,
+                       keypts,
+                       nKeyptsCnt,
+                       nFlannIM,
+                       vnSiftMatched,
+                       vnDeltaScale,
+                       vnDeltaOri,
+                       nMaxDeltaOri,
+                       nMinDeltaOri,
+                       nMaxDeltaScale,
+                       nMinDeltaOri);
     nCandKeyCnt = nKeyptsCnt;
 
     /////** Filtering: extracting true-positives from matched keypoints **//////////////////
@@ -455,16 +473,40 @@ void Recognition (int nCandID,
     int nFlannTP=0;
 
     std::vector<bool> vbSiftTP(nKeyptsCnt, 0);
-    if(nFlannIM > T_numb) CalcDeltaScaleOri(vnSiftMatched, vnDeltaScale, vnDeltaOri, nDeltaScale, nDeltaBinNo, nMaxDeltaOri, nMinDeltaOri, T_orient, T_scale, nFlannTP, vbSiftTP);
-    else nFlannTP=0;
+    if(nFlannIM > T_numb) {
 
+        CalcDeltaScaleOri(vnSiftMatched,
+                          vnDeltaScale,
+                          vnDeltaOri,
+                          nDeltaScale,
+                          nDeltaBinNo,
+                          nMaxDeltaOri,
+                          nMinDeltaOri,
+                          T_orient,
+                          T_scale,
+                          nFlannTP,
+                          vbSiftTP);
+    }
+    else {
 
+        nFlannTP = 0;
+    }
 
     ////** Setting the object as "found" and Drawing**////////////
     float nColorDist;
-    if (bRecogClrMask) nColorDist = nColorDistMaskOrg; else nColorDist = nCandClrDist;
-    if(nFlannTP >= nFlannMatchCnt && nColorDist < nRecogDClr) { //If the number of matches for the current object are more than or equal to the threshhold for matches
-        clock_gettime(CLOCK_MONOTONIC_RAW, &t_rec_found_end); nTimeRecFound = double(timespecDiff(&t_rec_found_end, &t_rec_found_start)/nTimeRatio);
+    if (bRecogClrMask) {
+
+        nColorDist = nColorDistMaskOrg;
+
+    }
+    else {
+        nColorDist = nCandClrDist;
+    }
+
+    if(nFlannTP >= nFlannMatchCnt && nColorDist < nRecogDClr) {
+        //If the number of matches for the current object are more than or equal to the threshhold for matches
+        clock_gettime(CLOCK_MONOTONIC_RAW, &t_rec_found_end);
+        nTimeRecFound = double(timespecDiff(&t_rec_found_end, &t_rec_found_start)/nTimeRatio);
         printf("%d. object with %3d keypoints (%d %d) at frame %d (%d), Color dist: %4.3f (%4.3f), Object size: %4.0f mm\n", nCandCnt, nFlannTP, nFlannIM, nKeyptsCnt, nCtrFrame, nCtrFrame_tmp, nCandClrDist, nColorDist, stMems.vnLength[nCandID]*1000);
 
         nFoundCnt++;
@@ -472,10 +514,15 @@ void Recognition (int nCandID,
         nFoundFrame = nCtrFrame;
         stMems.vnFound[nCandID] = 3;
 
-
         if (vbFlagTask[stTID.nRecTime] && bSwitchRecordTime) {
-            if (nFoundNr < nRecogRtNr) vnRecogRating_tmp[nFoundNr]++;
-            else vnRecogRating_tmp[0]++;
+
+            if (nFoundNr < nRecogRtNr) {
+
+                vnRecogRating_tmp[nFoundNr]++;
+            }
+            else {
+                vnRecogRating_tmp[0]++;
+            }
 
             int size = mnTimeMeas1.size();
             mnTimeMeas1.resize(size+1);
@@ -494,28 +541,40 @@ void Recognition (int nCandID,
             mnTimeMeas2[size][0] = nTimeRecFound;
             mnTimeMeas2[size][1] = nTimeSift;
 
-            if (nTimeRecFound > nTimeRecFound_max) nTimeRecFound_max = nTimeRecFound;
-            if (nTimeRecFound < nTimeRecFound_min) nTimeRecFound_min = nTimeRecFound;
+            if (nTimeRecFound > nTimeRecFound_max) {
+
+                nTimeRecFound_max = nTimeRecFound;
+            }
+            if (nTimeRecFound < nTimeRecFound_min) {
+
+                nTimeRecFound_min = nTimeRecFound;
+            }
         }
     }
-    else {if (stMems.vnFound[nCandID] == 1 || stMems.vnFound[nCandID] == 3) stMems.vnFound[nCandID] = 2;}
+    else if (stMems.vnFound[nCandID] == 1 || stMems.vnFound[nCandID] == 3) {
+
+            stMems.vnFound[nCandID] = 2;
+    }
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &t_flann_end); nTimeFlann = double(timespecDiff(&t_flann_end, &t_flann_start)/nTimeRatio);
 
-
-
     if (vbFlagTask[stTID.nRecogOrg] || (vbFlagTask[stTID.nRecVideo] && nRecordMode)) {
+
         cv::rectangle(cvm_rec_org, cv::Point(x_min_org, y_min_org), cv::Point(x_max_org, y_max_org), c_red, 3);
 
         keypts = keypts_tmp;
         while(keypts) {
+
             cv::rectangle(cvm_rec_org, cv::Point(keypts->row + x_min_org - 2, keypts->col + y_min_org - 2), cv::Point(keypts->row + x_min_org + 2, keypts->col + y_min_org + 2), c_white, 1);
             keypts= keypts->next;
         }
+
         keypts = keypts_tmp;
         nKeyptsCnt = 0;
         while(keypts) {
+
             if(vbSiftTP[nKeyptsCnt]) {
+
                 cv::rectangle(cvm_rec_org, cv::Point(keypts->row + x_min_org - 2, keypts->col + y_min_org - 2), cv::Point(keypts->row + x_min_org + 2, keypts->col + y_min_org + 2), c_white, 1);
                 cv::rectangle(cvm_rec_org, cv::Point(keypts->row + x_min_org - 3, keypts->col + y_min_org - 3), cv::Point(keypts->row + x_min_org + 3, keypts->col + y_min_org + 3), c_blue, 1);
                 cv::rectangle(cvm_rec_org, cv::Point(keypts->row + x_min_org - 1, keypts->col + y_min_org - 1), cv::Point(keypts->row + x_min_org + 1, keypts->col + y_min_org + 1), c_blue, 1);
@@ -523,12 +582,13 @@ void Recognition (int nCandID,
             nKeyptsCnt++;
             keypts= keypts->next;
         }
-        FreeKeypoints(keypts); FreeKeypoints(keypts_tmp);
 
+        FreeKeypoints(keypts); FreeKeypoints(keypts_tmp);
 
         int offset = 2*nImgScale;
         int line_thickness = cvm_rec_org.cols/150;
         for (int j = 0; j < nMemsCnt; j++) {
+
             if (stMems.vnFound[j] != 1 && stMems.vnFound[j] != 3) continue;
 
             if (stMems.vnLostCtr[j] > nTrackCntLost) continue;
@@ -544,6 +604,7 @@ void Recognition (int nCandID,
 
             bool draw = true;
             for (int k = 0; k < j; k++) {
+
                 if (stMems.vnFound[k] != 1 && stMems.vnFound[k] != 3) continue;
                 int x_overlapp_min = max(stMems.mnRect[j][0], stMems.mnRect[k][0]);
                 int y_overlapp_min = max(stMems.mnRect[j][1], stMems.mnRect[k][1]);
@@ -552,7 +613,6 @@ void Recognition (int nCandID,
                 int size_overlapp = (x_overlapp_max - x_overlapp_min)*(y_overlapp_max - y_overlapp_min);
                 int size_curr = (stMems.mnRect[j][2] - stMems.mnRect[j][0])*(stMems.mnRect[j][3] - stMems.mnRect[j][1]);
                 int size_past = (stMems.mnRect[k][2] - stMems.mnRect[k][0])*(stMems.mnRect[k][3] - stMems.mnRect[k][1]);
-
             }
 
             if (draw) cv::rectangle(cvm_rec_org, cv::Point(x_min_tmp -offset, y_min_tmp -offset), cv::Point(x_max_tmp +offset, y_max_tmp +offset), c_lemon, line_thickness);
