@@ -428,7 +428,7 @@ void Recognition (int nCandID,
     }
     if (x_max_org > cvm_rgb_org.cols - 1) {
 
-        x_min_org = cvm_rgb_org.cols; ///< @todo BUG? Should this be x_max_org?
+        x_max_org = cvm_rgb_org.cols;
     }
     if (y_min_org < 0) {
 
