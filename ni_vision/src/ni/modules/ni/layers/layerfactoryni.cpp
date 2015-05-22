@@ -21,6 +21,7 @@
 #include "elm/layers/triangulation.h"
 #include "elm/layers/weightedsum.h"
 
+#include "ni/layers/attention.h"
 #include "ni/layers/mapareafilter.h"
 #include "ni/layers/mapneighadjacency.h"
 #include "ni/layers/depthgradient.h"
@@ -45,6 +46,7 @@ typedef Registor_<base_Layer>::Registry LayerRegistry;
 #define LAYER_REGISTRY_PAIR(NewInstance) REGISTRY_PAIR(LayerRegistor, NewInstance)
 
 LayerRegistry g_layerRegistry = map_list_of
+        LAYER_REGISTRY_PAIR( Attention )
         LAYER_REGISTRY_PAIR( AttentionWindow )
         LAYER_REGISTRY_PAIR( DepthGradient )
         LAYER_REGISTRY_PAIR( DepthGradientRectify )

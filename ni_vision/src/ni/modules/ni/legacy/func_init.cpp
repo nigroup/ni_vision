@@ -111,7 +111,7 @@ void BuildFlannIndex (int libnr,
     FLANNParam.checks = 64;
     FLANNParam.target_precision = 0.9;
 
-    switch (libnr) {        // 1: Color histogram, 2: SIFT for one view-point
+    switch (libnr) {
     case 1:
         nFlannDataset = ReadFlannDataset_Color(mFeatureSet, mnColorHistY_lib, stTrack);  //Store the Input file into memory!
         //FlannIdx_Color = flann_build_index(nFlannDataset, mFeatureSet.rows, mFeatureSet.rows, &speedup, &FLANNParam);

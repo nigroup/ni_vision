@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include <flann/flann.h>
+
 #include "elm/core/typedefs_fwd.h"
 #include "elm/core/pcl/typedefs_fwd.h"
 #include "elm/layers/layers_interim/base_matoutputlayer.h"
@@ -29,11 +31,8 @@ public:
     static const std::string PARAM_SIZE_MAX;        ///< upper threshold for size (cube diagonal) [mm]
     static const std::string PARAM_SIZE_MIN;        ///< lower threshold for size (cube diagonal) [mm]
     static const std::string PARAM_PTS_MIN;         ///< lower threshold for area [pixels]
-    static const std::string PARAM_WEIGHT_SIZE;
-    static const std::string PARAM_MAX_COLOR;       ///< upper threshold for similarly colored surfaces
-    static const std::string PARAM_MAX_POS;         ///< upper threshold for similarly positioned surfaces
-    static const std::string PARAM_MAX_SIZE;        ///< upper threshold for similarly sized surfaces
-    static const std::string PARAM_MAX_DIST;        ///< upper threshold for total feature distance
+    static const std::string PARAM_PATH_COLOR;      ///< path to library file
+    static const std::string PARAM_PATH_SIFT;       ///< path to library file
 
     // remaining I/O keys
     static const std::string KEY_INPUT_BGR_IMAGE;
@@ -77,11 +76,15 @@ protected:
     int nAttSizeMax;        ///< upper threshold for size (cube diagonal) [mm]
     int nAttSizeMin;        ///< lower threshold for size (cube diagonal) [mm]
     int nAttPtsMin;         ///< lower threshold for area [pixels]
+    std::vector<elm::VecF > mnColorHistY_lib;
+    int nFlannLibCols_sift;
+    FLANNParameters FLANNParam;
+    float* nFlannDataset;
+    std::vector <std::vector <float> > mnSiftExtraFeatures;
+    flann_index_t FlannIdx_Sift;
+
     SurfProp stMems;
     TrackProp stTrack;
-    VecI vnMemsValidIdx;
-    std::vector<elm::VecF > mnMemsRelPose;
-    int framec;
 };
 
 } // namespace ni

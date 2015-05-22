@@ -3,6 +3,7 @@
 
 #include <set>
 
+#include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/mutex.hpp>
 
@@ -30,8 +31,7 @@
 
 #include "ni/core/color_utils.h"
 #include "ni/core/surface.h"
-#include "ni/layers/depthmap.h"
-#include "ni/layers/surfacetracking.h"
+#include "ni/layers/attention.h"
 #include "ni/layers/layerfactoryni.h"
 #include "ni/legacy/timer.h"
 
@@ -88,7 +88,7 @@ public:
         using namespace message_filters; // Subscriber, sync_policies
 
         // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-        int queue_size = 30;
+        int queue_size = 60;
         sync_ptr_ = new Synchronizer<MySyncPolicy>(MySyncPolicy(queue_size),
                                                    cloud_sub_,
                                                    img_sub_,
@@ -106,12 +106,36 @@ protected:
     void initLayers(ros::NodeHandle &nh)
     {
         { // 0
-            // Instantiate DepthMap layer
+            // Instantiate top-down attention
             LayerConfig cfg;
+
+            PTree p;
+            p.put(Attention::PARAM_HIST_BINS,   8);
+            p.put(Attention::PARAM_SIZE_MAX,  400);
+            p.put(Attention::PARAM_SIZE_MIN,  100);
+            p.put(Attention::PARAM_PTS_MIN,   200);
+
+            std::string tmp;
+            nh.getParam(Attention::PARAM_PATH_COLOR, tmp);
+            boost::filesystem::path path_color(tmp);
+
+            nh.getParam(Attention::PARAM_PATH_SIFT, tmp);
+            boost::filesystem::path path_sift(tmp);
+
+            //boost::filesystem::path path_color("/home/kashefy/nivision/models/Lib8B/simplelib_3dch_DanKlorix.yaml");
+            //boost::filesystem::path path_sift("/home/kashefy/nivision/models/Lib8B/lib_sift_DanKlorix_0015.yaml");
+
+            p.put<boost::filesystem::path>(Attention::PARAM_PATH_COLOR, path_color);
+            p.put<boost::filesystem::path>(Attention::PARAM_PATH_SIFT,  path_sift);
+
+            cfg.Params(p);
+
             LayerIONames io;
-            io.Input(DepthMap::KEY_INPUT_STIMULUS, name_in_cld_);
-            io.Output(DepthMap::KEY_OUTPUT_RESPONSE, "depth_map");
-            layers_.push_back(LayerFactoryNI::CreateShared("DepthMap", cfg, io));
+            io.Input(Attention::KEY_INPUT_BGR_IMAGE, name_in_img_);
+            io.Input(Attention::KEY_INPUT_CLOUD, name_in_cld_);
+            io.Input(Attention::KEY_INPUT_MAP, name_in_seg_);
+            io.Output(Attention::KEY_OUTPUT_RESPONSE, name_out_);
+            layers_.push_back(LayerFactoryNI::CreateShared("Attention", cfg, io));
         }
     }
 
@@ -167,7 +191,7 @@ protected:
                 layers_[i]->Response(sig_);
             }
 
-            //Mat1f response = sig_.MostRecentMat1f(name_out_);
+            Mat1f response = sig_.MostRecentMat1f(name_out_);
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);
             double nTimeTotal = double(timespecDiff(&t_total_end, &t_total_start)/1e9);
@@ -230,14 +254,14 @@ int main(int argc, char** argv)
      * You must call one of the versions of ros::init() before using any other
      * part of the ROS system.
      */
-    ros::init(argc, argv, "surface_tracking");
+    ros::init(argc, argv, "attention");
 
     /**
      * NodeHandle is the main access point to communications with the ROS system.
      * The first NodeHandle constructed will fully initialize this node, and the last
      * NodeHandle destructed will close down the node.
      */
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("~");
     ni::AttentionNode attention_node(nh);
 
     /**
