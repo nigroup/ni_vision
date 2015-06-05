@@ -3,11 +3,6 @@ cmake_minimum_required(VERSION 2.8.3)
 set(ROOT_PROJECT ni)
 project(${ROOT_PROJECT})
 
-set(BUILD_NO_ROS OFF CACHE BOOL "Enable building NI libs independent of ROS.")
-if(BUILD_NO_ROS)
-# TODO: write out alternate CMakeLists file for building without ROS
-else(BUILD_NO_ROS)
-
 # ----------------------------------------------------------------------------
 # Define root project variables
 # ----------------------------------------------------------------------------
@@ -29,6 +24,11 @@ include(cmake/MessageUtils.cmake)
 # Print all warnings and enable C++11 support
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++0x")
 set(CMAKE_VERBOSE ON CACHE BOOL "Verbose mode")
+
+set(BUILD_NO_ROS OFF CACHE BOOL "Enable building NI libs independent of ROS.")
+if(BUILD_NO_ROS)
+# TODO: write out alternate CMakeLists file for building without ROS
+else(BUILD_NO_ROS)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
