@@ -8,18 +8,7 @@
  *  1. include its header below
  *  2. Add it to the initialization of g_layerRegistryNI map.
  */
-#include "elm/layers/attentionwindow.h"
-#include "elm/layers/gradassignment.h"
-#include "elm/layers/graphcompatibility.h"
-#include "elm/layers/icp.h"
-#include "elm/layers/layer_y.h"
-#include "elm/layers/medianblur.h"
-#include "elm/encoding/populationcode_derivs/mutex_populationcode.h"
-#include "elm/encoding/populationcode_derivs/softmax_populationcode.h"
-#include "elm/layers/saliencyitti.h"
-#include "elm/layers/sinkhornbalancing.h"
-#include "elm/layers/triangulation.h"
-#include "elm/layers/weightedsum.h"
+#include "elm/layers/layerfactory.h"
 
 #include "ni/layers/attention.h"
 #include "ni/layers/mapareafilter.h"
@@ -47,27 +36,15 @@ typedef Registor_<base_Layer>::Registry LayerRegistry;
 
 LayerRegistry g_layerRegistryNI = map_list_of
         LAYER_REGISTRY_PAIR( Attention )
-        LAYER_REGISTRY_PAIR( AttentionWindow )
         LAYER_REGISTRY_PAIR( DepthGradient )
         LAYER_REGISTRY_PAIR( DepthGradientRectify )
         LAYER_REGISTRY_PAIR( DepthGradientSmoothing )
         LAYER_REGISTRY_PAIR( DepthMap )
         LAYER_REGISTRY_PAIR( DepthSegmentation )
-        LAYER_REGISTRY_PAIR( GradAssignment )
-        LAYER_REGISTRY_PAIR( GraphCompatibility )
-        LAYER_REGISTRY_PAIR( ICP )
-        LAYER_REGISTRY_PAIR( LayerY )
         LAYER_REGISTRY_PAIR( MapAreaFilter )
         LAYER_REGISTRY_PAIR( MapNeighAdjacency )
-        LAYER_REGISTRY_PAIR( MedianBlur )
-        LAYER_REGISTRY_PAIR( MutexPopulationCode )
         LAYER_REGISTRY_PAIR( PruneSmallSegments )
-        LAYER_REGISTRY_PAIR( SaliencyItti )
-        LAYER_REGISTRY_PAIR( SoftMaxPopulationCode )
-        LAYER_REGISTRY_PAIR( SinkhornBalancing )
         LAYER_REGISTRY_PAIR( SurfaceTracking )
-        LAYER_REGISTRY_PAIR( Triangulation )
-        LAYER_REGISTRY_PAIR( WeightedSum )
         ; ///< <-- add new layer to registry here
 
 LayerFactoryNI::LayerFactoryNI()
@@ -77,6 +54,12 @@ LayerFactoryNI::LayerFactoryNI()
 LayerRegistor::RegisteredTypeSharedPtr LayerFactoryNI::CreateShared(const LayerType &type)
 {
     static_assert(std::is_same<LayerRegistor::RegisteredTypeSharedPtr, LayerShared >(), "Mismatching shared_ptr types.");
+
+    if(!LayerRegistor::Find(g_layerRegistryNI, type)) {
+
+        return LayerFactory::CreateShared(type);
+    }
+
     return LayerRegistor::CreatePtrShared(g_layerRegistryNI, type);
 }
 
