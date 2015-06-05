@@ -6,7 +6,7 @@
 
 /** Whenever a new layer is imeplemented:
  *  1. include its header below
- *  2. Add it to the initialization of g_layerRegistry map.
+ *  2. Add it to the initialization of g_layerRegistryNI map.
  */
 #include "elm/layers/attentionwindow.h"
 #include "elm/layers/gradassignment.h"
@@ -45,7 +45,7 @@ typedef Registor_<base_Layer>::Registry LayerRegistry;
 #define REGISTRY_PAIR(Registor, NewInstance) (#NewInstance, &Registor::DerivedInstance<NewInstance>)
 #define LAYER_REGISTRY_PAIR(NewInstance) REGISTRY_PAIR(LayerRegistor, NewInstance)
 
-LayerRegistry g_layerRegistry = map_list_of
+LayerRegistry g_layerRegistryNI = map_list_of
         LAYER_REGISTRY_PAIR( Attention )
         LAYER_REGISTRY_PAIR( AttentionWindow )
         LAYER_REGISTRY_PAIR( DepthGradient )
@@ -77,7 +77,7 @@ LayerFactoryNI::LayerFactoryNI()
 LayerRegistor::RegisteredTypeSharedPtr LayerFactoryNI::CreateShared(const LayerType &type)
 {
     static_assert(std::is_same<LayerRegistor::RegisteredTypeSharedPtr, LayerShared >(), "Mismatching shared_ptr types.");
-    return LayerRegistor::CreatePtrShared(g_layerRegistry, type);
+    return LayerRegistor::CreatePtrShared(g_layerRegistryNI, type);
 }
 
 LayerRegistor::RegisteredTypeSharedPtr LayerFactoryNI::CreateShared(const LayerType &type,
