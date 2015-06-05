@@ -49,7 +49,7 @@ protected:
         to_->IONames(io);
     }
 
-    shared_ptr<base_Layer> to_; ///< test object
+    LayerShared to_; ///< test object
     LayerConfig config_;        ///< default config for tests
 };
 
