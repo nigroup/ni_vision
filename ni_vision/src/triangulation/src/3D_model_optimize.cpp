@@ -28,7 +28,7 @@ typedef boost::variate_generator<boost::mt19937, boost::normal_distribution<floa
 bool optimize = 1; // if false, test different combinations of parameters and visualize the cost function (for n==2)
 
 // information about the data set
-std::string setName = "../../Dose_vonOben";   // name of the folder
+std::string setName = "/home/anna/Soennecken";   // name of the folder
 static const int numClouds = 8;  //number of point clouds
 static const double rotAng = 45.0 * 2.0 * M_PI / 360.0;  //angle of rotation (turn table) in radians
 
@@ -57,8 +57,8 @@ static const float pRange[n][2] =  { {0.0, 0.01},
 
 
 // pairs of point clouds which are considered in the cost function
-static const int numPairs = 8;
-static const int pairs[numPairs][2] = { {0,1}, {1,2}, {2,3}, {3,4}, {4,5}, {5,6}, {6,7}, {7,0} };
+static const int numPairs = 2;
+static const int pairs[numPairs][2] = { {0,1} , {1,2} };
 
 // construct kd-trees for efficient nearest neighbor search
 pcl::KdTreeFLANN<pcl::PointXYZRGB> * kdtree[numPairs];
@@ -92,7 +92,7 @@ int main()
     for (int i = 0; i < numClouds; i++)
     {
         std::string num = static_cast<std::ostringstream*>( &(std::ostringstream() << (i+1)))->str();
-        std::string fn_in = setName + "/PointCloud_" + num + ".pcd";
+        std::string fn_in = setName + "/cloudShifted_" + num + ".pcd";
         pcl::io::loadPCDFile (fn_in, clouds[i]);
     }
 
