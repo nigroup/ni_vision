@@ -556,9 +556,9 @@ void Tracking_Pre(int nSegmCutSize,
         stSurf.mnCubic[final_cnt_new][5] = cz_max;
         stSurf.mnRCenter[final_cnt_new][0] = int(float(rx_acc) / stSurf.vnPtsCnt[i]);
         stSurf.mnRCenter[final_cnt_new][1] = int(float(ry_acc) / stSurf.vnPtsCnt[i]);
-        stSurf.mnCCenter[final_cnt_new][0] = int(float(cx_acc) / stSurf.vnPtsCnt[i]);
-        stSurf.mnCCenter[final_cnt_new][1] = int(float(cy_acc) / stSurf.vnPtsCnt[i]);
-        stSurf.mnCCenter[final_cnt_new][2] = int(float(cz_acc) / stSurf.vnPtsCnt[i]);
+        stSurf.mnCCenter[final_cnt_new][0] = cx_acc / stSurf.vnPtsCnt[i];
+        stSurf.mnCCenter[final_cnt_new][1] = cy_acc / stSurf.vnPtsCnt[i];
+        stSurf.mnCCenter[final_cnt_new][2] = cz_acc / stSurf.vnPtsCnt[i];
         stSurf.vnLength[final_cnt_new] = sqrt(pow((cx_max - cx_min), 2) + pow((cy_max - cy_min), 2)+ pow((cz_max - cz_min), 2));
 
         stSurf.vnMemCtr[final_cnt_new] = stTrack.CntMem - stTrack.CntStable;
