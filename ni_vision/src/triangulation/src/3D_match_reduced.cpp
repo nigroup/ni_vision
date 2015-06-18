@@ -74,14 +74,14 @@ int main()
     srand((unsigned int) time(0));
 
     // load 3D object model
-    std::string fn_model = "Dose_3DMod.pcd";
+    std::string fn_model = "/home/anna/catkin_ws/src/ni_vision/ni_vision/src/triangulation/Dose_3DMod.pcd";
     pcl::PointCloud<pcl::PointXYZRGB> model;
     pcl::io::loadPCDFile (fn_model, model);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr model_Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::copyPointCloud<pcl::PointXYZRGB>(model, *model_Ptr);
 
     // load query point cloud
-    std::string fn_query = "Dose_views/PointCloud_1.pcd";
+    std::string fn_query = "/home/anna/catkin_ws/src/ni_vision/ni_vision/src/triangulation/Dose_views/PointCloud_1.pcd";
     pcl::PointCloud<pcl::PointXYZRGB> query;
     pcl::io::loadPCDFile (fn_query, query);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr query_Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
