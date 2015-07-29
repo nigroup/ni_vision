@@ -961,11 +961,15 @@ void Tracking(int nSurfCnt,
                 mnDistSiz[i][j] = ds;
                 mnDistClr[i][j] = dc;
 
-                if (dp < stTrack.DPos && ds < stTrack.DSize && dc < stTrack.DClr)
-                    mnDistTotal[i][j] = stTrack.FPos * dp + stTrack.FSize * ds + stTrack.FClr * dc;
+                if (dp < stTrack.DPos && ds < stTrack.DSize && dc < stTrack.DClr) {
+                    if (stTrack.FPos * dp + stTrack.FSize * ds + stTrack.FClr * dc < stTrack.Dist) {
+                        mnDistTotal[i][j] = stTrack.FPos * dp + stTrack.FSize * ds + stTrack.FClr * dc;
+                    }
+                }
             }
         }
 
+        // Printing additional information
         if (flag_mat) {
             char sText[128];
             std::ofstream finn1;
@@ -1013,54 +1017,57 @@ void Tracking(int nSurfCnt,
     std::vector<int> vnMatchedMem(nMemsCnt, nObjsNrLimit*2);
 
     std::vector<std::vector<float> > mnDistTmp = mnDistTotal;           // specified distance matrix
-    Tracking_OptPre (nMemsCnt, nSurfCnt, huge, nObjsNrLimit, stTrack, mnDistTmp, vnSurfCandCnt, vnSegCandMin, vnMemsCandCnt, vnMemCandMin, vnMatchedSeg);
+//    Tracking_OptPre (nMemsCnt, nSurfCnt, huge, nObjsNrLimit, stTrack, mnDistTmp, vnSurfCandCnt, vnSegCandMin, vnMemsCandCnt, vnMemCandMin, vnMatchedSeg);
 
 
     /////////////////////////////////////////////////////////////////////////////////
     ////////////**              Main Optimization              **////////////////////
     /////////////////////////////////////////////////////////////////////////////////
-    std::vector<int> idx_seg;
-    int cnt_nn = 0;
-    for (int i = 0; i < nSurfCnt; i++) {
-        if (vnMatchedSeg[i] > nObjsNrLimit) {
-            for (int j = 0; j < nMemsCnt; j++) {
-                if (mnDistTmp[i][j] < stTrack.Dist) {
-                    vnMatchedMem[j] = 0;
-                }
-            }
-            idx_seg.resize(cnt_nn + 1);
-            idx_seg[cnt_nn++] = i;
-        }
-    }
+//    std::vector<int> idx_seg;
+//    int cnt_nn = 0;
+//    for (int i = 0; i < nSurfCnt; i++) {
+//        if (vnMatchedSeg[i] > nObjsNrLimit) {
+//            for (int j = 0; j < nMemsCnt; j++) {
+//                if (mnDistTmp[i][j] < stTrack.Dist) {
+//                    vnMatchedMem[j] = 0;
+//                }
+//            }
+//            idx_seg.resize(cnt_nn + 1);
+//            idx_seg[cnt_nn++] = i;
+//        }
+//    }
 
-    if (cnt_nn) {
-        std::vector<int> idx_mem;
-        cnt_nn = 0;
-        for (int j = 0; j < nMemsCnt; j++) {
-            if (!vnMatchedMem[j]) {
-                idx_mem.resize(cnt_nn + 1);
-                idx_mem[cnt_nn++] = j;
-            }
-        }
+    if (true) {
+//        std::vector<int> idx_mem;
+//        cnt_nn = 0;
+//        for (int j = 0; j < nMemsCnt; j++) {
+//            if (!vnMatchedMem[j]) {
+//                idx_mem.resize(cnt_nn + 1);
+//                idx_mem[cnt_nn++] = j;
+//            }
+//        }
+
 
 
         int munkres_huge = 100;
-        int nDimMunkres = max((int)idx_seg.size(), (int)idx_mem.size());
+        int nDimMunkres = max(nSurfCnt, nMemsCnt);
+        printf("Munkres Dimension %i\n", nDimMunkres);
+
         MunkresMatrix<double> m_MunkresIn(nDimMunkres, nDimMunkres);
         MunkresMatrix<double> m_MunkresOut(nDimMunkres, nDimMunkres);
 
-        for (size_t i = 0; i < idx_seg.size(); i++) {
-            for (size_t j = 0; j < idx_mem.size(); j++)
-                m_MunkresIn(i,j) = mnDistTmp[idx_seg[i]][idx_mem[j]];
+        for (size_t i = 0; i < nSurfCnt; i++) {
+            for (size_t j = 0; j < nMemsCnt; j++)
+                m_MunkresIn(i,j) = mnDistTmp[i][j];
         }
 
-        if (idx_mem.size() > idx_seg.size()) {
-            for (int i = (int)idx_seg.size(); i < nDimMunkres; i++) {
+        if (nMemsCnt > nSurfCnt) {
+            for (int i = nSurfCnt; i < nDimMunkres; i++) {
                 for (int j = 0; j < nDimMunkres; j++) m_MunkresIn(i,j) = rand()% 10 + munkres_huge;
             }
         }
-        if (idx_mem.size() < idx_seg.size()) {
-            for (int j = (int)idx_mem.size(); j < nDimMunkres; j++) {
+        if (nMemsCnt < nSurfCnt) {
+            for (int j = nMemsCnt; j < nDimMunkres; j++) {
                 for (int i = 0; i < nDimMunkres; i++) m_MunkresIn(i,j) = rand()% 10 + munkres_huge;
             }
 
@@ -1074,16 +1081,16 @@ void Tracking(int nSurfCnt,
 
 
         //////* Specifying the output matrix *//////////////////
-        for (size_t i = 0; i < idx_seg.size(); i++) {
-            for (size_t j = 0; j < idx_mem.size(); j++) {
-                if (m_MunkresOut(i,j) == 0) vnMatchedSeg[idx_seg[i]] = idx_mem[j];
-                else mnDistTmp[idx_seg[i]][idx_mem[j]] = huge;
+        for (size_t i = 0; i < nSurfCnt; i++) {
+            for (size_t j = 0; j < nMemsCnt; j++) {
+                if (m_MunkresOut(i,j) == 0) vnMatchedSeg[i] = j;
+                else mnDistTmp[i][j] = huge;
             }
         }
 
 
 
-
+        // Printing additional output
         if (flag_mat) {
             char sText[128];
             std::ofstream finn1;
