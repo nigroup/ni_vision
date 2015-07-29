@@ -1009,12 +1009,12 @@ void Tracking(int nSurfCnt,
     ////////////** Pre-Processing **//////////////////////////////////////////////////////////
     ////////////** Elemination of rows and columns that have a unique minimum match   **//////
     //////////////////////////////////////////////////////////////////////////////////////////
-    std::vector<int> vnSurfCandCnt(nSurfCnt, 0);
-    std::vector<int> vnSegCandMin(nSurfCnt, nObjsNrLimit);        //
-    std::vector<int> vnMemsCandCnt(nMemsCnt, 0);
-    std::vector<int> vnMemCandMin(nMemsCnt, nObjsNrLimit);
+//    std::vector<int> vnSurfCandCnt(nSurfCnt, 0);
+//    std::vector<int> vnSegCandMin(nSurfCnt, nObjsNrLimit);        //
+//    std::vector<int> vnMemsCandCnt(nMemsCnt, 0);
+//    std::vector<int> vnMemCandMin(nMemsCnt, nObjsNrLimit);
     std::vector<int> vnMatchedSeg(nSurfCnt, nObjsNrLimit*2);
-    std::vector<int> vnMatchedMem(nMemsCnt, nObjsNrLimit*2);
+//    std::vector<int> vnMatchedMem(nMemsCnt, nObjsNrLimit*2);
 
     std::vector<std::vector<float> > mnDistTmp = mnDistTotal;           // specified distance matrix
 //    Tracking_OptPre (nMemsCnt, nSurfCnt, huge, nObjsNrLimit, stTrack, mnDistTmp, vnSurfCandCnt, vnSegCandMin, vnMemsCandCnt, vnMemCandMin, vnMatchedSeg);
@@ -1037,7 +1037,6 @@ void Tracking(int nSurfCnt,
 //        }
 //    }
 
-    if (true) {
 //        std::vector<int> idx_mem;
 //        cnt_nn = 0;
 //        for (int j = 0; j < nMemsCnt; j++) {
@@ -1049,62 +1048,77 @@ void Tracking(int nSurfCnt,
 
 
 
-        int munkres_huge = 100;
-        int nDimMunkres = max(nSurfCnt, nMemsCnt);
-        printf("Munkres Dimension %i\n", nDimMunkres);
+    int munkres_huge = 200;
+    int nDimMunkres = max(nSurfCnt, nMemsCnt);
+    printf("SurfCnt, MemsCnt %i %i\n", nSurfCnt, nMemsCnt);
 
-        MunkresMatrix<double> m_MunkresIn(nDimMunkres, nDimMunkres);
-        MunkresMatrix<double> m_MunkresOut(nDimMunkres, nDimMunkres);
+    MunkresMatrix<double> m_MunkresIn(nDimMunkres, nDimMunkres);
+    MunkresMatrix<double> m_MunkresOut(nDimMunkres, nDimMunkres);
 
-        for (size_t i = 0; i < nSurfCnt; i++) {
-            for (size_t j = 0; j < nMemsCnt; j++)
-                m_MunkresIn(i,j) = mnDistTmp[i][j];
-        }
+    for (size_t i = 0; i < nSurfCnt; i++) {
+        for (size_t j = 0; j < nMemsCnt; j++)
+            m_MunkresIn(i,j) = mnDistTmp[i][j];
+    }
 
-        if (nMemsCnt > nSurfCnt) {
-            for (int i = nSurfCnt; i < nDimMunkres; i++) {
-                for (int j = 0; j < nDimMunkres; j++) m_MunkresIn(i,j) = rand()% 10 + munkres_huge;
-            }
-        }
-        if (nMemsCnt < nSurfCnt) {
-            for (int j = nMemsCnt; j < nDimMunkres; j++) {
-                for (int i = 0; i < nDimMunkres; i++) m_MunkresIn(i,j) = rand()% 10 + munkres_huge;
-            }
-
-        }
-
-        m_MunkresOut = m_MunkresIn;
-
-        Munkres m;
-        m.solve(m_MunkresOut);
-
-
-
-        //////* Specifying the output matrix *//////////////////
-        for (size_t i = 0; i < nSurfCnt; i++) {
-            for (size_t j = 0; j < nMemsCnt; j++) {
-                if (m_MunkresOut(i,j) == 0) vnMatchedSeg[i] = j;
-                else mnDistTmp[i][j] = huge;
-            }
-        }
-
-
-
-        // Printing additional output
-        if (flag_mat) {
-            char sText[128];
-            std::ofstream finn1;
-            std::string filename = "matrix.txt";
-
-            finn1.open(filename.data(), std::ios::app);
-
-            sprintf(sText, "disttmp\n");
-            finn1<< sText;
-            for (int j = 0; j < nDim; j++) {if (!j) sprintf(sText, "%11d", j); else sprintf(sText, "%8d", j); finn1<< sText;} finn1<< "\n";
-            for (int i = 0; i < nDim; i++) {for (int j = 0; j < nDim; j++) {if (!j) sprintf(sText, "%2d %8.3f", i, mnDistTmp[i][j]); else sprintf(sText, "%8.3f", mnDistTmp[i][j]); finn1<< sText;} finn1<< "\n";} finn1<< "\n";
-            finn1.close();
+    if (nMemsCnt > nSurfCnt) {
+        for (int i = nSurfCnt; i < nDimMunkres; i++) {
+            for (int j = 0; j < nDimMunkres; j++) m_MunkresIn(i,j) = munkres_huge;
         }
     }
+    if (nMemsCnt < nSurfCnt) {
+        for (int j = nMemsCnt; j < nDimMunkres; j++) {
+            for (int i = 0; i < nDimMunkres; i++) m_MunkresIn(i,j) = munkres_huge;
+        }
+
+    }
+
+    for(int i = 0; i < nDimMunkres; i++) {
+        for(int j = 0; j < nDimMunkres; j++) {
+            printf("%f ", m_MunkresIn(i,j));
+        }
+        printf("\n");
+    }
+
+    m_MunkresOut = m_MunkresIn;
+
+    Munkres m;
+    m.solve(m_MunkresOut);
+
+
+
+    for(int i = 0; i < nDimMunkres; i++) {
+        for(int j = 0; j < nDimMunkres; j++) {
+            printf("%f ", m_MunkresOut(i,j));
+        }
+        printf("\n");
+    }
+
+
+    //////* Specifying the output matrix *//////////////////
+    for (size_t i = 0; i < nSurfCnt; i++) {
+        for (size_t j = 0; j < nMemsCnt; j++) {
+            if (m_MunkresOut(i,j) == 0) vnMatchedSeg[i] = j;
+            else mnDistTmp[i][j] = huge;
+        }
+    }
+
+
+
+    // Printing additional output
+    if (flag_mat) {
+        char sText[128];
+        std::ofstream finn1;
+        std::string filename = "matrix.txt";
+
+        finn1.open(filename.data(), std::ios::app);
+
+        sprintf(sText, "disttmp\n");
+        finn1<< sText;
+        for (int j = 0; j < nDim; j++) {if (!j) sprintf(sText, "%11d", j); else sprintf(sText, "%8d", j); finn1<< sText;} finn1<< "\n";
+        for (int i = 0; i < nDim; i++) {for (int j = 0; j < nDim; j++) {if (!j) sprintf(sText, "%2d %8.3f", i, mnDistTmp[i][j]); else sprintf(sText, "%8.3f", mnDistTmp[i][j]); finn1<< sText;} finn1<< "\n";} finn1<< "\n";
+        finn1.close();
+    }
+
     /////////////////////////------------------------------------------------------------------////////////////////////////////
     /////////////////////////**                                                              **////////////////////////////////
     /////////////////////////**                    End of the optimization                   **////////////////////////////////
