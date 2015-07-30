@@ -575,87 +575,6 @@ void Tracking_Pre(int nSegmCutSize,
     nSurfCnt = final_cnt_new;
 }
 
-void Tracking_OptPreFunc(int seg,
-                         int j_min,
-                         int nMemsCnt,
-                         int nObjsNrLimit,
-                         float nTrackDist,
-                         float huge,
-                         std::vector<int> &vnSurfCandCnt,
-                         std::vector<int> &vnMemsCandCnt,
-                         std::vector<int> &vnMemCandMin,
-                         std::vector<int> &vnMatchedSeg,
-                         std::vector<std::vector<float> > &mnDistTmp) {
-
-    for (int j = 0; j < nMemsCnt; j++) {
-        if (j == j_min) continue;                       //
-        if (mnDistTmp[seg][j] > nTrackDist) continue;   //
-
-        mnDistTmp[seg][j] = huge;
-        vnMemsCandCnt[j]--;
-        vnSurfCandCnt[seg]--;
-        if (!vnMemsCandCnt[j]) vnMemCandMin[j] = nObjsNrLimit;
-
-        //// if there is only one candidate in the colum left
-        if (vnMemsCandCnt[j] != 1) continue;
-        for (int i = 0; i < seg; i++) {
-            if (mnDistTmp[i][j] > nTrackDist) continue;
-            vnMatchedSeg[i] = j;
-            if (vnSurfCandCnt[i] > 1) Tracking_OptPreFunc (i, j, nMemsCnt, nObjsNrLimit, nTrackDist, huge, vnSurfCandCnt, vnMemsCandCnt, vnMemCandMin, vnMatchedSeg, mnDistTmp);
-        }
-    }
-}
-
-void Tracking_OptPre (int nMemsCnt,
-                      int nSurfCnt,
-                      int huge,
-                      int nObjsNrLimit,
-                      const TrackProp &stTrack,
-                      std::vector<std::vector<float> > &mnDistTmp,
-                      std::vector<int> &vnSurfCandCnt,
-                      std::vector<int> &vnSegCandMin,
-                      std::vector<int> &vnMemsCandCnt,
-                      std::vector<int> &vnMemCandMin,
-                      std::vector<int> &vnMatchedSeg) {
-
-    float offset = 0.01;
-    for (int i = 0; i < nSurfCnt; i++) {
-        float j_min = huge;
-        for (int j = 0; j < nMemsCnt; j++) {
-            if (mnDistTmp[i][j] >= stTrack.Dist) {mnDistTmp[i][j] = huge; continue;}
-            vnSurfCandCnt[i]++;
-
-            if (mnDistTmp[i][j] > j_min) continue;
-            if (mnDistTmp[i][j] == j_min) mnDistTmp[i][j] += offset;
-            else {j_min = mnDistTmp[i][j]; vnSegCandMin[i] = j;}
-        }
-    }
-
-    for (int j = 0; j < nMemsCnt; j++) {
-        float i_min = huge;
-        for (int i = 0; i < nSurfCnt; i++) {
-            if (mnDistTmp[i][j] >= stTrack.Dist) continue;
-            vnMemsCandCnt[j]++;
-
-            if (mnDistTmp[i][j] > i_min) continue;
-            if (mnDistTmp[i][j] == i_min) mnDistTmp[i][j] += offset;
-            else {i_min = mnDistTmp[i][j]; vnMemCandMin[j] = i;}
-        }
-    }
-
-    for (int i = 0; i < nSurfCnt; i++) {
-        if (vnSurfCandCnt[i]) {
-            //// if no other initial elements in the column
-            if (vnMemsCandCnt[vnSegCandMin[i]] < 2) {
-                if (vnMatchedSeg[i] < nObjsNrLimit) printf("Error, the segment %d is already matched %d\n", i, vnSegCandMin[i]);
-                vnMatchedSeg[i] = vnSegCandMin[i];
-
-                if (vnSurfCandCnt[i] > 1) Tracking_OptPreFunc (i, vnSegCandMin[i], nMemsCnt, nObjsNrLimit, stTrack.Dist, huge, vnSurfCandCnt, vnMemsCandCnt, vnMemCandMin, vnMatchedSeg, mnDistTmp);
-            }
-        }
-        else vnMatchedSeg[i] = nObjsNrLimit;
-    }
-}
 
 void Tracking_Post1(int nAttSizeMin,
                     int nMemsCnt,
@@ -1009,46 +928,14 @@ void Tracking(int nSurfCnt,
     ////////////** Pre-Processing **//////////////////////////////////////////////////////////
     ////////////** Elemination of rows and columns that have a unique minimum match   **//////
     //////////////////////////////////////////////////////////////////////////////////////////
-//    std::vector<int> vnSurfCandCnt(nSurfCnt, 0);
-//    std::vector<int> vnSegCandMin(nSurfCnt, nObjsNrLimit);        //
-//    std::vector<int> vnMemsCandCnt(nMemsCnt, 0);
-//    std::vector<int> vnMemCandMin(nMemsCnt, nObjsNrLimit);
     std::vector<int> vnMatchedSeg(nSurfCnt, nObjsNrLimit*2);
-//    std::vector<int> vnMatchedMem(nMemsCnt, nObjsNrLimit*2);
-
     std::vector<std::vector<float> > mnDistTmp = mnDistTotal;           // specified distance matrix
-//    Tracking_OptPre (nMemsCnt, nSurfCnt, huge, nObjsNrLimit, stTrack, mnDistTmp, vnSurfCandCnt, vnSegCandMin, vnMemsCandCnt, vnMemCandMin, vnMatchedSeg);
-
 
     /////////////////////////////////////////////////////////////////////////////////
     ////////////**              Main Optimization              **////////////////////
     /////////////////////////////////////////////////////////////////////////////////
-//    std::vector<int> idx_seg;
-//    int cnt_nn = 0;
-//    for (int i = 0; i < nSurfCnt; i++) {
-//        if (vnMatchedSeg[i] > nObjsNrLimit) {
-//            for (int j = 0; j < nMemsCnt; j++) {
-//                if (mnDistTmp[i][j] < stTrack.Dist) {
-//                    vnMatchedMem[j] = 0;
-//                }
-//            }
-//            idx_seg.resize(cnt_nn + 1);
-//            idx_seg[cnt_nn++] = i;
-//        }
-//    }
 
-//        std::vector<int> idx_mem;
-//        cnt_nn = 0;
-//        for (int j = 0; j < nMemsCnt; j++) {
-//            if (!vnMatchedMem[j]) {
-//                idx_mem.resize(cnt_nn + 1);
-//                idx_mem[cnt_nn++] = j;
-//            }
-//        }
-
-
-
-    int munkres_huge = 200;
+    int munkres_huge = 100;
     int nDimMunkres = max(nSurfCnt, nMemsCnt);
     printf("SurfCnt, MemsCnt %i %i\n", nSurfCnt, nMemsCnt);
 
@@ -1072,12 +959,13 @@ void Tracking(int nSurfCnt,
 
     }
 
-    for(int i = 0; i < nDimMunkres; i++) {
-        for(int j = 0; j < nDimMunkres; j++) {
-            printf("%f ", m_MunkresIn(i,j));
-        }
-        printf("\n");
-    }
+// Debugging
+//    for(int i = 0; i < nDimMunkres; i++) {
+//        for(int j = 0; j < nDimMunkres; j++) {
+//            printf("%f ", m_MunkresIn(i,j));
+//        }
+//        printf("\n");
+//    }
 
     m_MunkresOut = m_MunkresIn;
 
@@ -1085,13 +973,13 @@ void Tracking(int nSurfCnt,
     m.solve(m_MunkresOut);
 
 
-
-    for(int i = 0; i < nDimMunkres; i++) {
-        for(int j = 0; j < nDimMunkres; j++) {
-            printf("%f ", m_MunkresOut(i,j));
-        }
-        printf("\n");
-    }
+// Debugging
+//    for(int i = 0; i < nDimMunkres; i++) {
+//        for(int j = 0; j < nDimMunkres; j++) {
+//            printf("%f ", m_MunkresOut(i,j));
+//        }
+//        printf("\n");
+//    }
 
 
     //////* Specifying the output matrix *//////////////////

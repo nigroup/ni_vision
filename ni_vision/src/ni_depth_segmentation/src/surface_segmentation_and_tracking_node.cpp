@@ -82,17 +82,17 @@ public:
           name_in_img_("/camera/rgb/image_color"),
           name_out_("/ni/depth_segmentation/surfaces/image"),
 #if USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          img_sub_(it_, name_in_img_, 30),
+          img_sub_(it_, name_in_img_, 10),
 #else // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          img_sub_(nh, name_in_img_, 30),
+          img_sub_(nh, name_in_img_, 10),
 #endif // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          cloud_sub_(nh, name_in_cld_, 30)
+          cloud_sub_(nh, name_in_cld_, 10)
     {
 
         using namespace message_filters; // Subscriber, sync_policies
 
         // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-        int queue_size = 30;
+        int queue_size = 10;
         sync_ptr_ = new Synchronizer<MySyncPolicy>(MySyncPolicy(queue_size),
                                                    cloud_sub_,
                                                    img_sub_);
@@ -278,7 +278,8 @@ protected:
             }
 
             Mat1f img = sig_.MostRecentMat1f(name_out_);
-            //img(0) = 12.f;
+            img(0) = 0.f;
+            img(1) = 20.f;
 
             Mat mask_not_assigned = img <= 0.f;
 
