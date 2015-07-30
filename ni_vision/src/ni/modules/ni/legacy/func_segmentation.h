@@ -196,64 +196,6 @@ void Tracking_Pre(int nSegmCutSize,
                   int &nSurfCnt);
 
 
-/* */
-/**
- * @brief Recursive Sub-function of the pre-processing of the optimization of the tracking
- *
- * Elimination of the unique elements in Munkres-matrix
-
- * @param seg
- * @param j_min
- * @param nMemsCnt
- * @param nObjsNrLimit
- * @param nTrackDist
- * @param huge
- * @param vnSurfCandCnt
- * @param vnMemsCandCnt
- * @param vnMemCandMin
- * @param vnMatchedSeg
- * @param mnDistTmp
- */
-void Tracking_OptPreFunc(int seg,
-                         int j_min,
-                         int nMemsCnt,
-                         int nObjsNrLimit,
-                         float nTrackDist,
-                         float huge,
-                         std::vector<int> &vnSurfCandCnt,
-                         std::vector<int> &vnMemsCandCnt,
-                         std::vector<int> &vnMemCandMin,
-                         std::vector<int> &vnMatchedSeg,
-                         std::vector<std::vector<float> > &mnDistTmp);
-
-/**
- * @brief Pre-Processing of the optimization of the tracking
- *
- * Elimination of the unique elements in Munkres-matrix
-
- * @param[in] nMemsCnt
- * @param[in] nSurfCnt
- * @param[in] huge
- * @param[in] nObjsNrLimit
- * @param[in] stTrack
- * @param[out] mnDistTmp modified in-place
- * @param[out] vnSurfCandCnt
- * @param[out] vnSegCandMin
- * @param[out] vnMemsCandCnt
- * @param[out] vnMemCandMin
- * @param[out] vnMatchedSeg
- */
-void Tracking_OptPre (int nMemsCnt,
-                      int nSurfCnt,
-                      int huge,
-                      int nObjsNrLimit,
-                      const TrackProp &stTrack,
-                      std::vector<std::vector<float> > &mnDistTmp,
-                      std::vector<int> &vnSurfCandCnt,
-                      std::vector<int> &vnSegCandMin,
-                      std::vector<int> &vnMemsCandCnt,
-                      std::vector<int> &vnMemCandMin,
-                      std::vector<int> &vnMatchedSeg);
 
 /**
  * @brief Postprocessing of the tracking (Part 1)

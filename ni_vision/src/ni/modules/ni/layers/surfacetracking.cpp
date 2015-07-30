@@ -3,6 +3,8 @@
 #include "elm/core/debug_utils.h"
 #include <set>
 
+#include "elm/core/cv/mat_utils.h".h"
+
 #include "elm/core/cv/mat_vector_utils.h"
 #include "elm/core/cv/mat_vector_utils_inl.h"
 #include "elm/core/exception.h"
@@ -201,6 +203,9 @@ void SurfaceTracking::Activate(const Signal &signal)
             }
             m_(i) = static_cast<float>(vnTrkMap[i]);
         }
+
+//        cv::imshow("x", elm::ConvertTo8U(m_));
+//        cv::waitKey();
 
 //        {
 //            std::set<int> snew;
