@@ -937,7 +937,7 @@ void Tracking(int nSurfCnt,
 
     int munkres_huge = 100;
     int nDimMunkres = max(nSurfCnt, nMemsCnt);
-    printf("SurfCnt, MemsCnt %i %i\n", nSurfCnt, nMemsCnt);
+    //printf("SurfCnt, MemsCnt %i %i\n", nSurfCnt, nMemsCnt);
 
     MunkresMatrix<double> m_MunkresIn(nDimMunkres, nDimMunkres);
     MunkresMatrix<double> m_MunkresOut(nDimMunkres, nDimMunkres);
