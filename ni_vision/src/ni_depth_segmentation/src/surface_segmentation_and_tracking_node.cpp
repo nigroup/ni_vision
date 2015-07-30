@@ -80,7 +80,7 @@ public:
         : it_(nh),
           name_in_cld_("/camera/depth_registered/points"),
           name_in_img_("/camera/rgb/image_color"),
-          name_out_("/ni/depth_segmentation/surfaces/image"),
+          name_out_("/ni/depth_segmentation/surfaces/imageX"),
 #if USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
           img_sub_(it_, name_in_img_, 10),
 #else // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
@@ -407,7 +407,7 @@ int main(int argc, char** argv)
      * You must call one of the versions of ros::init() before using any other
      * part of the ROS system.
      */
-    ros::init(argc, argv, "surface_segmentation_and_tracking");
+    ros::init(argc, argv, "surface_segmentation_and_trackingX");
 
     /**
      * NodeHandle is the main access point to communications with the ROS system.
