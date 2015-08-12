@@ -16,9 +16,8 @@
 namespace ni {
 
 /**
- * @brief layer for tracking surfaces over time,
- * by assigning newly observed surfaces to surfaces stored
- * in short-term memory (STM)
+ * @brief layer for selecting the surface
+ * next inspected by the recognition module
  * @cite Mohr2014
  *
  * Output keys defined by parent
