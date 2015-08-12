@@ -48,7 +48,7 @@ using namespace elm;
 namespace ni {
 
 /**
- * @brief Node for Top-Down Attention
+ * @brief Node for Top-Down Attention and Object Recognition
  */
 class AttentionNode
 {
