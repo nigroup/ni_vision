@@ -69,13 +69,15 @@ protected:
 
     cv::Mat1f dist_;        ///< weighted sum of feature distance matrices
 
-    std::vector<ni::Surface> observed_;
+    std::vector<ni::Surface> surface_; ///< surface selected by attention process
 
     // legacy members
     int nAttSizeMax;        ///< upper threshold for size (cube diagonal) [mm]
     int nAttSizeMin;        ///< lower threshold for size (cube diagonal) [mm]
     int nAttPtsMin;         ///< lower threshold for area [pixels]
     std::vector<elm::VecF > mnColorHistY_lib;
+    // Todo
+    std::vector<elm::VecF > mnSiftFeature_lib;
     int nFlannLibCols_sift;
     FLANNParameters FLANNParam;
     float* nFlannDataset;

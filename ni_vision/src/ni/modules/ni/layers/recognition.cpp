@@ -31,3 +31,53 @@ using namespace cv;
 using namespace elm;
 using namespace ni;
 
+Attention::~Attention()
+{
+}
+
+Attention::Attention()
+    : elm::base_MatOutputLayer()
+{
+    Clear();
+}
+
+void Attention::Clear()
+{
+}
+
+void Attention::Reset(const LayerConfig &config)
+{
+
+}
+
+
+void Attention::Reconfigure(const LayerConfig &config)
+{
+
+}
+
+
+void Attention::InputNames(const LayerInputNames &io)
+{
+    input_name_bgr_     = io.Input(KEY_INPUT_BGR_IMAGE);
+    input_name_attList_ = io.Input(KEY_INPUT_ATT_LIST);
+}
+
+void Attention::Activate(const Signal &signal)
+{
+    Mat3f color         = signal.MostRecent(input_name_bgr_).get<Mat1f>();
+    Mat1f attentionList = signal.MostRecent(input_name_attList_).get<Mat1f>();
+    // Todo: object properties übergeben, surface statt attention_list
+
+
+    // color histogramm difference
+    float dc = 0;
+
+    for (int j = 0; j < nTrackHistoBin_tmp; j++) {
+        dc += fabs(mnColorHistY_lib[0][j] - stMems.mnColorHist[i][j]);
+    }
+    dc /= 2.f;
+
+    // SIFT feature comparison
+
+}

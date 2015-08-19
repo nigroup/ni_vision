@@ -191,6 +191,11 @@ add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
 target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
 list(APPEND NODE_NAMES ${NODE_NAME})
 
+set(NODE_NAME attention_and_recognition_node)
+add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
+target_link_libraries(${NODE_NAME} ${catkin_LIBRARIES} ${ELM_LIBS} ${NI_LIBS})
+list(APPEND NODE_NAMES ${NODE_NAME})
+
 if(ELM_WITH_MATIO)
     set(NODE_NAME nyu_depth_v2_node)
     add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
