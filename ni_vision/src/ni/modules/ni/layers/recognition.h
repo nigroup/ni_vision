@@ -22,7 +22,7 @@ namespace ni {
  *
  * Output keys defined by parent
  */
-class Recognition : public elm::base_MatOutputLayer
+class Recognition : public elm::base_Layer
 {
 public:
     // params
@@ -62,14 +62,12 @@ protected:
 
     // members
     std::string input_name_bgr_;
-    std::string input_name_cloud_;
-    std::string input_name_map_;
+    std::string input_name_selHistogram_;
+    std::string input_name_selBoundingBox_;
+    std::string name_out_rect_;
+    std::string name_out_matchFlag_;
 
     int nb_bins_;           ///< no. of bins in color histogram
-
-    cv::Mat1f dist_;        ///< weighted sum of feature distance matrices
-
-    std::vector<ni::Surface> surface_; ///< surface selected by attention process
 
     // legacy members
     int nAttSizeMax;        ///< upper threshold for size (cube diagonal) [mm]

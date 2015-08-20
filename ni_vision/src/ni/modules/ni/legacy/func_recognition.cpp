@@ -492,7 +492,7 @@ void Recognition (int nCandID,
                        nMaxDeltaOri,
                        nMinDeltaOri,
                        nMaxDeltaScale,
-                       nMinDeltaOri);
+                       nMinDeltaScale);
     nCandKeyCnt = nKeyptsCnt;
 
     /////** Filtering: extracting true-positives from matched keypoints **//////////////////
