@@ -47,6 +47,7 @@ void Attention::Clear()
 
 void Attention::Reset(const LayerConfig &config)
 {
+    // todo
     // @todo: load the histogram and sift feature from the learned model
     BuildFlannIndex(1, sColorLibFileName,
                     mnColorHistY_lib,
@@ -72,7 +73,7 @@ void Attention::Reset(const LayerConfig &config)
 
 void Attention::Reconfigure(const LayerConfig &config)
 {
-
+    // todo
 }
 
 
@@ -86,8 +87,8 @@ void Attention::InputNames(const LayerInputNames &io)
 
 void AttentionWindow::OutputNames(const LayerOutputNames &config)
 {
-    name_out_rect_ = config.Output(KEY_OUTPUT_WIN);
-    name_out_matchFlag_ = config.OutputOpt(KEY_OUTPUT_OPT_TL);
+    name_out_rect_ = config.Output(KEY_OUTPUT_RECT);
+    name_out_matchFlag_ = config.OutputOpt(KEY_OUTPUT_MATCH_FLAG);
 }
 
 

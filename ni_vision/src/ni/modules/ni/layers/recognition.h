@@ -37,6 +37,8 @@ public:
     static const std::string KEY_INPUT_BGR_IMAGE;
     static const std::string KEY_INPUT_CLOUD;
     static const std::string KEY_INPUT_MAP;
+    static const std::string KEY_OUTPUT_RECT;
+    static const std::string KEY_OUTPUT_MATCH_FLAG;
 
     static const float DISTANCE_HUGE;
 

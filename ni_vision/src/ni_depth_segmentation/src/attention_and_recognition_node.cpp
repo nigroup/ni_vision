@@ -35,6 +35,9 @@
 #include "ni/layers/layerfactoryni.h"
 #include "ni/legacy/timer.h"
 
+#include "std_msgs/Bool.h"
+#include "std_msgs/Int32MultiArray.h"
+
 /** A post from ROS Answers suggested using image_transport::SubscriberFilter
  *  source: http://answers.ros.org/question/9705/synchronizer-and-image_transportsubscriber/
  *
@@ -191,7 +194,22 @@ protected:
                 layers_[i]->Response(sig_);
             }
 
-            Mat1f response = sig_.MostRecentMat1f(name_out_);
+            Mat1f rect_ = sig_.MostRecentMat1f(name_out_rect_);
+            int matchFlag_ = sig_.MostRecentMat1f(name_out_matchFlag_);
+
+            // mimic timestamp of processed data
+            std_msgs::Header header;
+            header.stamp = ros::Time().fromNSec(msg->header.stamp*1e3);
+
+            std_msgs::Bool msg;
+            msg.data = (bool)matchFlag_;
+            // todo add header
+            recog_pub_matchFlag_.publish(msg);
+
+            std_msgs::Int32MultiArray msg2;
+            msg2.data = rect_;
+            // todo add header
+            recog_pub_rect_.publish(msg2);
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);
             double nTimeTotal = double(timespecDiff(&t_total_end, &t_total_start)/1e9);
@@ -220,12 +238,17 @@ protected:
     std::string name_in_img_;    ///< Signal name and subscribing topic name
     std::string name_in_seg_;    ///< Signal name and subscribing topic name
     std::string name_out_;       ///< Signal name and publishing topic name
+    std::string name_out_rect_;
+    std::string name_out_matchFlag_;
 
     message_filters::Synchronizer<MySyncPolicy> *sync_ptr_;
 
     ImageSubscriber img_sub_; ///< synchronized image subscriber (RGB)
     ImageSubscriber img_sub_seg_; ///< synchronized image subscriber (Segmentation map)
     message_filters::Subscriber<CloudXYZ > cloud_sub_;         ///< synchronized point cloud subscriber
+
+    ros::Publisher recog_pub_rect_;
+    ros::Publisher recog_pub_matchFlag_;
 
     boost::mutex mtx_;                      ///< mutex object for thread safety
 
