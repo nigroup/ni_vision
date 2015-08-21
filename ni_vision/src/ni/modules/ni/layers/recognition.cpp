@@ -31,25 +31,66 @@ using namespace cv;
 using namespace elm;
 using namespace ni;
 
-Attention::~Attention()
+const string Recognition::PARAM_HIST_BINS       = "bins";
+const string Recognition::PARAM_SIZE_MAX        = "att_size_max";
+const string Recognition::PARAM_SIZE_MIN        = "att_size_min";
+const string Recognition::PARAM_PTS_MIN         = "att_pts_min";
+const string Recognition::PARAM_PATH_COLOR      = "path_color";
+const string Recognition::PARAM_PATH_SIFT       = "path_sift";
+
+const string Recognition::KEY_INPUT_BGR_IMAGE   = "bgr";
+const string Recognition::KEY_INPUT_CLOUD       = "points";
+const string Recognition::KEY_INPUT_MAP         = "map";
+const string Recognition::KEY_INPUT_SELECTED_HISTOGRAM = "hist";
+const string Recognition::KEY_INPUT_SELECTED_BOUNDINGBOX = "boundBox";
+const string Recognition::KEY_OUTPUT_RECT = "rect";
+const string Recognition::KEY_OUTPUT_MATCH_FLAG = "match";
+
+
+const float Recognition::DISTANCE_HUGE = 100.f;
+
+
+Recognition::~Recognition()
 {
 }
 
-Attention::Attention()
+Recognition::Recognition()
     : elm::base_MatOutputLayer()
 {
     Clear();
 }
 
-void Attention::Clear()
+void Recognition::Clear()
 {
 }
 
-void Attention::Reset(const LayerConfig &config)
+void Recognition::Reset(const LayerConfig &config)
 {
-    // todo
-    // @todo: load the histogram and sift feature from the learned model
-    BuildFlannIndex(1, sColorLibFileName,
+    PTree p = config.Params();
+
+    bfs::path path_color = p.get<bfs::path>(PARAM_PATH_COLOR);
+
+    if(!bfs::is_regular_file(path_color)) {
+
+        stringstream s;
+        s << "Invalid path to color model for recognition layer (" << path_color << ")";
+        ELM_THROW_FILEIO_ERROR(s.str());
+    }
+
+    bfs::path path_sift = p.get<bfs::path>(PARAM_PATH_SIFT);
+
+    if(!bfs::is_regular_file(path_sift)) {
+
+        stringstream s;
+        s << "Invalid path to sift model for recognition layer (" << path_sift << ")";
+        ELM_THROW_FILEIO_ERROR(s.str());
+    }
+
+    mnColorHistY_lib.clear();
+    mnSiftExtraFeatures.clear();
+
+    int nRecogFeature = 20;
+    BuildFlannIndex(1, path_color.string(),
                     mnColorHistY_lib,
                     stTrack,
                     nFlannLibCols_sift,
@@ -58,8 +99,7 @@ void Attention::Reset(const LayerConfig &config)
                     nRecogFeature,
                     mnSiftExtraFeatures,
                     FlannIdx_Sift);
-    printf("Color FLANN Index Computed.\n\n");
-    BuildFlannIndex(2, sSIFTLibFileName,
+    BuildFlannIndex(2, path_sift.string(),
                     mnColorHistY_lib,
                     stTrack,
                     nFlannLibCols_sift,
@@ -68,16 +108,18 @@ void Attention::Reset(const LayerConfig &config)
                     nRecogFeature,
                     mnSiftExtraFeatures,
                     FlannIdx_Sift);
+
+    Reconfigure(config);
 }
 
 
-void Attention::Reconfigure(const LayerConfig &config)
+void Recognition::Reconfigure(const LayerConfig &config)
 {
     // todo
 }
 
 
-void Attention::InputNames(const LayerInputNames &io)
+void Recognition::InputNames(const LayerInputNames &io)
 {
     input_name_bgr_     = io.Input(KEY_INPUT_BGR_IMAGE);
     input_name_selHistogram_ = io.Input(KEY_INPUT_SELECTED_HISTOGRAM);
@@ -85,14 +127,14 @@ void Attention::InputNames(const LayerInputNames &io)
 }
 
 
-void AttentionWindow::OutputNames(const LayerOutputNames &config)
+void Recognition::OutputNames(const LayerOutputNames &config)
 {
     name_out_rect_ = config.Output(KEY_OUTPUT_RECT);
     name_out_matchFlag_ = config.OutputOpt(KEY_OUTPUT_MATCH_FLAG);
 }
 
 
-void Attention::Activate(const Signal &signal)
+void Recognition::Activate(const Signal &signal)
 {
     Mat3f color         = signal.MostRecent(input_name_bgr_).get<Mat3f>();
     Mat1f selectedHistogram = signal.MostRecent(input_name_selHistogram_).get<Mat1f>();
@@ -121,7 +163,7 @@ void Attention::Activate(const Signal &signal)
     float flannKnn = 2;
     float flannMatchFac = 0.7;
     // @todo: find the right way to determine number of columns
-    int flannLibCols_sift = mnSiftExtraFeatures[0].length;
+    int flannLibCols_sift = mnSiftExtraFeatures[0].size();
 
     std::vector<int> vnSiftMatched;
     std::vector <double> vnDeltaScale;
@@ -132,6 +174,8 @@ void Attention::Activate(const Signal &signal)
     double nMinDeltaScale = 999;
     int keyptsCnt = 0;
     int flannIM = 0;
+    // todo: correct value?
+    int tcount = 1;
 
     Recognition_Flann (tcount,
                        flannKnn,

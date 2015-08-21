@@ -472,7 +472,8 @@ void Recognition (int nCandID,
     std::vector <double> vnDeltaOri;
     double nMaxDeltaOri = -999;
     double nMaxDeltaScale = -999;
-    double nMinDeltaOri = 999; //double nMinDeltaScale = 999;
+    double nMinDeltaOri = 999;
+    double nMinDeltaScale = 999;
     int nKeyptsCnt = 0;
     int nFlannIM=0;
 
