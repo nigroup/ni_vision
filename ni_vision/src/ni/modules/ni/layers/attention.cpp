@@ -7,6 +7,7 @@
 
 #include <boost/filesystem.hpp>
 
+#include "elm/core/debug_utils.h"
 #include "elm/core/cv/mat_vector_utils.h"
 #include "elm/core/cv/mat_vector_utils_inl.h"
 #include "elm/core/exception.h"
@@ -41,6 +42,8 @@ const string Attention::PARAM_PATH_SIFT       = "path_sift";
 const string Attention::KEY_INPUT_BGR_IMAGE   = "bgr";
 const string Attention::KEY_INPUT_CLOUD       = "points";
 const string Attention::KEY_INPUT_MAP         = "map";
+const string Attention::KEY_OUTPUT_HISTOGRAM  = "hist";
+const string Attention::KEY_OUTPUT_RECT       = "rect";
 
 const float Attention::DISTANCE_HUGE = 100.f;
 
@@ -58,7 +61,7 @@ Attention::~Attention()
 }
 
 Attention::Attention()
-    : elm::base_MatOutputLayer()
+    : elm::base_Layer()
 {
     Clear();
 }
@@ -168,6 +171,12 @@ void Attention::InputNames(const LayerInputNames &io)
     input_name_map_     = io.Input(KEY_INPUT_MAP);
 }
 
+void Attention::OutputNames(const LayerOutputNames &io)
+{
+    name_out_histogram_ = io.Output(KEY_OUTPUT_HISTOGRAM);
+    name_out_rect_ = io.Output(KEY_OUTPUT_RECT);
+}
+
 void Attention::Activate(const Signal &signal)
 {
     Mat3f color         = signal.MostRecent(input_name_bgr_).get<Mat1f>();
@@ -267,27 +276,47 @@ void Attention::Activate(const Signal &signal)
                        nMemsCnt,
                        veCandClrDist);
 
-    m_ = Mat1f(1, nMemsCnt, -1.f);
+    Mat1f m_ = Mat1f(1, nMemsCnt, -1.f);
     for(int i=0; i<nMemsCnt; i++) {
 
         m_(i) = static_cast<float>(stMems.vnIdx[i]);
     }
 
-//    cv::Mat img(240, 320, CV_8UC1);
-//    img.setTo(Scalar(0));
-//    for(int i=0; i<nMemsCnt; i++) {
 
-//        Point2i p(stMems.mnRCenter[i][0], stMems.mnRCenter[i][1]);
+    histogram_ = Mat1f(1, stMems.mnColorHist[stMems.vnIdx[0]].size());
+    for(int i = 0; i < stMems.mnColorHist[stMems.vnIdx[0]].size(); i++) {
+        histogram_(i) = stMems.mnColorHist[stMems.vnIdx[0]][i];
+    }
 
-//        stringstream s;
-//        s << i << " " << stMems.vnIdx[i];
+    rect_ = Mat1f(1, stMems.mnRect[stMems.vnIdx[0]].size());
+    for(int i = 0; i < stMems.mnRect[stMems.vnIdx[0]].size(); i++) {
+        rect_(i) = stMems.mnRect[stMems.vnIdx[0]][i];
+    }
 
-//        cv::putText(img, s.str(), p, CV_FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
-//    }
 
-//    cv::imshow("att", img);
-//    cv::waitKey(1);
+    cv::Mat img(240, 320, CV_8UC1);
+    img.setTo(Scalar(0));
+    for(int i=0; i<nMemsCnt; i++) {
+
+        Point2i p(stMems.mnRCenter[i][0], stMems.mnRCenter[i][1]);
+
+        stringstream s;
+        s << i << " " << stMems.vnIdx[i];
+
+        cv::putText(img, s.str(), p, CV_FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
+    }
+
+    cv::imshow("att", img);
+    cv::waitKey(1);
 }
+
+
+void Attention::Response(Signal &signal)
+{
+    signal.Append(name_out_rect_, rect_);
+    signal.Append(name_out_histogram_, histogram_);
+}
+
 
 void Attention::extractFeatures(
         const CloudXYZPtr &cloud,

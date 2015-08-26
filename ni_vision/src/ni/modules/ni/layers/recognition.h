@@ -26,10 +26,6 @@ class Recognition : public elm::base_Layer
 {
 public:
     // params
-    static const std::string PARAM_HIST_BINS;
-    static const std::string PARAM_SIZE_MAX;        ///< upper threshold for size (cube diagonal) [mm]
-    static const std::string PARAM_SIZE_MIN;        ///< lower threshold for size (cube diagonal) [mm]
-    static const std::string PARAM_PTS_MIN;         ///< lower threshold for area [pixels]
     static const std::string PARAM_PATH_COLOR;      ///< path to library file
     static const std::string PARAM_PATH_SIFT;       ///< path to library file
 
@@ -37,9 +33,8 @@ public:
     static const std::string KEY_INPUT_BGR_IMAGE;
     static const std::string KEY_INPUT_CLOUD;
     static const std::string KEY_INPUT_MAP;
-    static const std::string KEY_INPUT_SELECTED_HISTOGRAM;
-    static const std::string KEY_INPUT_SELECTED_BOUNDINGBOX;
-    static const std::string KEY_OUTPUT_RECT;
+    static const std::string KEY_INPUT_HISTOGRAM;
+    static const std::string KEY_INPUT_RECT;
     static const std::string KEY_OUTPUT_MATCH_FLAG;
 
     static const float DISTANCE_HUGE;
@@ -56,7 +51,11 @@ public:
 
     void InputNames(const elm::LayerInputNames &io);
 
+    void OutputNames(const elm::LayerOutputNames &io);
+
     void Activate(const elm::Signal &signal);
+
+    void Response(elm::Signal &signal);
 
 protected:
     void extractFeatures(const elm::CloudXYZPtr &cloud,
@@ -68,9 +67,10 @@ protected:
     std::string input_name_bgr_;
     std::string input_name_selHistogram_;
     std::string input_name_selBoundingBox_;
-    std::string name_out_rect_;
+
     std::string name_out_matchFlag_;
 
+    int matchFlag_;
     int nb_bins_;           ///< no. of bins in color histogram
 
     // legacy members

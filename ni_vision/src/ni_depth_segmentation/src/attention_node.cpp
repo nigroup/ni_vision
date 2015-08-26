@@ -134,7 +134,8 @@ protected:
             io.Input(Attention::KEY_INPUT_BGR_IMAGE, name_in_img_);
             io.Input(Attention::KEY_INPUT_CLOUD, name_in_cld_);
             io.Input(Attention::KEY_INPUT_MAP, name_in_seg_);
-            io.Output(Attention::KEY_OUTPUT_RESPONSE, name_out_);
+            io.Output(Attention::KEY_OUTPUT_HISTOGRAM, "name_out_hist");
+            io.Output(Attention::KEY_OUTPUT_RECT, name_out_);
             layers_.push_back(LayerFactoryNI::CreateShared("Attention", cfg, io));
         }
     }

@@ -9,13 +9,13 @@
   </group>
   
   <group if="$(arg do_remote)">
-    <node machine="nivision" pkg="ni_depth_segmentation" name="attention" type="attention_node" output="screen">
+    <node machine="nivision" pkg="ni_depth_segmentation" name="attentionAndRecognition" type="attention_and_recognition_node" output="screen">
       <param name="path_color" type="str" value="$(arg path_color)"/>
       <param name="path_sift" type="str" value="$(arg path_sift)"/>
     </node>
   </group>
   <group unless="$(arg do_remote)">
-    <node pkg="ni_depth_segmentation" name="attention" type="attention_node" output="screen">
+    <node pkg="ni_depth_segmentation" name="attentionAndRecognition" type="attention_and_recognition_node" output="screen">
       <param name="path_color" type="str" value="$(arg path_color)"/>
       <param name="path_sift" type="str" value="$(arg path_sift)"/>
     </node>

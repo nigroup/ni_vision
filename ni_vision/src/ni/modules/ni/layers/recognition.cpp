@@ -31,19 +31,14 @@ using namespace cv;
 using namespace elm;
 using namespace ni;
 
-const string Recognition::PARAM_HIST_BINS       = "bins";
-const string Recognition::PARAM_SIZE_MAX        = "att_size_max";
-const string Recognition::PARAM_SIZE_MIN        = "att_size_min";
-const string Recognition::PARAM_PTS_MIN         = "att_pts_min";
 const string Recognition::PARAM_PATH_COLOR      = "path_color";
 const string Recognition::PARAM_PATH_SIFT       = "path_sift";
 
 const string Recognition::KEY_INPUT_BGR_IMAGE   = "bgr";
 const string Recognition::KEY_INPUT_CLOUD       = "points";
 const string Recognition::KEY_INPUT_MAP         = "map";
-const string Recognition::KEY_INPUT_SELECTED_HISTOGRAM = "hist";
-const string Recognition::KEY_INPUT_SELECTED_BOUNDINGBOX = "boundBox";
-const string Recognition::KEY_OUTPUT_RECT = "rect";
+const string Recognition::KEY_INPUT_RECT = "rect";
+const string Recognition::KEY_INPUT_HISTOGRAM = "hist";
 const string Recognition::KEY_OUTPUT_MATCH_FLAG = "match";
 
 
@@ -55,7 +50,7 @@ Recognition::~Recognition()
 }
 
 Recognition::Recognition()
-    : elm::base_MatOutputLayer()
+    : elm::base_Layer()
 {
     Clear();
 }
@@ -122,21 +117,20 @@ void Recognition::Reconfigure(const LayerConfig &config)
 void Recognition::InputNames(const LayerInputNames &io)
 {
     input_name_bgr_     = io.Input(KEY_INPUT_BGR_IMAGE);
-    input_name_selHistogram_ = io.Input(KEY_INPUT_SELECTED_HISTOGRAM);
-    input_name_selBoundingBox_ = io.Input(KEY_INPUT_SELECTED_BOUNDINGBOX);
+    input_name_selHistogram_ = io.Input(KEY_INPUT_HISTOGRAM);
+    input_name_selBoundingBox_ = io.Input(KEY_INPUT_RECT);
 }
 
 
 void Recognition::OutputNames(const LayerOutputNames &config)
 {
-    name_out_rect_ = config.Output(KEY_OUTPUT_RECT);
-    name_out_matchFlag_ = config.OutputOpt(KEY_OUTPUT_MATCH_FLAG);
+    name_out_matchFlag_ = config.Output(KEY_OUTPUT_MATCH_FLAG);
 }
 
 
 void Recognition::Activate(const Signal &signal)
 {
-    Mat3f color         = signal.MostRecent(input_name_bgr_).get<Mat3f>();
+    Mat3f color         = signal.MostRecent(input_name_bgr_).get<Mat1f>();
     Mat1f selectedHistogram = signal.MostRecent(input_name_selHistogram_).get<Mat1f>();
     Mat1f selectedBoundingBox = signal.MostRecent(input_name_selBoundingBox_).get<Mat1f>();
 
@@ -163,7 +157,6 @@ void Recognition::Activate(const Signal &signal)
     float flannKnn = 2;
     float flannMatchFac = 0.7;
     // @todo: find the right way to determine number of columns
-    int flannLibCols_sift = mnSiftExtraFeatures[0].size();
 
     std::vector<int> vnSiftMatched;
     std::vector <double> vnDeltaScale;
@@ -179,7 +172,7 @@ void Recognition::Activate(const Signal &signal)
 
     Recognition_Flann (tcount,
                        flannKnn,
-                       flannLibCols_sift,
+                       nFlannLibCols_sift,
                        flannMatchFac,
                        mnSiftExtraFeatures,
                        FlannIdx_Sift,
@@ -202,10 +195,14 @@ void Recognition::Activate(const Signal &signal)
     float colorThreshold = 0.3;
 
     // todo: (siftfeature + matched_siftfeature)
-    rect_ = selectedBoundingBox;
     if (keyptsCnt >= siftCntThreshold && colorDistance < colorThreshold) {
         matchFlag_ = 1;
     } else {
         matchFlag_ = 0;
     }
+}
+
+void Recognition::Response(Signal &signal)
+{
+    signal.Append(name_out_matchFlag_, matchFlag_);
 }

@@ -19,6 +19,7 @@
 #include "ni/layers/depthmap.h"
 #include "ni/layers/depthsegmentation.h"
 #include "ni/layers/prunesmallsegments.h"
+#include "ni/layers/recognition.h"
 #include "ni/layers/surfacetracking.h"
 
 using boost::assign::map_list_of;
@@ -44,6 +45,7 @@ LayerRegistry g_layerRegistryNI = map_list_of
         LAYER_REGISTRY_PAIR( MapAreaFilter )
         LAYER_REGISTRY_PAIR( MapNeighAdjacency )
         LAYER_REGISTRY_PAIR( PruneSmallSegments )
+        LAYER_REGISTRY_PAIR( Recognition )
         LAYER_REGISTRY_PAIR( SurfaceTracking )
         ; ///< <-- add new layer to registry here
 

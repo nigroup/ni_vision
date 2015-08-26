@@ -22,7 +22,7 @@ namespace ni {
  *
  * Output keys defined by parent
  */
-class Attention : public elm::base_MatOutputLayer
+class Attention : public elm::base_Layer
 {
 public:
     // params
@@ -37,6 +37,8 @@ public:
     static const std::string KEY_INPUT_BGR_IMAGE;
     static const std::string KEY_INPUT_CLOUD;
     static const std::string KEY_INPUT_MAP;
+    static const std::string KEY_OUTPUT_HISTOGRAM;
+    static const std::string KEY_OUTPUT_RECT;
 
     static const float DISTANCE_HUGE;
 
@@ -52,7 +54,11 @@ public:
 
     void InputNames(const elm::LayerInputNames &io);
 
+    void OutputNames(const elm::LayerOutputNames &io);
+
     void Activate(const elm::Signal &signal);
+
+    void Response(elm::Signal &signal);
 
 protected:
     void extractFeatures(const elm::CloudXYZPtr &cloud,
@@ -64,6 +70,11 @@ protected:
     std::string input_name_bgr_;
     std::string input_name_cloud_;
     std::string input_name_map_;
+    std::string name_out_rect_;
+    std::string name_out_histogram_;
+
+    cv::Mat1f rect_;
+    cv::Mat1f histogram_;
 
     int nb_bins_;           ///< no. of bins in color histogram
 

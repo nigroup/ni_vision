@@ -28,10 +28,12 @@
 #include "elm/core/layerconfig.h"
 #include "elm/core/signal.h"            // Signal class: Stimulus -> layer activation -> response
 #include "elm/core/pcl/typedefs_fwd.h"  // point cloud typedef
+#include "elm/core/featuredata.h"
 
 #include "ni/core/color_utils.h"
 #include "ni/core/surface.h"
 #include "ni/layers/attention.h"
+#include "ni/layers/recognition.h"
 #include "ni/layers/layerfactoryni.h"
 #include "ni/legacy/timer.h"
 
@@ -77,6 +79,9 @@ public:
           name_in_cld_("/camera/depth_registered/points"),
           name_in_img_("/camera/rgb/image_color"),
           name_in_seg_("/ni/depth_segmentation/surfaces/image"),
+          name_out_rect_("/ni/depth_segmentation/recognition/rect"),
+          name_out_histogram_("/ni/depth_segmentation/recognition/hist"),
+          name_out_matchFlag_("/ni/depth_segmentation/recognition/found"),
           name_out_("/ni/depth_segmentation/rect"),
 #if USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
           img_sub_(it_, name_in_img_, 30),
@@ -119,14 +124,14 @@ protected:
             p.put(Attention::PARAM_PTS_MIN,   200);
 
             std::string tmp;
-            nh.getParam(Attention::PARAM_PATH_COLOR, tmp);
-            boost::filesystem::path path_color(tmp);
+//            nh.getParam(Attention::PARAM_PATH_COLOR, tmp);
+//            boost::filesystem::path path_color(tmp);
 
-            nh.getParam(Attention::PARAM_PATH_SIFT, tmp);
-            boost::filesystem::path path_sift(tmp);
+//            nh.getParam(Attention::PARAM_PATH_SIFT, tmp);
+//            boost::filesystem::path path_sift(tmp);
 
-            //boost::filesystem::path path_color("/home/kashefy/nivision/models/Lib8B/simplelib_3dch_DanKlorix.yaml");
-            //boost::filesystem::path path_sift("/home/kashefy/nivision/models/Lib8B/lib_sift_DanKlorix_0015.yaml");
+            boost::filesystem::path path_color("/home/fritjof/Video/models/Lib8B/simplelib_3dch_DanKlorix.yaml");
+            boost::filesystem::path path_sift("/home/fritjof/Video/models/Lib8B/lib_sift_DanKlorix_0015.yaml");
 
             p.put<boost::filesystem::path>(Attention::PARAM_PATH_COLOR, path_color);
             p.put<boost::filesystem::path>(Attention::PARAM_PATH_SIFT,  path_sift);
@@ -137,8 +142,36 @@ protected:
             io.Input(Attention::KEY_INPUT_BGR_IMAGE, name_in_img_);
             io.Input(Attention::KEY_INPUT_CLOUD, name_in_cld_);
             io.Input(Attention::KEY_INPUT_MAP, name_in_seg_);
-            io.Output(Attention::KEY_OUTPUT_RESPONSE, name_out_);
+            io.Output(Attention::KEY_OUTPUT_HISTOGRAM, name_out_histogram_);
+            io.Output(Attention::KEY_OUTPUT_RECT, name_out_rect_);
             layers_.push_back(LayerFactoryNI::CreateShared("Attention", cfg, io));
+        }
+        { // 1
+            // Instantiate top-down attention
+            LayerConfig cfg;
+
+            PTree p;
+            std::string tmp;
+//            nh.getParam(Attention::PARAM_PATH_COLOR, tmp);
+//            boost::filesystem::path path_color(tmp);
+
+//            nh.getParam(Attention::PARAM_PATH_SIFT, tmp);
+//            boost::filesystem::path path_sift(tmp);
+
+            boost::filesystem::path path_color("/home/fritjof/Video/models/Lib8B/simplelib_3dch_DanKlorix.yaml");
+            boost::filesystem::path path_sift("/home/fritjof/Video/models/Lib8B/lib_sift_DanKlorix_0015.yaml");
+
+            p.put<boost::filesystem::path>(Attention::PARAM_PATH_COLOR, path_color);
+            p.put<boost::filesystem::path>(Attention::PARAM_PATH_SIFT,  path_sift);
+
+            cfg.Params(p);
+
+            LayerIONames io;
+            io.Input(Recognition::KEY_INPUT_BGR_IMAGE, name_in_img_);
+            io.Input(Recognition::KEY_INPUT_HISTOGRAM, name_out_histogram_);
+            io.Input(Recognition::KEY_INPUT_RECT, name_out_rect_);
+            io.Output(Recognition::KEY_OUTPUT_MATCH_FLAG, name_out_matchFlag_);
+            layers_.push_back(LayerFactoryNI::CreateShared("Recognition", cfg, io));
         }
     }
 
@@ -195,22 +228,23 @@ protected:
             }
 
             Mat1f rect_ = sig_.MostRecentMat1f(name_out_rect_);
-            int matchFlag_ = sig_.MostRecentMat1f(name_out_matchFlag_);
+            bool matchFlag_ = sig_.MostRecent(name_out_matchFlag_).get<int>() > 0;
 
-            // mimic timestamp of processed data
-            std_msgs::Header header;
-            header.stamp = ros::Time().fromNSec(msg->header.stamp*1e3);
+//            // mimic timestamp of processed data
+//            std_msgs::Header header;
+//            header.stamp = ros::Time().fromNSec(cld->header.stamp*1e3);
 
-            std_msgs::Bool msg;
-            msg.data = (bool)matchFlag_;
-            // todo add header
-            recog_pub_matchFlag_.publish(msg);
+//            std_msgs::Bool msg;
+//            msg.data = (bool)matchFlag_;
+//            // todo add header
+//            recog_pub_matchFlag_.publish(msg);
 
-            std_msgs::Int32MultiArray msg2;
-            msg2.data = rect_;
-            // todo add header
-            recog_pub_rect_.publish(msg2);
-
+//            std_msgs::Int32MultiArray msg2;
+//            msg2.data = rect_;
+//            // todo add header
+//            recog_pub_rect_.publish(msg2);
+            std::cout << rect_ << std::endl;
+            std::cout << matchFlag_ << std::endl;
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);
             double nTimeTotal = double(timespecDiff(&t_total_end, &t_total_start)/1e9);
 
@@ -240,6 +274,7 @@ protected:
     std::string name_out_;       ///< Signal name and publishing topic name
     std::string name_out_rect_;
     std::string name_out_matchFlag_;
+    std::string name_out_histogram_;
 
     message_filters::Synchronizer<MySyncPolicy> *sync_ptr_;
 

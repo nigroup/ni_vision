@@ -300,9 +300,11 @@ void Recognition_Flann (int tcount,
 
         nKeyptsCnt++;
         //free(f1);
+
         free(testset);
         free(result);
         free(dists);
+
         //free(dist0);
         //free(dist1);
 
