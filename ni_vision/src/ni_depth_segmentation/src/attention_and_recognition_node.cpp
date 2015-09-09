@@ -108,6 +108,8 @@ public:
                     );
 
         initLayers(nh);
+        recog_pub_matchFlag_ = it_.advertise<std_msgs::Bool>(name_out_matchFlag_, 1);
+        recog_pub_rect_ = it_.advertise(name_out_rect_, 1);
     }
 
 protected:
@@ -230,19 +232,19 @@ protected:
             Mat1f rect_ = sig_.MostRecentMat1f(name_out_rect_);
             bool matchFlag_ = sig_.MostRecent(name_out_matchFlag_).get<int>() > 0;
 
-//            // mimic timestamp of processed data
-//            std_msgs::Header header;
-//            header.stamp = ros::Time().fromNSec(cld->header.stamp*1e3);
+            // mimic timestamp of processed data
+            std_msgs::Header header;
+            header.stamp = ros::Time().fromNSec(cld->header.stamp*1e3);
 
-//            std_msgs::Bool msg;
-//            msg.data = (bool)matchFlag_;
-//            // todo add header
-//            recog_pub_matchFlag_.publish(msg);
+            std_msgs::Bool msg;
+            msg.data = (bool)matchFlag_;
+            // todo add header
+            recog_pub_matchFlag_.publish(msg);
 
-//            std_msgs::Int32MultiArray msg2;
-//            msg2.data = rect_;
-//            // todo add header
-//            recog_pub_rect_.publish(msg2);
+            std_msgs::Int32MultiArray msg2;
+            msg2.data = rect_;
+            // todo add header
+            recog_pub_rect_.publish(msg2);
             std::cout << rect_ << std::endl;
             std::cout << matchFlag_ << std::endl;
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);
