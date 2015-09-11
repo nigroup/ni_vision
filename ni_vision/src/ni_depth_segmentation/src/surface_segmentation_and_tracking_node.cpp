@@ -278,8 +278,8 @@ protected:
             }
 
             Mat1f img = sig_.MostRecentMat1f(name_out_);
-            img(0) = 0.f;
-            img(1) = 20.f;
+            //img(0) = 0.f;
+            //img(1) = 20.f;
 
             Mat mask_not_assigned = img <= 0.f;
 

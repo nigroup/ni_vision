@@ -108,8 +108,8 @@ public:
                     );
 
         initLayers(nh);
-        recog_pub_matchFlag_ = it_.advertise<std_msgs::Bool>(name_out_matchFlag_, 1);
-        recog_pub_rect_ = it_.advertise(name_out_rect_, 1);
+        recog_pub_matchFlag_ = nh.advertise<std_msgs::Bool>(name_out_matchFlag_, 1);
+        recog_pub_rect_ = nh.advertise<std_msgs::Int32MultiArray>(name_out_rect_, 1);
     }
 
 protected:

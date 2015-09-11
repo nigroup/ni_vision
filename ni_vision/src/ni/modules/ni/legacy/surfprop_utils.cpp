@@ -51,8 +51,8 @@ void ni::VecSurfacesToSurfProp(const std::vector<Surface> &surfaces, SurfProp &s
         Rect2i r = s.rect();
         surf_prop.mnRect[i][0] = r.x;
         surf_prop.mnRect[i][1] = r.y;
-        surf_prop.mnRect[i][2] = r.x + r.width;
-        surf_prop.mnRect[i][3] = r.y + r.height;
+        surf_prop.mnRect[i][2] = r.x + r.width-1;
+        surf_prop.mnRect[i][3] = r.y + r.height-1;
 
         BoundingBox2D bbox(r);
         Mat1f pt = bbox.centralPoint();

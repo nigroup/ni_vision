@@ -149,9 +149,14 @@ void Recognition::Activate(const Signal &signal)
     float siftScales = 3;
     float siftInitSigma = 1.6;
     float siftPeakThrs = 0.01;
+
+    int nCandRW = selectedBoundingBox(2) - selectedBoundingBox(0) + 1;
+    int nCandRH = selectedBoundingBox(3) - selectedBoundingBox(1) + 1;
+
     GetSiftKeypoints(color, siftScales, siftInitSigma, siftPeakThrs,
-                     selectedBoundingBox(0), selectedBoundingBox(1), selectedBoundingBox(2),
-                     selectedBoundingBox(3), keypts);
+                     selectedBoundingBox(0), selectedBoundingBox(1),
+                     nCandRW, nCandRH,
+                     keypts);
 
     // todo: use values from the gui
     float flannKnn = 2;
