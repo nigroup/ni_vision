@@ -290,7 +290,7 @@ void Attention::Activate(const Signal &signal)
 
     rect_ = Mat1f(1, stMems.mnRect[stMems.vnIdx[0]].size());
     for(int i = 0; i < stMems.mnRect[stMems.vnIdx[0]].size(); i++) {
-        rect_(i) = stMems.mnRect[stMems.vnIdx[0]][i];
+        rect_(i) = stMems.mnRect[0][i];
     }
 
 

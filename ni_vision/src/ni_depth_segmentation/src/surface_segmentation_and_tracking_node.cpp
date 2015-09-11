@@ -284,7 +284,7 @@ protected:
             Mat mask_not_assigned = img <= 0.f;
 
             Mat img_color;
-            Mat1b img_gray = ConvertTo8U(img);
+            Mat1b img_gray = img;//ConvertTo8U(img);
             applyColorMap(img_gray,
                           img_color,
                           COLORMAP_HSV);
