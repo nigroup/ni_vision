@@ -283,13 +283,13 @@ void Attention::Activate(const Signal &signal)
     }
 
 
-    histogram_ = Mat1f(1, stMems.mnColorHist[stMems.vnIdx[0]].size());
-    for(int i = 0; i < stMems.mnColorHist[stMems.vnIdx[0]].size(); i++) {
-        histogram_(i) = stMems.mnColorHist[stMems.vnIdx[0]][i];
+    histogram_ = Mat1f(1, stMems.mnColorHist[0].size());
+    for(int i = 0; i < stMems.mnColorHist[0].size(); i++) {
+        histogram_(i) = stMems.mnColorHist[0][i];
     }
 
-    rect_ = Mat1f(1, stMems.mnRect[stMems.vnIdx[0]].size());
-    for(int i = 0; i < stMems.mnRect[stMems.vnIdx[0]].size(); i++) {
+    rect_ = Mat1f(1, stMems.mnRect[0].size());
+    for(int i = 0; i < stMems.mnRect[0].size(); i++) {
         rect_(i) = stMems.mnRect[0][i];
     }
 
