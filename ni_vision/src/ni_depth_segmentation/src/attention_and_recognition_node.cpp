@@ -115,6 +115,10 @@ public:
 protected:
     void initLayers(ros::NodeHandle &nh)
     {
+
+        boost::filesystem::path path_color("/home/fritjof/Video/models/Lib8B/simplelib_3dch_DanKlorix.yaml");
+        boost::filesystem::path path_sift("/home/fritjof/Video/models/Lib8B/lib_sift_DanKlorix_0015.yaml");
+
         { // 0
             // Instantiate top-down attention
             LayerConfig cfg;
@@ -131,9 +135,6 @@ protected:
 
 //            nh.getParam(Attention::PARAM_PATH_SIFT, tmp);
 //            boost::filesystem::path path_sift(tmp);
-
-            boost::filesystem::path path_color("/home/fritjof/Video/models/Lib8B/simplelib_3dch_DanKlorix.yaml");
-            boost::filesystem::path path_sift("/home/fritjof/Video/models/Lib8B/lib_sift_DanKlorix_0015.yaml");
 
             p.put<boost::filesystem::path>(Attention::PARAM_PATH_COLOR, path_color);
             p.put<boost::filesystem::path>(Attention::PARAM_PATH_SIFT,  path_sift);
@@ -159,9 +160,6 @@ protected:
 
 //            nh.getParam(Attention::PARAM_PATH_SIFT, tmp);
 //            boost::filesystem::path path_sift(tmp);
-
-            boost::filesystem::path path_color("/home/fritjof/Video/models/Lib8B/simplelib_3dch_DanKlorix.yaml");
-            boost::filesystem::path path_sift("/home/fritjof/Video/models/Lib8B/lib_sift_DanKlorix_0015.yaml");
 
             p.put<boost::filesystem::path>(Attention::PARAM_PATH_COLOR, path_color);
             p.put<boost::filesystem::path>(Attention::PARAM_PATH_SIFT,  path_sift);

@@ -20,11 +20,12 @@
 
 #include "ni/core/boundingbox2d.h"
 #include "ni/core/boundingbox3d.h"
-#include "ni/core/colorhistogram.h"
+//#include "ni/core/colorhistogram.h"
 
 #include "ni/legacy/func_init.h"
 #include "ni/legacy/func_recognition.h"
 #include "ni/legacy/surfprop_utils.h"
+#include "ni/legacy/func_operations.h"
 
 using namespace std;
 namespace bfs=boost::filesystem;
@@ -287,6 +288,14 @@ void Attention::Activate(const Signal &signal)
     for(int i = 0; i < stMems.mnColorHist[0].size(); i++) {
         histogram_(i) = stMems.mnColorHist[0][i];
     }
+    float colorDistance = 0;
+    printf("Laenge in Attention %i\n", stMems.mnColorHist[0].size());
+    for (int j = 0; j < stMems.mnColorHist[0].size(); j++) {
+        //printf("%f %f\n", mnColorHistY_lib[0][j], selectedHistogram(j));
+        colorDistance += fabs(mnColorHistY_lib[0][j] - histogram_(j));
+    }
+    colorDistance = colorDistance / 2.f;
+    printf("%f\n", colorDistance);
 
     rect_ = Mat1f(1, stMems.mnRect[0].size());
     for(int i = 0; i < stMems.mnRect[0].size(); i++) {
@@ -294,7 +303,7 @@ void Attention::Activate(const Signal &signal)
     }
 
 
-    cv::Mat img(240, 320, CV_8UC1);
+    cv::Mat img(color.rows, color.cols, CV_8UC1);
     img.setTo(Scalar(0));
     for(int i=0; i<nMemsCnt; i++) {
 
@@ -408,10 +417,17 @@ void Attention::extractFeatures(
 
             surfaces[i].rect(r);
 
-            // color histogram
-            Mat1f hist;
-            computeColorHist(bgr, tmp, nb_bins_, hist);
 
+            // color histogram
+            std::vector<float> hist_tmp(nb_bins_*nb_bins_*nb_bins_,0);
+//            Mat1f hist;
+//            computeColorHist(bgr, tmp, nb_bins_, hist);
+            Calc3DColorHistogram(bgr, tmp, nb_bins_, hist_tmp);
+            //for(size_t i = 0; i < hist_tmp.)
+            Mat1f hist = Mat1f(1,nb_bins_*nb_bins_*nb_bins_);
+            for(size_t j = 0; j < hist_tmp.size(); j++) {
+                hist(j) = hist_tmp[j];
+            }
             surfaces[i].colorHistogram(hist);
         }
     }

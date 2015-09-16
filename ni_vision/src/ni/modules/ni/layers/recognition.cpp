@@ -138,7 +138,7 @@ void Recognition::Activate(const Signal &signal)
     // Color histogram difference
     float colorDistance = 0;
     for (int j = 0; j < selectedHistogram.cols; j++) {
-        printf("%i\n",selectedHistogram.cols);
+        //printf("%f %f\n", mnColorHistY_lib[0][j], selectedHistogram(j));
         colorDistance += fabs(mnColorHistY_lib[0][j] - selectedHistogram(j));
     }
     colorDistance = colorDistance / 2.f;
@@ -198,7 +198,7 @@ void Recognition::Activate(const Signal &signal)
 
     // todo: extract thresholds from gui
     int siftCntThreshold = 10;
-    float colorThreshold = 0.3;
+    float colorThreshold = 0.5;
 
     printf("%i %i %f %f\n",keyptsCnt, siftCntThreshold, colorDistance, colorThreshold);
     // todo: (siftfeature + matched_siftfeature)
