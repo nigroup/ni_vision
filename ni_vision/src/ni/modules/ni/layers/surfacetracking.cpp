@@ -1,5 +1,6 @@
 #include "ni/layers/surfacetracking.h"
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include "elm/core/debug_utils.h"
 #include <set>
 
@@ -138,8 +139,12 @@ void SurfaceTracking::Activate(const Signal &signal)
     CloudXYZPtr cloud   = signal.MostRecent(input_name_cloud_).get<CloudXYZPtr>();
     Mat1f map           = signal.MostRecent(input_name_map_).get<Mat1f>();
 
+    // Computing downsampled color-image (with dimension of depth-image)
+    Mat3f colorDS;
+    resize(color, colorDS, map.size());
+
     Mat bgr;
-    color.convertTo(bgr, CV_8UC3, 255.f);
+    colorDS.convertTo(bgr, CV_8UC3, 255.f);
 
     obsereved_.clear();
     extractFeatures(cloud, bgr, map, obsereved_);

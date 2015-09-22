@@ -1,6 +1,7 @@
 #include "ni/layers/attention.h"
 
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include "elm/core/debug_utils.h"
 
 #include <set>
@@ -184,8 +185,17 @@ void Attention::Activate(const Signal &signal)
     CloudXYZPtr cloud   = signal.MostRecent(input_name_cloud_).get<CloudXYZPtr>();
     Mat1f map           = signal.MostRecent(input_name_map_).get<Mat1f>();
 
+    // Debug
+    printf("%i %i\n", color.cols, color.rows);
+    printf("%i %i\n", map.cols, map.rows);
+
+    // Computing downsampled color-image (with dimension of depth-image)
+    Mat3f colorDS;
+    resize(color, colorDS, map.size());
+
+
     Mat bgr;
-    color.convertTo(bgr, CV_8UC3, 255.f);
+    colorDS.convertTo(bgr, CV_8UC3, 255.f);
 
     observed_.clear();
     extractFeatures(cloud, bgr, map, observed_);
@@ -296,14 +306,19 @@ void Attention::Activate(const Signal &signal)
     }
     colorDistance = colorDistance / 2.f;
     printf("%f\n", colorDistance);
+    int factor = 0;
+    if(map.cols && map.rows) {
+        // it is assumed that scaling in x- and y-direction is the same
+        factor = (color.cols / map.cols);
+    }
 
     rect_ = Mat1f(1, stMems.mnRect[0].size());
     for(int i = 0; i < stMems.mnRect[0].size(); i++) {
-        rect_(i) = stMems.mnRect[0][i];
+        rect_(i) = factor * stMems.mnRect[0][i];
     }
 
 
-    cv::Mat img(color.rows, color.cols, CV_8UC1);
+    cv::Mat img(colorDS.rows, colorDS.cols, CV_8UC1);
     img.setTo(Scalar(0));
     for(int i=0; i<nMemsCnt; i++) {
 
