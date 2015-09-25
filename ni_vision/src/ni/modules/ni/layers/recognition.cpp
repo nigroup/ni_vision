@@ -200,12 +200,34 @@ void Recognition::Activate(const Signal &signal)
                        nMaxDeltaScale,
                        nMinDeltaScale);
 
-    // @todo: filtering out false-positive keypoints
 
+    // Filtering: extracting true-positives from matched keypoints
+    double nDeltaScale=0;
+    int flannTP=0;
+    float T_orient = 0.01;
+    float T_scale = 0.001;
+    int nDeltaBinNo = 12;
 
-    printf("%i %i %f %f\n",keyptsCnt, siftCntThreshold, colorDistance, colorThreshold);
+    std::vector<bool> vbSiftTP = std::vector<bool>(keyptsCnt, 0);
+    if(flannIM > 6) {
+        CalcDeltaScaleOri(vnSiftMatched,
+                          vnDeltaScale,
+                          vnDeltaOri,
+                          nDeltaScale,
+                          nDeltaBinNo,
+                          nMaxDeltaOri,
+                          nMinDeltaOri,
+                          T_orient,
+                          T_scale,
+                          flannTP,
+                          vbSiftTP);
+    } else {
+        flannTP = 0;
+    }
+
+    printf("%i %i %i %f %f\n",keyptsCnt, flannTP,siftCntThreshold, colorDistance, colorThreshold);
     // todo: (siftfeature + matched_siftfeature)
-    if (keyptsCnt >= siftCntThreshold) {
+    if (flannTP >= siftCntThreshold) {
         matchFlag_ = 1;
     } else {
         matchFlag_ = 0;
