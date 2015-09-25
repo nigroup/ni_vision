@@ -201,27 +201,7 @@ void Attention::Activate(const Signal &signal)
 
     int nMemsCnt = static_cast<int>(observed_.size());
 
-    int nTrackHistoBin_max = nb_bins_ * nb_bins_ * nb_bins_;
-
-    // The value of nTrackHistoBin_tmp depends on the number of channels of the selected color model
-    int nTrackHistoBin_tmp;
-    switch(stTrack.ClrMode) {
-
-    case 0:
-    case 1:
-    case 2: nTrackHistoBin_tmp = nTrackHistoBin_max;
-        break;
-    case 3: nTrackHistoBin_tmp = stTrack.HistoBin * stTrack.HistoBin;
-        break;
-    case 4:
-    case 5:
-    case 6: nTrackHistoBin_tmp = nTrackHistoBin_max;
-        break;
-    case 7: nTrackHistoBin_tmp = stTrack.HistoBin * stTrack.HistoBin;
-        break;
-    default:
-        nTrackHistoBin_tmp = nTrackHistoBin_max;
-    }
+    int nTrackHistoBin = nb_bins_ * nb_bins_ * nb_bins_;
 
     stMems.vnIdx.resize(nMemsCnt, 0);
     stMems.vnPtsCnt.resize(nMemsCnt, 0);
@@ -231,7 +211,7 @@ void Attention::Activate(const Signal &signal)
     stMems.mnCubic.assign(nMemsCnt,     VecF(6,0));
     stMems.mnCCenter.assign(nMemsCnt,   VecF(3,0));
     stMems.vnLength.resize(nMemsCnt, 0);
-    stMems.mnColorHist.resize(nMemsCnt, VecF(nTrackHistoBin_max, 0));
+    stMems.mnColorHist.resize(nMemsCnt, VecF(nTrackHistoBin, 0));
     stMems.vnMemCtr.resize(nMemsCnt, stTrack.CntMem - stTrack.CntStable);
     stMems.vnStableCtr.resize(nMemsCnt, 0);
     stMems.vnLostCtr.resize(nMemsCnt, stTrack.CntLost + 10);
@@ -268,7 +248,7 @@ void Attention::Activate(const Signal &signal)
         vbProtoCand[i] = true;
 
         float dc = 0;
-        for (int j = 0; j < nTrackHistoBin_tmp; j++) {
+        for (int j = 0; j < nTrackHistoBin; j++) {
 
             if (mnColorHistY_lib.size() == 1) {
 

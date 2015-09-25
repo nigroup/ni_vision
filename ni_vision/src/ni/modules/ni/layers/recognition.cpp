@@ -202,8 +202,6 @@ void Recognition::Activate(const Signal &signal)
 
     // @todo: filtering out false-positive keypoints
 
-    // todo: extract thresholds from gui
-
 
     printf("%i %i %f %f\n",keyptsCnt, siftCntThreshold, colorDistance, colorThreshold);
     // todo: (siftfeature + matched_siftfeature)
