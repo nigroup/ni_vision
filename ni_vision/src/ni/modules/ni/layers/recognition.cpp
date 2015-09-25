@@ -134,6 +134,8 @@ void Recognition::Activate(const Signal &signal)
     Mat1f selectedHistogram = signal.MostRecent(input_name_selHistogram_).get<Mat1f>();
     Mat1f selectedBoundingBox = signal.MostRecent(input_name_selBoundingBox_).get<Mat1f>();
 
+    int siftCntThreshold = 10;
+    float colorThreshold = 0.5;
 
     // Color histogram difference
     float colorDistance = 0;
@@ -143,6 +145,10 @@ void Recognition::Activate(const Signal &signal)
     }
     colorDistance = colorDistance / 2.f;
 
+    if(colorDistance > colorThreshold) {
+        matchFlag_ = 0;
+        return;
+    }
 
     // SIFT feature comparison
     Keypoint keypts;
@@ -197,12 +203,11 @@ void Recognition::Activate(const Signal &signal)
     // @todo: filtering out false-positive keypoints
 
     // todo: extract thresholds from gui
-    int siftCntThreshold = 10;
-    float colorThreshold = 0.5;
+
 
     printf("%i %i %f %f\n",keyptsCnt, siftCntThreshold, colorDistance, colorThreshold);
     // todo: (siftfeature + matched_siftfeature)
-    if (keyptsCnt >= siftCntThreshold && colorDistance < colorThreshold) {
+    if (keyptsCnt >= siftCntThreshold) {
         matchFlag_ = 1;
     } else {
         matchFlag_ = 0;

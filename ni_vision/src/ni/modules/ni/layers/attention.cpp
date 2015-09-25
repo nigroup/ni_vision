@@ -193,7 +193,6 @@ void Attention::Activate(const Signal &signal)
     Mat3f colorDS;
     resize(color, colorDS, map.size());
 
-
     Mat bgr;
     colorDS.convertTo(bgr, CV_8UC3, 255.f);
 
