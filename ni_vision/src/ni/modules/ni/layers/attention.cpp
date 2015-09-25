@@ -71,6 +71,7 @@ Attention::Attention()
 void Attention::Clear()
 {
     dist_ = Mat1f();
+    inhibitionMemory = std::vector<int>();
 }
 
 void Attention::Reset(const LayerConfig &config)
@@ -249,14 +250,7 @@ void Attention::Activate(const Signal &signal)
 
         float dc = 0;
         for (int j = 0; j < nTrackHistoBin; j++) {
-
-            if (mnColorHistY_lib.size() == 1) {
-
-                dc += fabs(mnColorHistY_lib[0][j] - stMems.mnColorHist[i][j]);
-            }
-            else {
-                dc += fabs(mnColorHistY_lib[stTrack.ClrMode][j] - stMems.mnColorHist[i][j]);
-            }
+            dc += fabs(mnColorHistY_lib[0][j] - stMems.mnColorHist[i][j]);
         }
         veCandClrDist[i].first = dc/2.f;
     } // surface
@@ -272,30 +266,53 @@ void Attention::Activate(const Signal &signal)
         m_(i) = static_cast<float>(stMems.vnIdx[i]);
     }
 
+    // Inhibition of return
+    int currentIndex = -1;
+    int flag = 0;
+    for(int i = 0; i < stMems.vnIdx.size(); i++) {
+        flag = 0;
+        for(int j = 0; j < inhibitionMemory.size(); j++) {
+            if (stMems.vnIdx[i] == inhibitionMemory[j]) {
+                flag = 1;
+                break; // surface was already examined
+            }
+        }
+        if(flag == 0) { // surface was not examined yet, new id is added
+            currentIndex = i;
+            inhibitionMemory.push_back(stMems.vnIdx[i]);
+            break;
+        }
+    }
+    if(currentIndex == -1) { // all surfaces were examined
+        currentIndex = 0;
+        inhibitionMemory.clear();
+        inhibitionMemory.push_back(stMems.vnIdx[0]);
+    }
 
-    histogram_ = Mat1f(1, stMems.mnColorHist[0].size());
-    for(int i = 0; i < stMems.mnColorHist[0].size(); i++) {
-        histogram_(i) = stMems.mnColorHist[0][i];
+    // Debugging
+    for(int i = 0; i < inhibitionMemory.size(); i++) {
+        printf("%i ", inhibitionMemory[i]);
     }
-    float colorDistance = 0;
-    printf("Laenge in Attention %i\n", stMems.mnColorHist[0].size());
-    for (int j = 0; j < stMems.mnColorHist[0].size(); j++) {
-        //printf("%f %f\n", mnColorHistY_lib[0][j], selectedHistogram(j));
-        colorDistance += fabs(mnColorHistY_lib[0][j] - histogram_(j));
+    printf("\n");
+
+    histogram_ = Mat1f(1, stMems.mnColorHist[currentIndex].size());
+    for(int i = 0; i < stMems.mnColorHist[currentIndex].size(); i++) {
+        histogram_(i) = stMems.mnColorHist[currentIndex][i];
     }
-    colorDistance = colorDistance / 2.f;
-    printf("%f\n", colorDistance);
+
+
+    // factor for rescaling the rgb-image, assumes same factor in x- and y-direction
     int factor = 0;
     if(map.cols && map.rows) {
-        // it is assumed that scaling in x- and y-direction is the same
         factor = (color.cols / map.cols);
     }
 
-    rect_ = Mat1f(1, stMems.mnRect[0].size());
-    for(int i = 0; i < stMems.mnRect[0].size(); i++) {
-        rect_(i) = factor * stMems.mnRect[0][i];
+    rect_ = Mat1f(1, stMems.mnRect[currentIndex].size());
+    for(int i = 0; i < stMems.mnRect[currentIndex].size(); i++) {
+        rect_(i) = factor * stMems.mnRect[currentIndex][i];
     }
 
+    // Debugging
 
     cv::Mat img(colorDS.rows, colorDS.cols, CV_8UC1);
     img.setTo(Scalar(0));
@@ -311,6 +328,8 @@ void Attention::Activate(const Signal &signal)
 
     cv::imshow("att", img);
     cv::waitKey(1);
+
+    // End Debugging
 }
 
 

@@ -92,6 +92,7 @@ protected:
     float* nFlannDataset;
     std::vector <std::vector <float> > mnSiftExtraFeatures;
     flann_index_t FlannIdx_Sift;
+    std::vector<int> inhibitionMemory; ///< stores IDs of object already examined
 
     SurfProp stMems;
     TrackProp stTrack;
