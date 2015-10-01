@@ -134,7 +134,7 @@ void Recognition::Activate(const Signal &signal)
     Mat1f selectedHistogram = signal.MostRecent(input_name_selHistogram_).get<Mat1f>();
     Mat1f selectedBoundingBox = signal.MostRecent(input_name_selBoundingBox_).get<Mat1f>();
 
-    int siftCntThreshold = 10;
+    int siftCntThreshold = 3;
     float colorThreshold = 0.5;
 
     // Color histogram difference
@@ -155,7 +155,7 @@ void Recognition::Activate(const Signal &signal)
     // @todo: use values from the gui
     float siftScales = 3;
     float siftInitSigma = 1.6;
-    float siftPeakThrs = 0.01;
+    float siftPeakThrs = 0.015;
 
     int nCandRW = selectedBoundingBox(2) - selectedBoundingBox(0) + 1;
     int nCandRH = selectedBoundingBox(3) - selectedBoundingBox(1) + 1;
@@ -204,12 +204,14 @@ void Recognition::Activate(const Signal &signal)
     // Filtering: extracting true-positives from matched keypoints
     double nDeltaScale=0;
     int flannTP=0;
-    float T_orient = 0.01;
+    float T_orient = 0.5233333;
     float T_scale = 0.001;
     int nDeltaBinNo = 12;
+    int tnumb = 3;
 
+    printf("FlannIM %i\n",flannIM);
     std::vector<bool> vbSiftTP = std::vector<bool>(keyptsCnt, 0);
-    if(flannIM > 6) {
+    if(flannIM > tnumb) {
         CalcDeltaScaleOri(vnSiftMatched,
                           vnDeltaScale,
                           vnDeltaOri,

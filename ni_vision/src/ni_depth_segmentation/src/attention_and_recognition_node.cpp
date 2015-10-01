@@ -161,8 +161,8 @@ protected:
 //            nh.getParam(Attention::PARAM_PATH_SIFT, tmp);
 //            boost::filesystem::path path_sift(tmp);
 
-            p.put<boost::filesystem::path>(Attention::PARAM_PATH_COLOR, path_color);
-            p.put<boost::filesystem::path>(Attention::PARAM_PATH_SIFT,  path_sift);
+            p.put<boost::filesystem::path>(Recognition::PARAM_PATH_COLOR, path_color);
+            p.put<boost::filesystem::path>(Recognition::PARAM_PATH_SIFT,  path_sift);
 
             cfg.Params(p);
 

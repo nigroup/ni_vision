@@ -277,7 +277,12 @@ void Attention::Activate(const Signal &signal)
                 break; // surface was already examined
             }
         }
-        if(flag == 0) { // surface was not examined yet, new id is added
+        // surface was not examined in current cycle
+        // and matches general attention criteria
+        if(flag == 0
+                && stMems.vnLength[i]*1000 < nAttSizeMax
+                && stMems.vnLength[i]*1000 > nAttSizeMin
+                && stMems.vnPtsCnt[i] > nAttPtsMin) {
             currentIndex = i;
             inhibitionMemory.push_back(stMems.vnIdx[i]);
             break;
@@ -290,10 +295,10 @@ void Attention::Activate(const Signal &signal)
     }
 
     // Debugging
-    for(int i = 0; i < inhibitionMemory.size(); i++) {
-        printf("%i ", inhibitionMemory[i]);
-    }
-    printf("\n");
+//    for(int i = 0; i < inhibitionMemory.size(); i++) {
+//        printf("%i ", inhibitionMemory[i]);
+//    }
+//    printf("\n");
 
     histogram_ = Mat1f(1, stMems.mnColorHist[currentIndex].size());
     for(int i = 0; i < stMems.mnColorHist[currentIndex].size(); i++) {
