@@ -36,6 +36,8 @@ public:
     static const std::string KEY_INPUT_HISTOGRAM;
     static const std::string KEY_INPUT_RECT;
     static const std::string KEY_OUTPUT_MATCH_FLAG;
+    static const std::string KEY_OUTPUT_KEYPOINTS;
+    static const std::string KEY_OUTPUT_MATCHED_KEYPOINTS;
 
     static const float DISTANCE_HUGE;
 
@@ -69,8 +71,13 @@ protected:
     std::string input_name_selBoundingBox_;
 
     std::string name_out_matchFlag_;
+    std::string name_out_keypoints_;
+    std::string name_out_matchedKeypoints_;
 
     int matchFlag_;
+    cv::Mat2f keypoints_;
+    cv::Mat1f matchedKeypoints_;
+
     int nb_bins_;           ///< no. of bins in color histogram
 
     // legacy members

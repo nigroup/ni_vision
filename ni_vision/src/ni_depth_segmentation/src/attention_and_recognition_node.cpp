@@ -110,6 +110,8 @@ public:
         initLayers(nh);
         recog_pub_matchFlag_ = nh.advertise<std_msgs::Bool>(name_out_matchFlag_, 1);
         recog_pub_rect_ = nh.advertise<std_msgs::Int32MultiArray>(name_out_rect_, 1);
+        recog_pub_keypoints_ = nh.advertise<std_msgs::Int32MultiArray>(name_out_keypoints_, 1);
+        recog_pub_matchedKeypoints_ = nh.advertise<std_msgs::Int32MultiArray>(name_out_matchedKeypoints_, 1);
     }
 
 protected:
@@ -171,6 +173,8 @@ protected:
             io.Input(Recognition::KEY_INPUT_HISTOGRAM, name_out_histogram_);
             io.Input(Recognition::KEY_INPUT_RECT, name_out_rect_);
             io.Output(Recognition::KEY_OUTPUT_MATCH_FLAG, name_out_matchFlag_);
+            io.Output(Recognition::KEY_OUTPUT_KEYPOINTS, name_out_keypoints_);
+            io.Output(Recognition::KEY_OUTPUT_MATCHED_KEYPOINTS, name_out_matchedKeypoints_);
             layers_.push_back(LayerFactoryNI::CreateShared("Recognition", cfg, io));
         }
     }
@@ -230,6 +234,8 @@ protected:
 
             Mat1f rect_ = sig_.MostRecentMat1f(name_out_rect_);
             bool matchFlag_ = sig_.MostRecent(name_out_matchFlag_).get<int>() > 0;
+            Mat2f keypoints_ = sig_.MostRecent(name_out_keypoints_);
+            Mat1f matchedKeypoints_ = sig_.MostRecent(name_out_matchedKeypoints_);
 
             // mimic timestamp of processed data
             std_msgs::Header header;
@@ -244,8 +250,19 @@ protected:
             msg2.data = rect_;
             // todo add header
             recog_pub_rect_.publish(msg2);
-            std::cout << rect_ << std::endl;
-            std::cout << matchFlag_ << std::endl;
+
+            std_msgs::Int32MultiArray msg3;
+            msg3.data = keypoints_;
+            recog_pub_keypoints_.publish(msg3);
+
+            std_msgs::Int32MultiArray msg4;
+            msg4.data = matchedKeypoints_;
+            recog_pub_matchedKeypoints_.publish(msg4);
+
+//            std::cout << rect_ << std::endl;
+//            std::cout << matchFlag_ << std::endl;
+
+
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);
             double nTimeTotal = double(timespecDiff(&t_total_end, &t_total_start)/1e9);
 
@@ -276,6 +293,9 @@ protected:
     std::string name_out_rect_;
     std::string name_out_matchFlag_;
     std::string name_out_histogram_;
+    std::string name_out_keypoints_;
+    std::string name_out_matchedKeypoints_;
+
 
     message_filters::Synchronizer<MySyncPolicy> *sync_ptr_;
 
@@ -285,6 +305,8 @@ protected:
 
     ros::Publisher recog_pub_rect_;
     ros::Publisher recog_pub_matchFlag_;
+    ros::Publisher recog_pub_keypoints_;
+    ros::Publisher recog_pub_matchedKeypoints_;
 
     boost::mutex mtx_;                      ///< mutex object for thread safety
 

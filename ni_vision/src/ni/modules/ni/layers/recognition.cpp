@@ -40,7 +40,8 @@ const string Recognition::KEY_INPUT_MAP         = "map";
 const string Recognition::KEY_INPUT_RECT = "rect";
 const string Recognition::KEY_INPUT_HISTOGRAM = "hist";
 const string Recognition::KEY_OUTPUT_MATCH_FLAG = "match";
-
+const string Recognition::KEY_OUTPUT_KEYPOINTS = "keys";
+const string Recognition::KEY_OUTPUT_MATCHED_KEYPOINTS = "matched_keys";
 
 const float Recognition::DISTANCE_HUGE = 100.f;
 
@@ -125,6 +126,8 @@ void Recognition::InputNames(const LayerInputNames &io)
 void Recognition::OutputNames(const LayerOutputNames &config)
 {
     name_out_matchFlag_ = config.Output(KEY_OUTPUT_MATCH_FLAG);
+    name_out_keypoints_ = config.Output(KEY_OUTPUT_KEYPOINTS);
+    name_out_matchedKeypoints_ = config.Output(KEY_OUTPUT_MATCHED_KEYPOINTS);
 }
 
 
@@ -155,7 +158,7 @@ void Recognition::Activate(const Signal &signal)
     // @todo: use values from the gui
     float siftScales = 3;
     float siftInitSigma = 1.6;
-    float siftPeakThrs = 0.015;
+    float siftPeakThrs = 0.01;
 
     int nCandRW = selectedBoundingBox(2) - selectedBoundingBox(0) + 1;
     int nCandRH = selectedBoundingBox(3) - selectedBoundingBox(1) + 1;
@@ -189,7 +192,7 @@ void Recognition::Activate(const Signal &signal)
                        mnSiftExtraFeatures,
                        FlannIdx_Sift,
                        FLANNParam,
-                       keypts,
+                       keypts, // keypoints of surface
                        keyptsCnt,
                        flannIM,
                        vnSiftMatched,
@@ -205,13 +208,13 @@ void Recognition::Activate(const Signal &signal)
     double nDeltaScale=0;
     int flannTP=0;
     float T_orient = 0.5233333;
-    float T_scale = 0.001;
+    float T_scale = 0.1;
     int nDeltaBinNo = 12;
-    int tnumb = 3;
+//    int tnumb = 3;
 
     printf("FlannIM %i\n",flannIM);
     std::vector<bool> vbSiftTP = std::vector<bool>(keyptsCnt, 0);
-    if(flannIM > tnumb) {
+    if(flannIM > siftCntThreshold) {
         CalcDeltaScaleOri(vnSiftMatched,
                           vnDeltaScale,
                           vnDeltaOri,
@@ -234,9 +237,24 @@ void Recognition::Activate(const Signal &signal)
     } else {
         matchFlag_ = 0;
     }
+
+    // return siftkeypoints
+    keypoints_ = Mat2f(keyptsCnt, 2,0);
+    int counter = 0;
+    while(keypts) {
+        keypoints_(counter,0) = keypts->row;
+        keypoints_(counter,1) = keypts->col;
+        keypts = keypts->next;
+    }
+    matchedKeypoints_ = Mat1f(keyptsCnt,0);
+    for(int i = 0; i < keyptsCnt; i++) {
+        matchedKeypoints_(i) = (int) vnSiftMatched[i];
+    }
 }
 
 void Recognition::Response(Signal &signal)
 {
     signal.Append(name_out_matchFlag_, matchFlag_);
+    signal.Append(name_out_keypoints_, keypoints_);
+    signal.Append(name_out_matchedKeypoints_, matchedKeypoints_);
 }
