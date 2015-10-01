@@ -39,6 +39,7 @@
 
 #include "std_msgs/Bool.h"
 #include "std_msgs/Int32MultiArray.h"
+#include "std_msgs/Float32MultiArray.h"
 
 /** A post from ROS Answers suggested using image_transport::SubscriberFilter
  *  source: http://answers.ros.org/question/9705/synchronizer-and-image_transportsubscriber/
@@ -82,7 +83,8 @@ public:
           name_out_rect_("/ni/depth_segmentation/recognition/rect"),
           name_out_histogram_("/ni/depth_segmentation/recognition/hist"),
           name_out_matchFlag_("/ni/depth_segmentation/recognition/found"),
-          name_out_("/ni/depth_segmentation/rect"),
+          name_out_keypoints_("/ni/depth_segmentation/recognition/keypoints"),
+          name_out_matchedKeypoints_("/ni/depth_segmentation/recognition/matchedKeypoints"),
 #if USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
           img_sub_(it_, name_in_img_, 30),
           img_sub_seg_(it_, name_in_seg_, 30),
@@ -110,8 +112,8 @@ public:
         initLayers(nh);
         recog_pub_matchFlag_ = nh.advertise<std_msgs::Bool>(name_out_matchFlag_, 1);
         recog_pub_rect_ = nh.advertise<std_msgs::Int32MultiArray>(name_out_rect_, 1);
-        recog_pub_keypoints_ = nh.advertise<std_msgs::Int32MultiArray>(name_out_keypoints_, 1);
-        recog_pub_matchedKeypoints_ = nh.advertise<std_msgs::Int32MultiArray>(name_out_matchedKeypoints_, 1);
+        recog_pub_keypoints_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_keypoints_, 1);
+        recog_pub_matchedKeypoints_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_matchedKeypoints_, 1);
     }
 
 protected:
@@ -224,6 +226,7 @@ protected:
             sig_.Clear();
             sig_.Append(name_in_cld_, cloud_);
             sig_.Append(name_in_img_, static_cast<Mat1f>(img_normalized_colors_));
+
             sig_.Append(name_in_seg_, img_seg_);
 
             for(size_t i=0; i<layers_.size(); i++) {
@@ -233,16 +236,16 @@ protected:
             }
 
             Mat1f rect_ = sig_.MostRecentMat1f(name_out_rect_);
-            bool matchFlag_ = sig_.MostRecent(name_out_matchFlag_).get<int>() > 0;
-            Mat2f keypoints_ = sig_.MostRecent(name_out_keypoints_);
-            Mat1f matchedKeypoints_ = sig_.MostRecent(name_out_matchedKeypoints_);
+            bool matchFlag = sig_.MostRecent(name_out_matchFlag_).get<int>() > 0;
+            Mat1f keypoints = sig_.MostRecentMat1f(name_out_keypoints_);
+            Mat1f matchedKeypoints = sig_.MostRecentMat1f(name_out_matchedKeypoints_);
 
             // mimic timestamp of processed data
             std_msgs::Header header;
             header.stamp = ros::Time().fromNSec(cld->header.stamp*1e3);
 
             std_msgs::Bool msg;
-            msg.data = (bool)matchFlag_;
+            msg.data = matchFlag;
             // todo add header
             recog_pub_matchFlag_.publish(msg);
 
@@ -251,14 +254,16 @@ protected:
             // todo add header
             recog_pub_rect_.publish(msg2);
 
-            std_msgs::Int32MultiArray msg3;
-            msg3.data = keypoints_;
-            recog_pub_keypoints_.publish(msg3);
+            if(!keypoints.empty()) {
 
-            std_msgs::Int32MultiArray msg4;
-            msg4.data = matchedKeypoints_;
-            recog_pub_matchedKeypoints_.publish(msg4);
+                std_msgs::Float32MultiArray msg3;
+                msg3.data = keypoints.reshape(1, keypoints.total());
+                recog_pub_keypoints_.publish(msg3);
 
+                std_msgs::Float32MultiArray msg4;
+                msg4.data = matchedKeypoints;
+                recog_pub_matchedKeypoints_.publish(msg4);
+            }
 //            std::cout << rect_ << std::endl;
 //            std::cout << matchFlag_ << std::endl;
 
@@ -289,7 +294,6 @@ protected:
     std::string name_in_cld_;    ///< Signal name and subscribing topic name
     std::string name_in_img_;    ///< Signal name and subscribing topic name
     std::string name_in_seg_;    ///< Signal name and subscribing topic name
-    std::string name_out_;       ///< Signal name and publishing topic name
     std::string name_out_rect_;
     std::string name_out_matchFlag_;
     std::string name_out_histogram_;

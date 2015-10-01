@@ -150,105 +150,112 @@ void Recognition::Activate(const Signal &signal)
 
     if(colorDistance > colorThreshold) {
         matchFlag_ = 0;
-        return;
+
+        keypoints_ = Mat1f();
+        matchedKeypoints_ = Mat1f();
     }
+    else {
 
-    // SIFT feature comparison
-    Keypoint keypts;
-    // @todo: use values from the gui
-    float siftScales = 3;
-    float siftInitSigma = 1.6;
-    float siftPeakThrs = 0.01;
+        // SIFT feature comparison
+        Keypoint keypts;
+        // @todo: use values from the gui
+        float siftScales = 3;
+        float siftInitSigma = 1.6;
+        float siftPeakThrs = 0.01;
 
-    int nCandRW = selectedBoundingBox(2) - selectedBoundingBox(0) + 1;
-    int nCandRH = selectedBoundingBox(3) - selectedBoundingBox(1) + 1;
+        int nCandRW = selectedBoundingBox(2) - selectedBoundingBox(0) + 1;
+        int nCandRH = selectedBoundingBox(3) - selectedBoundingBox(1) + 1;
 
-    GetSiftKeypoints(color, siftScales, siftInitSigma, siftPeakThrs,
-                     selectedBoundingBox(0), selectedBoundingBox(1),
-                     nCandRW, nCandRH,
-                     keypts);
+        //Mat color_img;
+        //color.convertTo(color_img, CV_8UC3);
+        GetSiftKeypoints(color, siftScales, siftInitSigma, siftPeakThrs,
+                         selectedBoundingBox(0), selectedBoundingBox(1),
+                         nCandRW, nCandRH,
+                         keypts);
 
-    // todo: use values from the gui
-    float flannKnn = 2;
-    float flannMatchFac = 0.7;
-    // @todo: find the right way to determine number of columns
+        // todo: use values from the gui
+        float flannKnn = 2;
+        float flannMatchFac = 0.7;
+        // @todo: find the right way to determine number of columns
 
-    std::vector<int> vnSiftMatched;
-    std::vector <double> vnDeltaScale;
-    std::vector <double> vnDeltaOri;
-    double nMaxDeltaOri = -999;
-    double nMaxDeltaScale = -999;
-    double nMinDeltaOri = 999;
-    double nMinDeltaScale = 999;
-    int keyptsCnt = 0;
-    int flannIM = 0;
-    // todo: correct value?
-    int tcount = 1;
+        std::vector<int> vnSiftMatched;
+        std::vector <double> vnDeltaScale;
+        std::vector <double> vnDeltaOri;
+        double nMaxDeltaOri = -999;
+        double nMaxDeltaScale = -999;
+        double nMinDeltaOri = 999;
+        double nMinDeltaScale = 999;
+        int keyptsCnt = 0;
+        int flannIM = 0;
+        // todo: correct value?
+        int tcount = 1;
 
-    Recognition_Flann (tcount,
-                       flannKnn,
-                       nFlannLibCols_sift,
-                       flannMatchFac,
-                       mnSiftExtraFeatures,
-                       FlannIdx_Sift,
-                       FLANNParam,
-                       keypts, // keypoints of surface
-                       keyptsCnt,
-                       flannIM,
-                       vnSiftMatched,
-                       vnDeltaScale,
-                       vnDeltaOri,
-                       nMaxDeltaOri,
-                       nMinDeltaOri,
-                       nMaxDeltaScale,
-                       nMinDeltaScale);
+        Recognition_Flann (tcount,
+                           flannKnn,
+                           nFlannLibCols_sift,
+                           flannMatchFac,
+                           mnSiftExtraFeatures,
+                           FlannIdx_Sift,
+                           FLANNParam,
+                           keypts, // keypoints of surface
+                           keyptsCnt,
+                           flannIM,
+                           vnSiftMatched,
+                           vnDeltaScale,
+                           vnDeltaOri,
+                           nMaxDeltaOri,
+                           nMinDeltaOri,
+                           nMaxDeltaScale,
+                           nMinDeltaScale);
 
 
-    // Filtering: extracting true-positives from matched keypoints
-    double nDeltaScale=0;
-    int flannTP=0;
-    float T_orient = 0.5233333;
-    float T_scale = 0.1;
-    int nDeltaBinNo = 12;
-//    int tnumb = 3;
+        // Filtering: extracting true-positives from matched keypoints
+        double nDeltaScale=0;
+        int flannTP=0;
+        float T_orient = 0.5233333;
+        float T_scale = 0.1;
+        int nDeltaBinNo = 12;
+    //    int tnumb = 3;
 
-    printf("FlannIM %i\n",flannIM);
-    std::vector<bool> vbSiftTP = std::vector<bool>(keyptsCnt, 0);
-    if(flannIM > siftCntThreshold) {
-        CalcDeltaScaleOri(vnSiftMatched,
-                          vnDeltaScale,
-                          vnDeltaOri,
-                          nDeltaScale,
-                          nDeltaBinNo,
-                          nMaxDeltaOri,
-                          nMinDeltaOri,
-                          T_orient,
-                          T_scale,
-                          flannTP,
-                          vbSiftTP);
-    } else {
-        flannTP = 0;
-    }
+        printf("FlannIM %i\n",flannIM);
+        std::vector<bool> vbSiftTP = std::vector<bool>(keyptsCnt, 0);
+        if(flannIM > siftCntThreshold) {
+            CalcDeltaScaleOri(vnSiftMatched,
+                              vnDeltaScale,
+                              vnDeltaOri,
+                              nDeltaScale,
+                              nDeltaBinNo,
+                              nMaxDeltaOri,
+                              nMinDeltaOri,
+                              T_orient,
+                              T_scale,
+                              flannTP,
+                              vbSiftTP);
+        } else {
+            flannTP = 0;
+        }
 
-    printf("%i %i %i %f %f\n",keyptsCnt, flannTP,siftCntThreshold, colorDistance, colorThreshold);
-    // todo: (siftfeature + matched_siftfeature)
-    if (flannTP >= siftCntThreshold) {
-        matchFlag_ = 1;
-    } else {
-        matchFlag_ = 0;
-    }
+        printf("%i %i %i %f %f\n",keyptsCnt, flannTP,siftCntThreshold, colorDistance, colorThreshold);
+        // todo: (siftfeature + matched_siftfeature)
+        if (flannTP >= siftCntThreshold) {
+            matchFlag_ = 1;
+        } else {
+            matchFlag_ = 0;
+        }
 
-    // return siftkeypoints
-    keypoints_ = Mat2f(keyptsCnt, 2,0);
-    int counter = 0;
-    while(keypts) {
-        keypoints_(counter,0) = keypts->row;
-        keypoints_(counter,1) = keypts->col;
-        keypts = keypts->next;
-    }
-    matchedKeypoints_ = Mat1f(keyptsCnt,0);
-    for(int i = 0; i < keyptsCnt; i++) {
-        matchedKeypoints_(i) = (int) vnSiftMatched[i];
+        // return siftkeypoints
+        keypoints_ = Mat1f(keyptsCnt, 2);
+        int counter = 0;
+        while(keypts) {
+            keypoints_(counter, 0) = keypts->row;
+            keypoints_(counter, 1) = keypts->col;
+            keypts = keypts->next;
+            counter++;
+        }
+        matchedKeypoints_ = Mat1f(keyptsCnt, 1);
+        for(int i = 0; i < keyptsCnt; i++) {
+            matchedKeypoints_(i) = (int) vbSiftTP[i];
+        }
     }
 }
 

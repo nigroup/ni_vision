@@ -75,7 +75,7 @@ protected:
     std::string name_out_matchedKeypoints_;
 
     int matchFlag_;
-    cv::Mat2f keypoints_;
+    cv::Mat1f keypoints_;
     cv::Mat1f matchedKeypoints_;
 
     int nb_bins_;           ///< no. of bins in color histogram

@@ -1,5 +1,5 @@
 #include "ni/legacy/func_recognition.h"
-
+#include "opencv2/highgui/highgui.hpp"
 void GetSiftKeypoints(const cv::Mat &input,
                       int nSiftScales,
                       double nSiftInitSigma,
@@ -12,9 +12,11 @@ void GetSiftKeypoints(const cv::Mat &input,
 
     Image img_sift = CreateImage(width, height);
 
+    cv::imwrite("ycf.png", input(cv::Rect(x, y,width, height)));
     for (int i = 0; i < width; ++i) {
         for (int j = 0; j < height; ++j) {
             cv::Vec3b s = input.at<cv::Vec3b>(j+y, i+x);
+            std::cout<<(float)s[0]<<" "<<(float)s[1]<<" "<<(float)s[2]<<std::endl;
             img_sift->pixels[i * img_sift->stride + j] = (s[0] + s[1] + s[2]) / (3.*255);
         }
     }
