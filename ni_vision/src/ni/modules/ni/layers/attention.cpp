@@ -309,20 +309,20 @@ void Attention::Activate(const Signal &signal)
 
     // Debugging
 
-    cv::Mat img(colorDS.rows, colorDS.cols, CV_8UC1);
-    img.setTo(Scalar(0));
-    for(int i=0; i<nMemsCnt; i++) {
+//    cv::Mat img(colorDS.rows, colorDS.cols, CV_8UC1);
+//    img.setTo(Scalar(0));
+//    for(int i=0; i<nMemsCnt; i++) {
 
-        Point2i p(stMems.mnRCenter[i][0], stMems.mnRCenter[i][1]);
+//        Point2i p(stMems.mnRCenter[i][0], stMems.mnRCenter[i][1]);
 
-        stringstream s;
-        s << i << " " << stMems.vnIdx[i];
+//        stringstream s;
+//        s << i << " " << stMems.vnIdx[i];
 
-        cv::putText(img, s.str(), p, CV_FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
-    }
+//        cv::putText(img, s.str(), p, CV_FONT_HERSHEY_COMPLEX, 0.4, Scalar(255, 255, 255));
+//    }
 
-    cv::imshow("att", img);
-    cv::waitKey(1);
+//    cv::imshow("att", img);
+//    cv::waitKey(1);
 
     // End Debugging
 }

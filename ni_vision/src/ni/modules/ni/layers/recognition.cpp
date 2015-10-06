@@ -250,8 +250,8 @@ void Recognition::Activate(const Signal &signal)
         keypoints_ = Mat1f(keyptsCnt, 2);
         int counter = 0;
         while(keypts) {
-            keypoints_(counter, 0) = keypts->row;
-            keypoints_(counter, 1) = keypts->col;
+            keypoints_(counter, 0) = keypts->row + selectedBoundingBox(0);
+            keypoints_(counter, 1) = keypts->col + selectedBoundingBox(1);
             keypts = keypts->next;
             counter++;
         }
