@@ -144,8 +144,8 @@ void Recognition::Activate(const Signal &signal)
     color.convertTo(bgr, CV_8UC3);
 
     // Debugging
-//    imshow("asdf", bgr);
-//    cvWaitKey(1);
+    imshow("asdf", bgr);
+    cvWaitKey(1);
 
     // Color histogram difference
     float colorDistance = 0;
@@ -177,7 +177,9 @@ void Recognition::Activate(const Signal &signal)
         //color.convertTo(color_img, CV_8UC3);
 //        imshow("asdf", color);
 //        cvWaitKey(1);
-        GetSiftKeypoints(color, siftScales, siftInitSigma, siftPeakThrs,
+        // WARNING: QtCreator links this function to the wrong file
+        // but the right one (in func_recognition.cpp) is compiled !!!
+        GetSiftKeypoints(bgr, siftScales, siftInitSigma, siftPeakThrs,
                          selectedBoundingBox(0), selectedBoundingBox(1),
                          nCandRW, nCandRH,
                          keypts);
