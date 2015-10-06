@@ -12,12 +12,10 @@ void GetSiftKeypoints(const cv::Mat &input,
 
     Image img_sift = CreateImage(width, height);
 
-    cv::imshow("ycf.png", input(cv::Rect(x, y,width, height)));
-    cvWaitKey(1);
+
     for (int i = 0; i < width; ++i) {
         for (int j = 0; j < height; ++j) {
             cv::Vec3b s = input.at<cv::Vec3b>(j+y, i+x);
-            //std::cout<<(float)s[0]<<" "<<(float)s[1]<<" "<<(float)s[2]<<std::endl;
             img_sift->pixels[i * img_sift->stride + j] = (s[0] + s[1] + s[2]) / (3.*255);
         }
     }

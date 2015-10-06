@@ -186,16 +186,12 @@ void Attention::Activate(const Signal &signal)
     CloudXYZPtr cloud   = signal.MostRecent(input_name_cloud_).get<CloudXYZPtr>();
     Mat1f map           = signal.MostRecent(input_name_map_).get<Mat1f>();
 
-    // Debug
-    printf("%i %i\n", color.cols, color.rows);
-    printf("%i %i\n", map.cols, map.rows);
-
     // Computing downsampled color-image (with dimension of depth-image)
     Mat3f colorDS;
     resize(color, colorDS, map.size());
 
     Mat bgr;
-    colorDS.convertTo(bgr, CV_8UC3, 255.f);
+    colorDS.convertTo(bgr, CV_8UC3);
 
     observed_.clear();
     extractFeatures(cloud, bgr, map, observed_);
@@ -293,12 +289,6 @@ void Attention::Activate(const Signal &signal)
         inhibitionMemory.clear();
         inhibitionMemory.push_back(stMems.vnIdx[0]);
     }
-
-    // Debugging
-//    for(int i = 0; i < inhibitionMemory.size(); i++) {
-//        printf("%i ", inhibitionMemory[i]);
-//    }
-//    printf("\n");
 
     histogram_ = Mat1f(1, stMems.mnColorHist[currentIndex].size());
     for(int i = 0; i < stMems.mnColorHist[currentIndex].size(); i++) {
@@ -440,6 +430,7 @@ void Attention::extractFeatures(
             std::vector<float> hist_tmp(nb_bins_*nb_bins_*nb_bins_,0);
 //            Mat1f hist;
 //            computeColorHist(bgr, tmp, nb_bins_, hist);
+
             Calc3DColorHistogram(bgr, tmp, nb_bins_, hist_tmp);
             //for(size_t i = 0; i < hist_tmp.)
             Mat1f hist = Mat1f(1,nb_bins_*nb_bins_*nb_bins_);

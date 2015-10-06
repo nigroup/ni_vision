@@ -137,15 +137,11 @@ void Recognition::Activate(const Signal &signal)
     Mat1f selectedHistogram = signal.MostRecent(input_name_selHistogram_).get<Mat1f>();
     Mat1f selectedBoundingBox = signal.MostRecent(input_name_selBoundingBox_).get<Mat1f>();
 
-    int siftCntThreshold = 3;
-    float colorThreshold = 1;
+    int siftCntThreshold = 10;
+    float colorThreshold = 0.5;
 
     Mat bgr;
     color.convertTo(bgr, CV_8UC3);
-
-    // Debugging
-    imshow("asdf", bgr);
-    cvWaitKey(1);
 
     // Color histogram difference
     float colorDistance = 0;
@@ -173,10 +169,6 @@ void Recognition::Activate(const Signal &signal)
         int nCandRW = selectedBoundingBox(2) - selectedBoundingBox(0) + 1;
         int nCandRH = selectedBoundingBox(3) - selectedBoundingBox(1) + 1;
 
-        //Mat color_img;
-        //color.convertTo(color_img, CV_8UC3);
-//        imshow("asdf", color);
-//        cvWaitKey(1);
         // WARNING: QtCreator links this function to the wrong file
         // but the right one (in func_recognition.cpp) is compiled !!!
         GetSiftKeypoints(bgr, siftScales, siftInitSigma, siftPeakThrs,
