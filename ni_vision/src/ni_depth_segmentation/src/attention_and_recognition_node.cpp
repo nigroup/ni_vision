@@ -198,8 +198,8 @@ protected:
             try {
                 cv_bridge::CvImageConstPtr cv_img_ptr;
                 cv_img_ptr = cv_bridge::toCvShare(img, img_enc::BGR8);
-                //img_normalized_colors_ = cv_img_ptr->image;
-                ni::normalizeColors(cv_img_ptr->image, img_normalized_colors_);
+                img_normalized_colors_ = cv_img_ptr->image;
+                //ni::normalizeColors(cv_img_ptr->image, img_normalized_colors_);
                 //img_normalized_colors_.convertTo(img_normalized_colors_8bit_, CV_8UC3);
                 //cv::imshow("x2", img_normalized_colors_8bit_);
             }

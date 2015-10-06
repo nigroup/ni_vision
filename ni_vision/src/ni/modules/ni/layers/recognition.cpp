@@ -138,7 +138,14 @@ void Recognition::Activate(const Signal &signal)
     Mat1f selectedBoundingBox = signal.MostRecent(input_name_selBoundingBox_).get<Mat1f>();
 
     int siftCntThreshold = 3;
-    float colorThreshold = 0.5;
+    float colorThreshold = 1;
+
+    Mat bgr;
+    color.convertTo(bgr, CV_8UC3);
+
+    // Debugging
+//    imshow("asdf", bgr);
+//    cvWaitKey(1);
 
     // Color histogram difference
     float colorDistance = 0;
@@ -168,6 +175,8 @@ void Recognition::Activate(const Signal &signal)
 
         //Mat color_img;
         //color.convertTo(color_img, CV_8UC3);
+//        imshow("asdf", color);
+//        cvWaitKey(1);
         GetSiftKeypoints(color, siftScales, siftInitSigma, siftPeakThrs,
                          selectedBoundingBox(0), selectedBoundingBox(1),
                          nCandRW, nCandRH,
