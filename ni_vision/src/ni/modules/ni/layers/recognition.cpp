@@ -179,7 +179,6 @@ void Recognition::Activate(const Signal &signal)
         // todo: use values from the gui
         float flannKnn = 2;
         float flannMatchFac = 0.7;
-        // @todo: find the right way to determine number of columns
 
         std::vector<int> vnSiftMatched;
         std::vector <double> vnDeltaScale;
@@ -239,7 +238,6 @@ void Recognition::Activate(const Signal &signal)
         }
 
         printf("%i %i %i %f %f\n",keyptsCnt, flannTP,siftCntThreshold, colorDistance, colorThreshold);
-        // todo: (siftfeature + matched_siftfeature)
         if (flannTP >= siftCntThreshold) {
             matchFlag_ = 1;
         } else {
