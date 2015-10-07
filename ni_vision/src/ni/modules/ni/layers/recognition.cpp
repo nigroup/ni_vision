@@ -152,6 +152,7 @@ void Recognition::Activate(const Signal &signal)
     colorDistance = colorDistance / 2.f;
 
     if(colorDistance > colorThreshold) {
+        printf("%f\n", colorDistance);
         matchFlag_ = 0;
 
         keypoints_ = Mat1f();
