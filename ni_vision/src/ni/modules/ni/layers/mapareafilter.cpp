@@ -87,23 +87,26 @@ Mat1f MapAreaFilter::getSizes(const Mat1f &map, const VecI &seg_ids) const
 {
     const int NB_SEGS = static_cast<int>(seg_ids.size());
     Mat1f seg_sizes(1, NB_SEGS);
+    if(!NB_SEGS) {
+        return seg_sizes;
+    } else {
+        // assuming last id is larger than other
+        // multiply by 2 as a precaution for sufficient size
+        // id occurence in map -> segment size
+        VecI hist(seg_ids[NB_SEGS-1]*2, 0);
+        for(size_t i=0; i<map.total(); i++) {
 
-    // assuming last id is larger than other
-    // multiply by 2 as a precaution for sufficient size
-    // id occurence in map -> segment size
-    VecI hist(seg_ids[NB_SEGS-1]*2, 0);
-    for(size_t i=0; i<map.total(); i++) {
+            hist[map(i)]++;
+        }
 
-        hist[map(i)]++;
+        // reorder
+        for(size_t i=0; i<seg_ids.size(); i++) {
+
+            seg_sizes(i) = hist[seg_ids[i]];
+        }
+
+        return seg_sizes;
     }
-
-    // reorder
-    for(size_t i=0; i<seg_ids.size(); i++) {
-
-        seg_sizes(i) = hist[seg_ids[i]];
-    }
-
-    return seg_sizes;
 }
 
 void MapAreaFilter::Activate(const Signal &signal)
