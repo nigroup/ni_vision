@@ -38,6 +38,7 @@
 #include "ni/legacy/timer.h"
 
 #include "std_msgs/Bool.h"
+#include "std_msgs/Float32.h"
 #include "std_msgs/Int32MultiArray.h"
 #include "std_msgs/Float32MultiArray.h"
 
@@ -85,6 +86,7 @@ public:
           name_out_matchFlag_("/ni/depth_segmentation/recognition/found"),
           name_out_keypoints_("/ni/depth_segmentation/recognition/keypoints"),
           name_out_matchedKeypoints_("/ni/depth_segmentation/recognition/matchedKeypoints"),
+          name_out_recognizedIndex_("/ni/depth_segmentation/recognition/recognizedIndex"),
 #if USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
           img_sub_(it_, name_in_img_, 30),
           img_sub_seg_(it_, name_in_seg_, 30),
@@ -114,6 +116,7 @@ public:
         recog_pub_rect_ = nh.advertise<std_msgs::Int32MultiArray>(name_out_rect_, 1);
         recog_pub_keypoints_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_keypoints_, 1);
         recog_pub_matchedKeypoints_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_matchedKeypoints_, 1);
+        recog_pub_recognizedIndex_ = nh.advertise<std_msgs::Float32>(name_out_recognizedIndex_, 1);
     }
 
 protected:
@@ -151,6 +154,7 @@ protected:
             io.Input(Attention::KEY_INPUT_MAP, name_in_seg_);
             io.Output(Attention::KEY_OUTPUT_HISTOGRAM, name_out_histogram_);
             io.Output(Attention::KEY_OUTPUT_RECT, name_out_rect_);
+            io.Output(Attention::KEY_OUTPUT_INDEX, name_out_recognizedIndex_);
             layers_.push_back(LayerFactoryNI::CreateShared("Attention", cfg, io));
         }
         { // 1
@@ -239,6 +243,8 @@ protected:
             bool matchFlag = sig_.MostRecent(name_out_matchFlag_).get<int>() > 0;
             Mat1f keypoints = sig_.MostRecentMat1f(name_out_keypoints_);
             Mat1f matchedKeypoints = sig_.MostRecentMat1f(name_out_matchedKeypoints_);
+            float recognizedIndex = sig_.MostRecent(name_out_recognizedIndex_).get<float>();
+
 
             // mimic timestamp of processed data
             std_msgs::Header header;
@@ -267,6 +273,11 @@ protected:
 //            std::cout << rect_ << std::endl;
 //            std::cout << matchFlag_ << std::endl;
 
+            if(matchFlag) {
+                std_msgs::Float32 msg5;
+                msg.data = recognizedIndex;
+                recog_pub_recognizedIndex_.publish(msg5);
+            }
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);
             double nTimeTotal = double(timespecDiff(&t_total_end, &t_total_start)/1e9);
@@ -299,6 +310,7 @@ protected:
     std::string name_out_histogram_;
     std::string name_out_keypoints_;
     std::string name_out_matchedKeypoints_;
+    std::string name_out_recognizedIndex_;
 
 
     message_filters::Synchronizer<MySyncPolicy> *sync_ptr_;
@@ -311,6 +323,7 @@ protected:
     ros::Publisher recog_pub_matchFlag_;
     ros::Publisher recog_pub_keypoints_;
     ros::Publisher recog_pub_matchedKeypoints_;
+    ros::Publisher recog_pub_recognizedIndex_;
 
     boost::mutex mtx_;                      ///< mutex object for thread safety
 

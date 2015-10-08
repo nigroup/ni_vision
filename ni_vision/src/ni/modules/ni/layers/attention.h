@@ -39,6 +39,7 @@ public:
     static const std::string KEY_INPUT_MAP;
     static const std::string KEY_OUTPUT_HISTOGRAM;
     static const std::string KEY_OUTPUT_RECT;
+    static const std::string KEY_OUTPUT_INDEX;
 
     static const float DISTANCE_HUGE;
 
@@ -72,9 +73,11 @@ protected:
     std::string input_name_map_;
     std::string name_out_rect_;
     std::string name_out_histogram_;
+    std::string name_out_index_;
 
     cv::Mat1f rect_;
     cv::Mat1f histogram_;
+    cv::Mat1f index_;
 
     int nb_bins_;           ///< no. of bins in color histogram
 

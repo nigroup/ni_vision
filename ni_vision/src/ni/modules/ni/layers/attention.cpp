@@ -46,6 +46,7 @@ const string Attention::KEY_INPUT_CLOUD       = "points";
 const string Attention::KEY_INPUT_MAP         = "map";
 const string Attention::KEY_OUTPUT_HISTOGRAM  = "hist";
 const string Attention::KEY_OUTPUT_RECT       = "rect";
+const string Attention::KEY_OUTPUT_INDEX      = "index";
 
 const float Attention::DISTANCE_HUGE = 100.f;
 
@@ -178,6 +179,7 @@ void Attention::OutputNames(const LayerOutputNames &io)
 {
     name_out_histogram_ = io.Output(KEY_OUTPUT_HISTOGRAM);
     name_out_rect_ = io.Output(KEY_OUTPUT_RECT);
+    name_out_index_ = io.Output(KEY_OUTPUT_INDEX);
 }
 
 void Attention::Activate(const Signal &signal)
@@ -307,6 +309,9 @@ void Attention::Activate(const Signal &signal)
         rect_(i) = factor * stMems.mnRect[currentIndex][i];
     }
 
+    index_ = Mat1f(1,1);
+    index_(0) = stMems.vnIdx[currentIndex];
+
     // Debugging
 
 //    cv::Mat img(colorDS.rows, colorDS.cols, CV_8UC1);
@@ -332,6 +337,7 @@ void Attention::Response(Signal &signal)
 {
     signal.Append(name_out_rect_, rect_);
     signal.Append(name_out_histogram_, histogram_);
+    signal.Append(name_out_index_, index_);
 }
 
 
