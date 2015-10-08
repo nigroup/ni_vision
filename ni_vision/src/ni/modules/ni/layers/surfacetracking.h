@@ -38,6 +38,7 @@ public:
     static const std::string KEY_INPUT_BGR_IMAGE;
     static const std::string KEY_INPUT_CLOUD;
     static const std::string KEY_INPUT_MAP;
+    static const std::string KEY_OUTPUT_BOUNDING_BOXES;
 
     static const float DISTANCE_HUGE;
 
@@ -55,6 +56,8 @@ public:
 
     void Activate(const elm::Signal &signal);
 
+    void Response(elm::Signal &signal);
+
 protected:
     void extractFeatures(const elm::CloudXYZPtr &cloud,
                          const cv::Mat &bgr,
@@ -68,6 +71,8 @@ protected:
     std::string input_name_bgr_;
     std::string input_name_cloud_;
     std::string input_name_map_;
+    std::string name_out_;
+    std::string name_out_boundingBoxes_;
 
     int nb_bins_;           ///< no. of bins in color histogram
 
@@ -84,6 +89,7 @@ protected:
     cv::Mat1f dist_pos_;    ///< distance matrix for position
     cv::Mat1f dist_size_;   ///< distance matrix for size
     cv::Mat1f dist_;        ///< weighted sum of feature distance matrices
+    cv::Mat1f boundingBoxes_; ///< matrix with coordinates and indices of the bounding boxes
 
     std::vector<ni::Surface> obsereved_;
     std::vector<ni::Surface> memory_;

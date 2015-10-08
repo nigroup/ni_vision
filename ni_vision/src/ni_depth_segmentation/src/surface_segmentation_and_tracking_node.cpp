@@ -42,6 +42,8 @@
 #include "ni/layers/layerfactoryni.h"
 #include "ni/legacy/timer.h"
 
+#include "std_msgs/Float32MultiArray.h"
+
 /** A post from ROS Answers suggested using image_transport::SubscriberFilter
  *  source: http://answers.ros.org/question/9705/synchronizer-and-image_transportsubscriber/
  *
@@ -81,6 +83,7 @@ public:
           name_in_cld_("/camera/depth_registered/points"),
           name_in_img_("/camera/rgb/image_color"),
           name_out_("/ni/depth_segmentation/surfaces/image"),
+          name_out_boundingBoxes_("/ni/depth_segmentation/boundingBoxes"),
 #if USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
           img_sub_(it_, name_in_img_, 10),
 #else // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
@@ -115,6 +118,7 @@ public:
         // publishers
         img_pub_bgr_ = it_.advertise(name_out_+"_color", 1);
         img_pub_ = it_.advertise(name_out_, 1);
+        img_pub_boundingBoxes = it_.advertise(name_out_boundingBoxes_, 1);
     }
 
 protected:
@@ -235,6 +239,7 @@ protected:
             io.Input(SurfaceTracking::KEY_INPUT_CLOUD, name_in_cld_);
             io.Input(SurfaceTracking::KEY_INPUT_MAP, "map_gray_");
             io.Output(SurfaceTracking::KEY_OUTPUT_RESPONSE, name_out_);
+            io.Output(SurfaceTracking::KEY_OUTPUT_BOUNDING_BOXES, name_out_boundingBoxes_);
             layers_.push_back(LayerFactoryNI::CreateShared("SurfaceTracking", cfg, io));
         }
     }
@@ -278,6 +283,7 @@ protected:
             }
 
             Mat1f img = sig_.MostRecentMat1f(name_out_);
+            Mat1f boundingBoxes = sig_.MostRecentMat1f(name_out_boundingBoxes_);
             //img(0) = 0.f;
             //img(1) = 20.f;
 
@@ -314,6 +320,11 @@ protected:
                         img_gray).toImageMsg();
 
             img_pub_.publish(img_msg_gray);
+
+            std_msgs::Float32MultiArray msg2;
+            msg2.data = boundingBoxes;
+            // todo add header
+            img_pub_boundingBoxes_.publish(msg2);
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);
             double nTimeTotal = double(timespecDiff(&t_total_end, &t_total_start)/1e9);
@@ -371,6 +382,7 @@ protected:
     std::string name_in_cld_;    ///< Signal name and subscribing topic name
     std::string name_in_img_;    ///< Signal name and subscribing topic name
     std::string name_out_;       ///< Signal name and publishing topic name
+    std::string name_out_boundingBoxes_;
 
     message_filters::Synchronizer<MySyncPolicy> *sync_ptr_;
 
@@ -379,6 +391,7 @@ protected:
 
     image_transport::Publisher img_pub_bgr_;    ///< surface map image publisher
     image_transport::Publisher img_pub_;        ///< surface map image publisher
+    ros::Publisher img_pub_boundingBoxes_;
 
     dynamic_reconfigure::Server<ni_depth_segmentation::NodeKVPConfig> dr_srv_;
 

@@ -188,6 +188,7 @@ void SurfaceTracking::Activate(const Signal &signal)
         int nDsSize = static_cast<int>(map.total());
         VecI vnTrkMap(nDsSize, -1);         // Tracking Map
 
+        int validSurfaceCnt = 0;
         for (int i=0; i < nMemsCnt; i++) {
 
             if (stMems.vnStableCtr[i] < stTrack.CntStable ||
@@ -198,6 +199,7 @@ void SurfaceTracking::Activate(const Signal &signal)
 
                 vnTrkMap[stMems.mnPtsIdx[i][j]] = stMems.vnIdx[i];
             }
+            validSurfaceCnt++;
         }
 
         m_ = Mat1f(map.size(), -1.f);
@@ -209,6 +211,23 @@ void SurfaceTracking::Activate(const Signal &signal)
             m_(i) = static_cast<float>(vnTrkMap[i]);
         }
 
+        {
+            int tmp = 0;
+            boundingBoxes_ = Mat1f(validSurfaceCnt, 5);
+            for(int i = 0; i < nMemsCnt; i++) {
+
+                if (stMems.vnStableCtr[i] < stTrack.CntStable ||
+                        stMems.vnLostCtr[i] > stTrack.CntLost) {
+                    continue;
+                }
+                boundingBoxes_(tmp,0) = stMems.mnRect[i][0];
+                boundingBoxes_(tmp,1) = stMems.mnRect[i][1];
+                boundingBoxes_(tmp,2) = stMems.mnRect[i][2];
+                boundingBoxes_(tmp,3) = stMems.mnRect[i][3];
+                boundingBoxes_(tmp,4) = stMems.vnIdx[i];
+                tmp++;
+            }
+        }
 //        cv::imshow("x", elm::ConvertTo8U(m_));
 //        cv::waitKey();
 
@@ -256,6 +275,12 @@ void SurfaceTracking::Activate(const Signal &signal)
     }
 
     framec++;
+}
+
+void SurfaceTracking::Response(Signal &signal)
+{
+    signal.Append(name_out_, m_);
+    signal.Append(name_out_boundingBoxes_, boundingBoxes_);
 }
 
 void SurfaceTracking::extractFeatures(
