@@ -118,7 +118,7 @@ public:
         // publishers
         img_pub_bgr_ = it_.advertise(name_out_+"_color", 1);
         img_pub_ = it_.advertise(name_out_, 1);
-        img_pub_boundingBoxes = it_.advertise(name_out_boundingBoxes_, 1);
+        img_pub_boundingBoxes_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_boundingBoxes_, 1);
     }
 
 protected:

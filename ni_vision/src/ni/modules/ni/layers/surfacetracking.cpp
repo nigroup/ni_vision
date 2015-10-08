@@ -58,7 +58,7 @@ SurfaceTracking::~SurfaceTracking()
 }
 
 SurfaceTracking::SurfaceTracking()
-    : elm::base_MatOutputLayer()
+    : elm::base_Layer()
 {
     Clear();
 }
