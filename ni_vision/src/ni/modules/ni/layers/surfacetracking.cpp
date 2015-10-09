@@ -4,7 +4,7 @@
 #include "elm/core/debug_utils.h"
 #include <set>
 
-#include "elm/core/cv/mat_utils.h".h"
+#include "elm/core/cv/mat_utils.h"
 
 #include "elm/core/cv/mat_vector_utils.h"
 #include "elm/core/cv/mat_vector_utils_inl.h"
@@ -41,6 +41,8 @@ const string SurfaceTracking::PARAM_MAX_DIST        = "max_dist";
 const string SurfaceTracking::KEY_INPUT_BGR_IMAGE   = "bgr";
 const string SurfaceTracking::KEY_INPUT_CLOUD       = "points";
 const string SurfaceTracking::KEY_INPUT_MAP         = "map";
+const string SurfaceTracking::KEY_OUTPUT_BOUNDING_BOXES = "boundingBoxes";
+const string SurfaceTracking::KEY_OUTPUT_TRACK_MAP = "trackMap";
 
 const float SurfaceTracking::DISTANCE_HUGE = 100.f;
 
@@ -133,6 +135,12 @@ void SurfaceTracking::InputNames(const LayerInputNames &io)
     input_name_map_     = io.Input(KEY_INPUT_MAP);
 }
 
+void SurfaceTracking::OutputNames(const LayerOutputNames &io)
+{
+    name_out_trackMap_ = io.Output(KEY_OUTPUT_TRACK_MAP);
+    name_out_boundingBoxes_ = io.Output(KEY_OUTPUT_BOUNDING_BOXES);
+}
+
 void SurfaceTracking::Activate(const Signal &signal)
 {
     Mat3f color         = signal.MostRecent(input_name_bgr_).get<Mat1f>();
@@ -202,13 +210,13 @@ void SurfaceTracking::Activate(const Signal &signal)
             validSurfaceCnt++;
         }
 
-        m_ = Mat1f(map.size(), -1.f);
+        trackMap_ = Mat1f(map.size(), -1.f);
         for (int i=0; i < nDsSize; i++) {
 
             if (vnTrkMap[i] < 0) {
                 continue;
             }
-            m_(i) = static_cast<float>(vnTrkMap[i]);
+            trackMap_(i) = static_cast<float>(vnTrkMap[i]);
         }
 
         {
@@ -279,7 +287,7 @@ void SurfaceTracking::Activate(const Signal &signal)
 
 void SurfaceTracking::Response(Signal &signal)
 {
-    signal.Append(name_out_, m_);
+    signal.Append(name_out_trackMap_, trackMap_);
     signal.Append(name_out_boundingBoxes_, boundingBoxes_);
 }
 

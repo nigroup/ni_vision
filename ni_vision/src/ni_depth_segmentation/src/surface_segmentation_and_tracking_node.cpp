@@ -82,7 +82,7 @@ public:
         : it_(nh),
           name_in_cld_("/camera/depth_registered/points"),
           name_in_img_("/camera/rgb/image_color"),
-          name_out_("/ni/depth_segmentation/surfaces/image"),
+          name_out_trackMap_("/ni/depth_segmentation/surfaces/image"),
           name_out_boundingBoxes_("/ni/depth_segmentation/boundingBoxes"),
 #if USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
           img_sub_(it_, name_in_img_, 10),
@@ -116,8 +116,8 @@ public:
         initLayers(nh);
 
         // publishers
-        img_pub_bgr_ = it_.advertise(name_out_+"_color", 1);
-        img_pub_ = it_.advertise(name_out_, 1);
+        img_pub_bgr_ = it_.advertise(name_out_trackMap_+"_color", 1);
+        img_pub_ = it_.advertise(name_out_trackMap_, 1);
         img_pub_boundingBoxes_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_boundingBoxes_, 1);
     }
 
@@ -238,7 +238,7 @@ protected:
             io.Input(SurfaceTracking::KEY_INPUT_BGR_IMAGE, name_in_img_);
             io.Input(SurfaceTracking::KEY_INPUT_CLOUD, name_in_cld_);
             io.Input(SurfaceTracking::KEY_INPUT_MAP, "map_gray_");
-            io.Output(SurfaceTracking::KEY_OUTPUT_RESPONSE, name_out_);
+            io.Output(SurfaceTracking::KEY_OUTPUT_TRACK_MAP, name_out_trackMap_);
             io.Output(SurfaceTracking::KEY_OUTPUT_BOUNDING_BOXES, name_out_boundingBoxes_);
             layers_.push_back(LayerFactoryNI::CreateShared("SurfaceTracking", cfg, io));
         }
@@ -282,7 +282,7 @@ protected:
                 layers_[i]->Response(sig_);
             }
 
-            Mat1f img = sig_.MostRecentMat1f(name_out_);
+            Mat1f img = sig_.MostRecentMat1f(name_out_trackMap_);
             Mat1f boundingBoxes = sig_.MostRecentMat1f(name_out_boundingBoxes_);
             //img(0) = 0.f;
             //img(1) = 20.f;
@@ -381,7 +381,7 @@ protected:
 
     std::string name_in_cld_;    ///< Signal name and subscribing topic name
     std::string name_in_img_;    ///< Signal name and subscribing topic name
-    std::string name_out_;       ///< Signal name and publishing topic name
+    std::string name_out_trackMap_;       ///< Signal name and publishing topic name
     std::string name_out_boundingBoxes_;
 
     message_filters::Synchronizer<MySyncPolicy> *sync_ptr_;
