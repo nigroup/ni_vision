@@ -77,7 +77,7 @@ protected:
 
     cv::Mat1f rect_;
     cv::Mat1f histogram_;
-    cv::Mat1f index_;
+    float index_;
 
     int nb_bins_;           ///< no. of bins in color histogram
 

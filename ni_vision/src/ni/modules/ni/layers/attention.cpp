@@ -309,8 +309,8 @@ void Attention::Activate(const Signal &signal)
         rect_(i) = factor * stMems.mnRect[currentIndex][i];
     }
 
-    index_ = Mat1f(1,1);
-    index_(0) = stMems.vnIdx[currentIndex];
+    index_ = stMems.vnIdx[currentIndex];
+    printf("current index %f\n", index_);
 
     // Debugging
 

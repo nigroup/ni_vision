@@ -275,8 +275,9 @@ protected:
 
             if(matchFlag) {
                 std_msgs::Float32 msg5;
-                msg.data = recognizedIndex;
+                msg5.data = recognizedIndex;
                 recog_pub_recognizedIndex_.publish(msg5);
+                printf("Index in node is %f", msg5.data);
             }
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);
