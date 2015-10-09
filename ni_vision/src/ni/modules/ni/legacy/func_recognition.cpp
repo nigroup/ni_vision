@@ -11,8 +11,8 @@ void GetSiftKeypoints(const cv::Mat &input,
                       Keypoint &keypts) {
 
     Image img_sift = CreateImage(width, height);
-    cv::imshow("siftfeaturecomputation", input(cv::Rect(x,y,width, height)));
-    cvWaitKey(1);
+//    cv::imshow("siftfeaturecomputation", input(cv::Rect(x,y,width, height)));
+//    cvWaitKey(1);
 
     for (int i = 0; i < width; ++i) {
         for (int j = 0; j < height; ++j) {
