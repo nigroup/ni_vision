@@ -322,7 +322,8 @@ protected:
             img_pub_.publish(img_msg_gray);
 
             std_msgs::Float32MultiArray msg2;
-            msg2.data = boundingBoxes;
+
+            msg2.data = boundingBoxes.reshape(1, boundingBoxes.total());
             // todo add header
             img_pub_boundingBoxes_.publish(msg2);
 

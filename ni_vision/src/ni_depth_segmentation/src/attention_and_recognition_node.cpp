@@ -255,7 +255,7 @@ protected:
             // todo add header
             recog_pub_matchFlag_.publish(msg);
 
-            std_msgs::Int32MultiArray msg2;
+            std_msgs::Float32MultiArray msg2;
             msg2.data = rect_;
             // todo add header
             recog_pub_rect_.publish(msg2);

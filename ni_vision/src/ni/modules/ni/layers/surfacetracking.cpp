@@ -218,10 +218,9 @@ void SurfaceTracking::Activate(const Signal &signal)
             }
             trackMap_(i) = static_cast<float>(vnTrkMap[i]);
         }
-
+        boundingBoxes_ = Mat1f(validSurfaceCnt, 5);
         {
             int tmp = 0;
-            boundingBoxes_ = Mat1f(validSurfaceCnt, 5);
             for(int i = 0; i < nMemsCnt; i++) {
 
                 if (stMems.vnStableCtr[i] < stTrack.CntStable ||
@@ -235,6 +234,7 @@ void SurfaceTracking::Activate(const Signal &signal)
                 boundingBoxes_(tmp,4) = stMems.vnIdx[i];
                 tmp++;
             }
+            //printf("%i %i \n", tmp, validSurfaceCnt);
         }
 //        cv::imshow("x", elm::ConvertTo8U(m_));
 //        cv::waitKey();
