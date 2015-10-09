@@ -218,6 +218,11 @@ void SurfaceTracking::Activate(const Signal &signal)
             }
             trackMap_(i) = static_cast<float>(vnTrkMap[i]);
         }
+
+        int factor = 0;
+        if(map.cols && map.rows) {
+            factor = (color.cols / map.cols);
+        }
         boundingBoxes_ = Mat1f(validSurfaceCnt, 5);
         {
             int tmp = 0;
@@ -227,10 +232,10 @@ void SurfaceTracking::Activate(const Signal &signal)
                         stMems.vnLostCtr[i] > stTrack.CntLost) {
                     continue;
                 }
-                boundingBoxes_(tmp,0) = stMems.mnRect[i][0];
-                boundingBoxes_(tmp,1) = stMems.mnRect[i][1];
-                boundingBoxes_(tmp,2) = stMems.mnRect[i][2];
-                boundingBoxes_(tmp,3) = stMems.mnRect[i][3];
+                boundingBoxes_(tmp,0) = factor * stMems.mnRect[i][0];
+                boundingBoxes_(tmp,1) = factor * stMems.mnRect[i][1];
+                boundingBoxes_(tmp,2) = factor * stMems.mnRect[i][2];
+                boundingBoxes_(tmp,3) = factor * stMems.mnRect[i][3];
                 boundingBoxes_(tmp,4) = stMems.vnIdx[i];
                 tmp++;
             }
