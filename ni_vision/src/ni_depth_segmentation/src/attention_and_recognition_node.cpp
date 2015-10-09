@@ -113,7 +113,7 @@ public:
 
         initLayers(nh);
         recog_pub_matchFlag_ = nh.advertise<std_msgs::Bool>(name_out_matchFlag_, 1);
-        recog_pub_rect_ = nh.advertise<std_msgs::Int32MultiArray>(name_out_rect_, 1);
+        recog_pub_rect_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_rect_, 1);
         recog_pub_keypoints_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_keypoints_, 1);
         recog_pub_matchedKeypoints_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_matchedKeypoints_, 1);
         recog_pub_recognizedIndex_ = nh.advertise<std_msgs::Float32>(name_out_recognizedIndex_, 1);
