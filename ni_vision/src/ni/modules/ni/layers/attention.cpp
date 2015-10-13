@@ -188,6 +188,13 @@ void Attention::Activate(const Signal &signal)
     CloudXYZPtr cloud   = signal.MostRecent(input_name_cloud_).get<CloudXYZPtr>();
     Mat1f map           = signal.MostRecent(input_name_map_).get<Mat1f>();
 
+//    // Debug
+//    for(int i = 0; i < map.cols; i++) {
+//        for(int j = 0; j < map.rows; j++) {
+//            printf("%i ",map(i,j));
+//        }
+//        printf("\n");
+//    }
 
     // Computing downsampled color-image (with dimension of depth-image)
     Mat3f colorDS;
@@ -259,11 +266,11 @@ void Attention::Activate(const Signal &signal)
                        nMemsCnt,
                        veCandClrDist);
 
-    Mat1f m_ = Mat1f(1, nMemsCnt, -1.f);
-    for(int i=0; i<nMemsCnt; i++) {
+//    Mat1f m_ = Mat1f(1, nMemsCnt, -1.f);
+//    for(int i=0; i<nMemsCnt; i++) {
 
-        m_(i) = static_cast<float>(stMems.vnIdx[i]);
-    }
+//        m_(i) = static_cast<float>(stMems.vnIdx[i]);
+//    }
 
     // Inhibition of return
     int currentIndex = -1;
