@@ -148,7 +148,7 @@ void SurfaceTracking::Activate(const Signal &signal)
     Mat1f map           = signal.MostRecent(input_name_map_).get<Mat1f>();
 
     // Debug
-    int nAttSizeMax = 350;        ///< upper threshold for size (cube diagonal) [mm]
+    int nAttSizeMax = 550;        ///< upper threshold for size (cube diagonal) [mm]
     int nAttSizeMin = 100;        ///< lower threshold for size (cube diagonal) [mm]
     int nAttPtsMin = 200;
 
@@ -237,9 +237,9 @@ void SurfaceTracking::Activate(const Signal &signal)
                         stMems.vnLostCtr[i] > stTrack.CntLost) {
                     continue;
                 }
-                if(stMems.vnLength[i]*1000 < nAttSizeMax
-                                && stMems.vnLength[i]*1000 > nAttSizeMin
-                                && stMems.vnPtsCnt[i] > nAttPtsMin) {
+                if(stMems.vnLength[i]*1000 > nAttSizeMax
+                                || stMems.vnLength[i]*1000 < nAttSizeMin
+                                || stMems.vnPtsCnt[i] < nAttPtsMin) {
                     continue;
                 }
 
