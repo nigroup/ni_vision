@@ -85,11 +85,11 @@ public:
           name_out_trackMap_("/ni/depth_segmentation/surfaces/image"),
           name_out_boundingBoxes_("/ni/depth_segmentation/boundingBoxes"),
 #if USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          img_sub_(it_, name_in_img_, 10),
+          img_sub_(it_, name_in_img_, 1),
 #else // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          img_sub_(nh, name_in_img_, 10),
+          img_sub_(nh, name_in_img_, 1),
 #endif // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          cloud_sub_(nh, name_in_cld_, 10)
+          cloud_sub_(nh, name_in_cld_, 1)
     {
 
         using namespace message_filters; // Subscriber, sync_policies

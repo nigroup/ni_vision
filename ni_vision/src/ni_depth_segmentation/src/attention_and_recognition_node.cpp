@@ -86,15 +86,15 @@ public:
           name_out_matchFlag_("/ni/depth_segmentation/recognition/found"),
           name_out_keypoints_("/ni/depth_segmentation/recognition/keypoints"),
           name_out_matchedKeypoints_("/ni/depth_segmentation/recognition/matchedKeypoints"),
-          name_out_recognizedIndex_("/ni/depth_segmentation/recognition/recognizedIndex"),
+          name_out_examinedIndex_("/ni/depth_segmentation/recognition/examinedIndex"),
 #if USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          img_sub_(it_, name_in_img_, 30),
-          img_sub_seg_(it_, name_in_seg_, 30),
+          img_sub_(it_, name_in_img_, 1),
+          img_sub_seg_(it_, name_in_seg_, 1),
 #else // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          img_sub_(nh, name_in_img_, 30),
-          img_sub_seg_(nh, name_in_seg_, 30),
+          img_sub_(nh, name_in_img_, 1),
+          img_sub_seg_(nh, name_in_seg_, 1),
 #endif // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
-          cloud_sub_(nh, name_in_cld_, 30)
+          cloud_sub_(nh, name_in_cld_, 1)
     {
 
         using namespace message_filters; // Subscriber, sync_policies
@@ -116,7 +116,7 @@ public:
         recog_pub_rect_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_rect_, 1);
         recog_pub_keypoints_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_keypoints_, 1);
         recog_pub_matchedKeypoints_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_matchedKeypoints_, 1);
-        recog_pub_recognizedIndex_ = nh.advertise<std_msgs::Float32>(name_out_recognizedIndex_, 1);
+        recog_pub_examinedIndex_ = nh.advertise<std_msgs::Float32>(name_out_examinedIndex_, 1);
     }
 
 protected:
@@ -154,7 +154,7 @@ protected:
             io.Input(Attention::KEY_INPUT_MAP, name_in_seg_);
             io.Output(Attention::KEY_OUTPUT_HISTOGRAM, name_out_histogram_);
             io.Output(Attention::KEY_OUTPUT_RECT, name_out_rect_);
-            io.Output(Attention::KEY_OUTPUT_INDEX, name_out_recognizedIndex_);
+            io.Output(Attention::KEY_OUTPUT_INDEX, name_out_examinedIndex_);
             layers_.push_back(LayerFactoryNI::CreateShared("Attention", cfg, io));
         }
         { // 1
@@ -243,7 +243,7 @@ protected:
             bool matchFlag = sig_.MostRecent(name_out_matchFlag_).get<int>() > 0;
             Mat1f keypoints = sig_.MostRecentMat1f(name_out_keypoints_);
             Mat1f matchedKeypoints = sig_.MostRecentMat1f(name_out_matchedKeypoints_);
-            float recognizedIndex = sig_.MostRecent(name_out_recognizedIndex_).get<float>();
+            float examinedIndex = sig_.MostRecent(name_out_examinedIndex_).get<float>();
 
 
             // mimic timestamp of processed data
@@ -311,7 +311,7 @@ protected:
     std::string name_out_histogram_;
     std::string name_out_keypoints_;
     std::string name_out_matchedKeypoints_;
-    std::string name_out_recognizedIndex_;
+    std::string name_out_examinedIndex_;
 
 
     message_filters::Synchronizer<MySyncPolicy> *sync_ptr_;
@@ -324,7 +324,7 @@ protected:
     ros::Publisher recog_pub_matchFlag_;
     ros::Publisher recog_pub_keypoints_;
     ros::Publisher recog_pub_matchedKeypoints_;
-    ros::Publisher recog_pub_recognizedIndex_;
+    ros::Publisher recog_pub_examinedIndex_;
 
     boost::mutex mtx_;                      ///< mutex object for thread safety
 
