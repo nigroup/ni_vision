@@ -138,7 +138,7 @@ void Recognition::Activate(const Signal &signal)
     Mat1f selectedBoundingBox = signal.MostRecent(input_name_selBoundingBox_).get<Mat1f>();
 
     int siftCntThreshold = 10;
-    float colorThreshold = 0.5;
+    float colorThreshold = 0.6;
 
     Mat bgr;
     color.convertTo(bgr, CV_8UC3);

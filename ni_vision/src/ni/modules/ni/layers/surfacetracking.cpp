@@ -147,6 +147,11 @@ void SurfaceTracking::Activate(const Signal &signal)
     CloudXYZPtr cloud   = signal.MostRecent(input_name_cloud_).get<CloudXYZPtr>();
     Mat1f map           = signal.MostRecent(input_name_map_).get<Mat1f>();
 
+    // Debug
+    int nAttSizeMax = 350;        ///< upper threshold for size (cube diagonal) [mm]
+    int nAttSizeMin = 100;        ///< lower threshold for size (cube diagonal) [mm]
+    int nAttPtsMin = 200;
+
     // Computing downsampled color-image (with dimension of depth-image)
     Mat3f colorDS;
     resize(color, colorDS, map.size());
@@ -232,6 +237,12 @@ void SurfaceTracking::Activate(const Signal &signal)
                         stMems.vnLostCtr[i] > stTrack.CntLost) {
                     continue;
                 }
+                if(stMems.vnLength[i]*1000 < nAttSizeMax
+                                && stMems.vnLength[i]*1000 > nAttSizeMin
+                                && stMems.vnPtsCnt[i] > nAttPtsMin) {
+                    continue;
+                }
+
                 boundingBoxes_(tmp,0) = factor * stMems.mnRect[i][0];
                 boundingBoxes_(tmp,1) = factor * stMems.mnRect[i][1];
                 boundingBoxes_(tmp,2) = factor * stMems.mnRect[i][2];

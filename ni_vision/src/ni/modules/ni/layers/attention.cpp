@@ -188,6 +188,7 @@ void Attention::Activate(const Signal &signal)
     CloudXYZPtr cloud   = signal.MostRecent(input_name_cloud_).get<CloudXYZPtr>();
     Mat1f map           = signal.MostRecent(input_name_map_).get<Mat1f>();
 
+
     // Computing downsampled color-image (with dimension of depth-image)
     Mat3f colorDS;
     resize(color, colorDS, map.size());
@@ -311,6 +312,10 @@ void Attention::Activate(const Signal &signal)
 
     index_ = stMems.vnIdx[currentIndex];
     printf("current index %f\n", index_);
+//    int h = stMems.mnRect[index_][2] - stMems.mnRect[index_][0];
+//    int b = stMems.mnRect[index_][3] - stMems.mnRect[index_][1];
+//    imshow("asdf", bgr(Rect(stMems.mnRect[index_][0],stMems.mnRect[index_][1],h,b)));
+//    cvWaitKey(1);
 
     // Debugging
 
