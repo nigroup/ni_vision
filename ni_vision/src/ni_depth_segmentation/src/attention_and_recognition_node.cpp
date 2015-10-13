@@ -273,12 +273,12 @@ protected:
 //            std::cout << rect_ << std::endl;
 //            std::cout << matchFlag_ << std::endl;
 
-            if(matchFlag) {
-                std_msgs::Float32 msg5;
-                msg5.data = recognizedIndex;
-                recog_pub_recognizedIndex_.publish(msg5);
-                printf("Index in node is %f", msg5.data);
-            }
+
+            std_msgs::Float32 msg5;
+            msg5.data = examinedIndex;
+            recog_pub_examinedIndex_.publish(msg5);
+            printf("Index in node is %f", msg5.data);
+
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);
             double nTimeTotal = double(timespecDiff(&t_total_end, &t_total_start)/1e9);
