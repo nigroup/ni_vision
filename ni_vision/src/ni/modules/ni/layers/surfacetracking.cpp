@@ -212,6 +212,11 @@ void SurfaceTracking::Activate(const Signal &signal)
 
                 vnTrkMap[stMems.mnPtsIdx[i][j]] = stMems.vnIdx[i];
             }
+            if(stMems.vnLength[i]*1000 > nAttSizeMax
+                            || stMems.vnLength[i]*1000 < nAttSizeMin
+                            || stMems.vnPtsCnt[i] < nAttPtsMin) {
+                continue;
+            }
             validSurfaceCnt++;
         }
 
