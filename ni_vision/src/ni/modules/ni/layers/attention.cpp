@@ -373,7 +373,7 @@ void Attention::extractFeatures(
 
             int value = map(i);
 
-            // dont bother counting zeros (a.k.a not assigned)
+            // don't bother counting zeros (a.k.a not assigned)
             if(value > 0) {
 
                 hist[value]++;
@@ -381,18 +381,18 @@ void Attention::extractFeatures(
         }
 
         vector<int> id_lut(UPPER_LIM, 0);
-        for(int i=1; i<UPPER_LIM; i++) {
+        for(int i=0; i<UPPER_LIM; i++) {
 
             if(hist[i] > 0) {
 
                 Surface surface;
 
-                surface.id(++NB_SEGS);
+                surface.id(i);
                 surface.overwritePixelCount(hist[i]);
 
                 surfaces.push_back(surface);
 
-                id_lut[i] = NB_SEGS;
+                id_lut[i] = ++NB_SEGS;
             }
         }
 
