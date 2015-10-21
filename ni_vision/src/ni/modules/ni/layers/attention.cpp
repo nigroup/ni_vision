@@ -374,7 +374,7 @@ void Attention::extractFeatures(
             int value = map(i);
 
             // don't bother counting zeros (a.k.a not assigned)
-            if(value > 0) {
+            if(value >= 0) {
 
                 hist[value]++;
             }
