@@ -78,6 +78,7 @@ add_message_files(
    FILES
    Num.msg
    NodeKVP.msg
+  Parameter.msg
 )
 
 ## Generate services in the 'srv' folder

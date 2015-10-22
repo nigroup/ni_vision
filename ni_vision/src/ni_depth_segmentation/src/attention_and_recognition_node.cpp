@@ -41,6 +41,7 @@
 #include "std_msgs/Float32.h"
 #include "std_msgs/Int32MultiArray.h"
 #include "std_msgs/Float32MultiArray.h"
+#include <ni_depth_segmentation/Parameter.h>
 
 /** A post from ROS Answers suggested using image_transport::SubscriberFilter
  *  source: http://answers.ros.org/question/9705/synchronizer-and-image_transportsubscriber/
@@ -95,6 +96,7 @@ public:
           img_sub_seg_(nh, name_in_seg_, 1),
 #endif // USE_IMAGE_TRANSPORT_SUBSCRIBER_FILTER
           cloud_sub_(nh, name_in_cld_, 1)
+
     {
 
         using namespace message_filters; // Subscriber, sync_policies
@@ -112,6 +114,7 @@ public:
                     );
 
         initLayers(nh);
+
         recog_pub_matchFlag_ = nh.advertise<std_msgs::Bool>(name_out_matchFlag_, 1);
         recog_pub_rect_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_rect_, 1);
         recog_pub_keypoints_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_keypoints_, 1);
@@ -119,6 +122,10 @@ public:
         recog_pub_examinedIndex_ = nh.advertise<std_msgs::Float32>(name_out_examinedIndex_, 1);
     }
 
+    void parameterCallback(const ni_depth_segmentation::Parameter::ConstPtr& msg)
+    {
+
+    }
 protected:
     void initLayers(ros::NodeHandle &nh)
     {
@@ -184,6 +191,8 @@ protected:
             layers_.push_back(LayerFactoryNI::CreateShared("Recognition", cfg, io));
         }
     }
+
+
 
     void callback(const CloudXYZ::ConstPtr& cld,
                   const sensor_msgs::ImageConstPtr& img,
@@ -326,6 +335,7 @@ protected:
     ros::Publisher recog_pub_matchedKeypoints_;
     ros::Publisher recog_pub_examinedIndex_;
 
+
     boost::mutex mtx_;                      ///< mutex object for thread safety
 
     CloudXYZPtr cloud_;  ///< most recent point cloud
@@ -362,7 +372,7 @@ int main(int argc, char** argv)
      */
     ros::NodeHandle nh("~");
     ni::AttentionAndRecognitionNode attentionAndRecognition_node(nh);
-
+    ros::Subscriber sub = nh.subscribe("/ni/ni_vision_gui/parameter", 1000, &ni::AttentionAndRecognitionNode::parameterCallback,&attentionAndRecognition_node);
     /**
      * ros::spin() will enter a loop, pumping callbacks.  With this version, all
      * callbacks will be called from within this thread (the main one).  ros::spin()
