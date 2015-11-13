@@ -121,6 +121,11 @@ public:
         img_pub_boundingBoxes_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_boundingBoxes_, 1);
     }
 
+//    void parameterCallback(const SurfaceSegAndTrackingNode::Parameter::ConstPtr& msg)
+//    {
+
+//    }
+
 protected:
 
     void initLayers(ros::NodeHandle &nh)
@@ -243,6 +248,8 @@ protected:
             layers_.push_back(LayerFactoryNI::CreateShared("SurfaceTracking", cfg, io));
         }
     }
+
+
 
     void callback(const CloudXYZ::ConstPtr& cld,
                   const sensor_msgs::ImageConstPtr& img)
@@ -430,7 +437,7 @@ int main(int argc, char** argv)
      */
     ros::NodeHandle nh("~");
     ni::SurfaceSegAndTrackingNode surface_tracking_node(nh);
-
+//    ros::Subscriber sub = nh.subscribe("/ni/ni_vision_gui/parameter", 1000, &ni::SurfaceSegAndTrackingNode::parameterCallback,&surface_tracking_node);
     /**
      * ros::spin() will enter a loop, pumping callbacks.  With this version, all
      * callbacks will be called from within this thread (the main one).  ros::spin()

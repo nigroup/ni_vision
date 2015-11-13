@@ -126,6 +126,7 @@ public:
     {
 
     }
+
 protected:
     void initLayers(ros::NodeHandle &nh)
     {
@@ -315,6 +316,7 @@ protected:
     std::string name_in_cld_;    ///< Signal name and subscribing topic name
     std::string name_in_img_;    ///< Signal name and subscribing topic name
     std::string name_in_seg_;    ///< Signal name and subscribing topic name
+    std::string name_in_attPara_;
     std::string name_out_rect_;
     std::string name_out_matchFlag_;
     std::string name_out_histogram_;

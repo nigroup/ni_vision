@@ -28,6 +28,8 @@ public:
     // params
     static const std::string PARAM_PATH_COLOR;      ///< path to library file
     static const std::string PARAM_PATH_SIFT;       ///< path to library file
+    static const std::string PARAM_COLOR_THRESHOLD; ///< threshold for the histogram
+
 
     // remaining I/O keys
     static const std::string KEY_INPUT_BGR_IMAGE;
@@ -81,9 +83,7 @@ protected:
     int nb_bins_;           ///< no. of bins in color histogram
 
     // legacy members
-    int nAttSizeMax;        ///< upper threshold for size (cube diagonal) [mm]
-    int nAttSizeMin;        ///< lower threshold for size (cube diagonal) [mm]
-    int nAttPtsMin;         ///< lower threshold for area [pixels]
+    float colorThreshold_;
     std::vector<elm::VecF > mnColorHistY_lib;
     // Todo
     std::vector<elm::VecF > mnSiftFeature_lib;
