@@ -207,9 +207,8 @@ void Recognition::Activate(const Signal &signal)
         colorDistance += fabs(mnColorHistY_lib[0][j] - selectedHistogram(j));
     }
     colorDistance = colorDistance / 2.f;
-    printf("Hellpo World %f\n",colorThreshold_);
     if(colorDistance > colorThreshold_) {
-        printf("%f\n", colorDistance);
+        printf("Color Distance is %f\n", colorDistance);
         matchFlag_ = 0;
 
         keypoints_ = Mat1f();
@@ -269,7 +268,6 @@ void Recognition::Activate(const Signal &signal)
         int nDeltaBinNo = 12;
     //    int tnumb = 3;
 
-        printf("FlannIM %i\n",flannIM);
         std::vector<bool> vbSiftTP = std::vector<bool>(keyptsCnt, 0);
         if(flannIM > siftCntThreshold_) {
             CalcDeltaScaleOri(vnSiftMatched,
@@ -287,7 +285,6 @@ void Recognition::Activate(const Signal &signal)
             flannTP = 0;
         }
 
-        printf("%i %i %i %f %f\n",keyptsCnt, flannTP,siftCntThreshold_, colorDistance, colorThreshold_);
         if (flannTP >= siftCntThreshold_) {
             matchFlag_ = 1;
         } else {
