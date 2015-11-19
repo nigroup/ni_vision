@@ -143,6 +143,52 @@ void Attention::Reset(const LayerConfig &config)
     Reconfigure(config);
 }
 
+void Attention::ResetPath(const elm::LayerConfig &config)
+{
+    PTree p = config.Params();
+
+    bfs::path path_color = p.get<bfs::path>(PARAM_PATH_COLOR);
+
+    if(!bfs::is_regular_file(path_color)) {
+
+        stringstream s;
+        s << "Invalid path to color model for attention layer (" << path_color << ")";
+        ELM_THROW_FILEIO_ERROR(s.str());
+    }
+
+    bfs::path path_sift = p.get<bfs::path>(PARAM_PATH_SIFT);
+
+    if(!bfs::is_regular_file(path_sift)) {
+
+        stringstream s;
+        s << "Invalid path to sift model for attention layer (" << path_sift << ")";
+        ELM_THROW_FILEIO_ERROR(s.str());
+    }
+
+    mnColorHistY_lib.clear();
+    mnSiftExtraFeatures.clear();
+
+    int nRecogFeature = 20;
+    BuildFlannIndex(1, path_color.string(),
+                    mnColorHistY_lib,
+                    stTrack,
+                    nFlannLibCols_sift,
+                    FLANNParam,
+                    nFlannDataset,
+                    nRecogFeature,
+                    mnSiftExtraFeatures,
+                    FlannIdx_Sift);
+    BuildFlannIndex(2, path_sift.string(),
+                    mnColorHistY_lib,
+                    stTrack,
+                    nFlannLibCols_sift,
+                    FLANNParam,
+                    nFlannDataset,
+                    nRecogFeature,
+                    mnSiftExtraFeatures,
+                    FlannIdx_Sift);
+}
+
 void Attention::Reconfigure(const LayerConfig &config)
 {
     PTree p = config.Params();
@@ -166,6 +212,8 @@ void Attention::Reconfigure(const LayerConfig &config)
 //    stTrack.FSize = weight_size_;
     stTrack.HistoBin = nb_bins_;
     stTrack.MFac = 100.;
+    printf("Hello2.0\n");
+    ResetPath(config);
 }
 
 void Attention::InputNames(const LayerInputNames &io)

@@ -56,6 +56,8 @@ public:
 
     void Reset(const elm::LayerConfig &config);
 
+    void ResetPath(const elm::LayerConfig &config);
+
     void Reconfigure(const elm::LayerConfig &config);
 
     void InputNames(const elm::LayerInputNames &io);

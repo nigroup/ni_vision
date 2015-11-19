@@ -124,6 +124,8 @@ public:
 
     void parameterCallback(const ni_depth_segmentation::Parameter &msg)
     {
+        boost::filesystem::path path_sift(msg.siftModel);
+        boost::filesystem::path path_color(msg.colorModel);
         ROS_INFO("Parameter changed:");
         if(layers_.size() > 0) {
                 LayerConfig cfg;
@@ -136,9 +138,22 @@ public:
                 params.put(Recognition::PARAM_SIFT_PEAK_THRESHOLD, msg.siftPeakThreshold);
                 params.put(Recognition::PARAM_FLANN_KNN, msg.flannKnn);
                 params.put(Recognition::PARAM_FLANN_MATCH_FACTOR, msg.flannMatchFactor);
+                params.put(Recognition::PARAM_PATH_SIFT, path_sift);
+                params.put(Recognition::PARAM_PATH_COLOR, path_color);
                 cfg.Params(params);
 
                 layers_[1]->Reconfigure(cfg);
+                printf("DEBUGGGG\n");
+                LayerConfig cfg2;
+                PTree params2;
+                params2.put(Attention::PARAM_HIST_BINS,   8);
+                params2.put(Attention::PARAM_SIZE_MAX,  msg.upperSizeLimit);
+                params2.put(Attention::PARAM_SIZE_MIN,  msg.lowerSizeLimit);
+                params2.put(Attention::PARAM_PTS_MIN,   msg.minPixelCount);
+                params2.put(Attention::PARAM_PATH_SIFT, path_sift);
+                params2.put(Attention::PARAM_PATH_COLOR, path_color);
+                cfg2.Params(params2);
+                layers_[0]->Reconfigure(cfg2);
         }
     }
 

@@ -115,6 +115,51 @@ void Recognition::Reset(const LayerConfig &config)
     Reconfigure(config);
 }
 
+void Recognition::ResetPath(const LayerConfig &config)
+{
+    PTree p = config.Params();
+
+    bfs::path path_color = p.get<bfs::path>(PARAM_PATH_COLOR);
+
+    if(!bfs::is_regular_file(path_color)) {
+
+        stringstream s;
+        s << "Invalid path to color model for recognition layer (" << path_color << ")";
+        ELM_THROW_FILEIO_ERROR(s.str());
+    }
+
+    bfs::path path_sift = p.get<bfs::path>(PARAM_PATH_SIFT);
+
+    if(!bfs::is_regular_file(path_sift)) {
+
+        stringstream s;
+        s << "Invalid path to sift model for recognition layer (" << path_sift << ")";
+        ELM_THROW_FILEIO_ERROR(s.str());
+    }
+
+    mnColorHistY_lib.clear();
+    mnSiftExtraFeatures.clear();
+
+    int nRecogFeature = 20;
+    BuildFlannIndex(1, path_color.string(),
+                    mnColorHistY_lib,
+                    stTrack,
+                    nFlannLibCols_sift,
+                    FLANNParam,
+                    nFlannDataset,
+                    nRecogFeature,
+                    mnSiftExtraFeatures,
+                    FlannIdx_Sift);
+    BuildFlannIndex(2, path_sift.string(),
+                    mnColorHistY_lib,
+                    stTrack,
+                    nFlannLibCols_sift,
+                    FLANNParam,
+                    nFlannDataset,
+                    nRecogFeature,
+                    mnSiftExtraFeatures,
+                    FlannIdx_Sift);
+}
 
 void Recognition::Reconfigure(const LayerConfig &config)
 {
@@ -126,6 +171,7 @@ void Recognition::Reconfigure(const LayerConfig &config)
     siftPeakThrs_ = p.get<float>(PARAM_SIFT_PEAK_THRESHOLD);
     flannKnn_ = p.get<float>(PARAM_FLANN_KNN);
     flannMatchFac_ = p.get<float>(PARAM_FLANN_MATCH_FACTOR);
+    ResetPath(config);
 }
 
 
