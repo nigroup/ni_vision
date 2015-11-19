@@ -143,7 +143,6 @@ public:
                 cfg.Params(params);
 
                 layers_[1]->Reconfigure(cfg);
-                printf("DEBUGGGG\n");
                 LayerConfig cfg2;
                 PTree params2;
                 params2.put(Attention::PARAM_HIST_BINS,   8);
@@ -325,7 +324,6 @@ protected:
             std_msgs::Float32 msg5;
             msg5.data = examinedIndex;
             recog_pub_examinedIndex_.publish(msg5);
-            printf("Index in node is %f", msg5.data);
 
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &t_total_end);

@@ -212,7 +212,6 @@ void Attention::Reconfigure(const LayerConfig &config)
 //    stTrack.FSize = weight_size_;
     stTrack.HistoBin = nb_bins_;
     stTrack.MFac = 100.;
-    printf("Hello2.0\n");
     ResetPath(config);
 }
 
@@ -366,7 +365,6 @@ void Attention::Activate(const Signal &signal)
     }
 
     index_ = stMems.vnIdx[currentIndex];
-    printf("current index %f\n", index_);
 //    int h = stMems.mnRect[index_][2] - stMems.mnRect[index_][0];
 //    int b = stMems.mnRect[index_][3] - stMems.mnRect[index_][1];
 //    imshow("asdf", bgr(Rect(stMems.mnRect[index_][0],stMems.mnRect[index_][1],h,b)));
