@@ -43,6 +43,7 @@
 #include "ni/legacy/timer.h"
 
 #include "std_msgs/Float32MultiArray.h"
+#include <ni_depth_segmentation/Parameter.h>
 
 /** A post from ROS Answers suggested using image_transport::SubscriberFilter
  *  source: http://answers.ros.org/question/9705/synchronizer-and-image_transportsubscriber/
@@ -121,10 +122,25 @@ public:
         img_pub_boundingBoxes_ = nh.advertise<std_msgs::Float32MultiArray>(name_out_boundingBoxes_, 1);
     }
 
-//    void parameterCallback(const SurfaceSegAndTrackingNode::Parameter::ConstPtr& msg)
-//    {
+    void parameterCallback(const ni_depth_segmentation::Parameter &msg)
+    {
+        ROS_INFO("Parameter changed:");
+        if(layers_.size() > 0) {
+                LayerConfig cfg;
 
-//    }
+                PTree p;
+                p.put(SurfaceTracking::PARAM_WEIGHT_COLOR,  msg.colorFactor);
+                p.put(SurfaceTracking::PARAM_WEIGHT_POS,    msg.positionFactor);
+                p.put(SurfaceTracking::PARAM_WEIGHT_SIZE,   msg.sizeFactor);
+                p.put(SurfaceTracking::PARAM_MAX_COLOR,     msg.maxColorDifference);
+                p.put(SurfaceTracking::PARAM_MAX_POS,       msg.maxPositionDifference);
+                p.put(SurfaceTracking::PARAM_MAX_SIZE,      msg.maxSizeDifference);
+                p.put(SurfaceTracking::PARAM_MAX_DIST,      msg.maxTotalDifference);
+                cfg.Params(p);
+
+                layers_[6]->Reconfigure(cfg);
+        }
+    }
 
 protected:
 
@@ -437,7 +453,7 @@ int main(int argc, char** argv)
      */
     ros::NodeHandle nh("~");
     ni::SurfaceSegAndTrackingNode surface_tracking_node(nh);
-//    ros::Subscriber sub = nh.subscribe("/ni/ni_vision_gui/parameter", 1000, &ni::SurfaceSegAndTrackingNode::parameterCallback,&surface_tracking_node);
+    ros::Subscriber sub = nh.subscribe("/ni/ni_vision_gui/parameter", 1000, &ni::SurfaceSegAndTrackingNode::parameterCallback,&surface_tracking_node);
     /**
      * ros::spin() will enter a loop, pumping callbacks.  With this version, all
      * callbacks will be called from within this thread (the main one).  ros::spin()
