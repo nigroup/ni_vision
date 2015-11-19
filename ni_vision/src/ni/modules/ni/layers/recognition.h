@@ -29,7 +29,12 @@ public:
     static const std::string PARAM_PATH_COLOR;      ///< path to library file
     static const std::string PARAM_PATH_SIFT;       ///< path to library file
     static const std::string PARAM_COLOR_THRESHOLD; ///< threshold for the histogram
-
+    static const std::string PARAM_SIFT_THRESHOLD;
+    static const std::string PARAM_SIFT_SCALES;
+    static const std::string PARAM_SIFT_INIT_SIGMA;
+    static const std::string PARAM_SIFT_PEAK_THRESHOLD;
+    static const std::string PARAM_FLANN_KNN;
+    static const std::string PARAM_FLANN_MATCH_FACTOR;
 
     // remaining I/O keys
     static const std::string KEY_INPUT_BGR_IMAGE;
@@ -84,6 +89,13 @@ protected:
 
     // legacy members
     float colorThreshold_;
+    float siftCntThreshold_;
+    float siftScales_;
+    float siftInitSigma_;
+    float siftPeakThrs_;
+    float flannKnn_;
+    float flannMatchFac_;
+
     std::vector<elm::VecF > mnColorHistY_lib;
     // Todo
     std::vector<elm::VecF > mnSiftFeature_lib;

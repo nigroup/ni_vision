@@ -122,9 +122,24 @@ public:
         recog_pub_examinedIndex_ = nh.advertise<std_msgs::Float32>(name_out_examinedIndex_, 1);
     }
 
-    void parameterCallback(const ni_depth_segmentation::Parameter::ConstPtr& msg)
+    void parameterCallback(const ni_depth_segmentation::Parameter &msg)
     {
+        ROS_INFO("Parameter changed:");
+        if(layers_.size() > 0) {
+                LayerConfig cfg;
 
+                PTree params;
+                params.put(Recognition::PARAM_COLOR_THRESHOLD, msg.colorDistanceThreshold);
+                params.put(Recognition::PARAM_SIFT_THRESHOLD, msg.flannMatchCount);
+                params.put(Recognition::PARAM_SIFT_SCALES, msg.siftScales);
+                params.put(Recognition::PARAM_SIFT_INIT_SIGMA, msg.siftInitSigma);
+                params.put(Recognition::PARAM_SIFT_PEAK_THRESHOLD, msg.siftPeakThreshold);
+                params.put(Recognition::PARAM_FLANN_KNN, msg.flannKnn);
+                params.put(Recognition::PARAM_FLANN_MATCH_FACTOR, msg.flannMatchFactor);
+                cfg.Params(params);
+
+                layers_[1]->Reconfigure(cfg);
+        }
     }
 
 protected:
@@ -166,10 +181,18 @@ protected:
             layers_.push_back(LayerFactoryNI::CreateShared("Attention", cfg, io));
         }
         { // 1
-            // Instantiate top-down attention
+            // Instantiate recognition
             LayerConfig cfg;
 
             PTree p;
+            p.put(Recognition::PARAM_COLOR_THRESHOLD, 0.5);
+            p.put(Recognition::PARAM_SIFT_THRESHOLD, 10);
+            p.put(Recognition::PARAM_SIFT_SCALES, 3);
+            p.put(Recognition::PARAM_SIFT_INIT_SIGMA, 1.6);
+            p.put(Recognition::PARAM_SIFT_PEAK_THRESHOLD, 0.01);
+            p.put(Recognition::PARAM_FLANN_KNN, 2);
+            p.put(Recognition::PARAM_FLANN_MATCH_FACTOR, 0.7);
+
             std::string tmp;
 //            nh.getParam(Attention::PARAM_PATH_COLOR, tmp);
 //            boost::filesystem::path path_color(tmp);

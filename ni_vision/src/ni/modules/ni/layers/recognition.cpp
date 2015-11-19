@@ -33,6 +33,13 @@ using namespace ni;
 
 const string Recognition::PARAM_PATH_COLOR      = "path_color";
 const string Recognition::PARAM_PATH_SIFT       = "path_sift";
+const string Recognition::PARAM_COLOR_THRESHOLD    = "color_threshold";
+const string Recognition::PARAM_SIFT_THRESHOLD = "sift_threshold";
+const string Recognition::PARAM_SIFT_SCALES = "sift_scales";
+const string Recognition::PARAM_SIFT_INIT_SIGMA = "sift_init_sigma";
+const string Recognition::PARAM_SIFT_PEAK_THRESHOLD = "sift_peak_threshold";
+const string Recognition::PARAM_FLANN_KNN = "flann_knn";
+const string Recognition::PARAM_FLANN_MATCH_FACTOR = "flann_match_factor";
 
 const string Recognition::KEY_INPUT_BGR_IMAGE   = "bgr";
 const string Recognition::KEY_INPUT_CLOUD       = "points";
@@ -113,6 +120,12 @@ void Recognition::Reconfigure(const LayerConfig &config)
 {
     PTree p = config.Params();
     colorThreshold_   = p.get<float>(PARAM_COLOR_THRESHOLD);
+    siftCntThreshold_ = p.get<float>(PARAM_SIFT_THRESHOLD);
+    siftScales_ = p.get<float>(PARAM_SIFT_SCALES);
+    siftInitSigma_ = p.get<float>(PARAM_SIFT_INIT_SIGMA);
+    siftPeakThrs_ = p.get<float>(PARAM_SIFT_PEAK_THRESHOLD);
+    flannKnn_ = p.get<float>(PARAM_FLANN_KNN);
+    flannMatchFac_ = p.get<float>(PARAM_FLANN_MATCH_FACTOR);
 }
 
 
@@ -138,9 +151,6 @@ void Recognition::Activate(const Signal &signal)
     Mat1f selectedHistogram = signal.MostRecent(input_name_selHistogram_).get<Mat1f>();
     Mat1f selectedBoundingBox = signal.MostRecent(input_name_selBoundingBox_).get<Mat1f>();
 
-    int siftCntThreshold = 10;
-    colorThreshold = 0.6;
-
     Mat bgr;
     color.convertTo(bgr, CV_8UC3);
 
@@ -151,8 +161,8 @@ void Recognition::Activate(const Signal &signal)
         colorDistance += fabs(mnColorHistY_lib[0][j] - selectedHistogram(j));
     }
     colorDistance = colorDistance / 2.f;
-
-    if(colorDistance > colorThreshold) {
+    printf("Hellpo World %f\n",colorThreshold_);
+    if(colorDistance > colorThreshold_) {
         printf("%f\n", colorDistance);
         matchFlag_ = 0;
 
@@ -163,24 +173,16 @@ void Recognition::Activate(const Signal &signal)
 
         // SIFT feature comparison
         Keypoint keypts;
-        // @todo: use values from the gui
-        float siftScales = 3;
-        float siftInitSigma = 1.6;
-        float siftPeakThrs = 0.01;
 
         int nCandRW = selectedBoundingBox(2) - selectedBoundingBox(0) + 1;
         int nCandRH = selectedBoundingBox(3) - selectedBoundingBox(1) + 1;
 
         // WARNING: QtCreator links this function to the wrong file
         // but the right one (in func_recognition.cpp) is compiled !!!
-        GetSiftKeypoints(bgr, siftScales, siftInitSigma, siftPeakThrs,
+        GetSiftKeypoints(bgr, siftScales_, siftInitSigma_, siftPeakThrs_,
                          selectedBoundingBox(0), selectedBoundingBox(1),
                          nCandRW, nCandRH,
                          keypts);
-
-        // todo: use values from the gui
-        float flannKnn = 2;
-        float flannMatchFac = 0.7;
 
         std::vector<int> vnSiftMatched;
         std::vector <double> vnDeltaScale;
@@ -195,9 +197,9 @@ void Recognition::Activate(const Signal &signal)
         int tcount = 1;
 
         Recognition_Flann (tcount,
-                           flannKnn,
+                           flannKnn_,
                            nFlannLibCols_sift,
-                           flannMatchFac,
+                           flannMatchFac_,
                            mnSiftExtraFeatures,
                            FlannIdx_Sift,
                            FLANNParam,
@@ -223,7 +225,7 @@ void Recognition::Activate(const Signal &signal)
 
         printf("FlannIM %i\n",flannIM);
         std::vector<bool> vbSiftTP = std::vector<bool>(keyptsCnt, 0);
-        if(flannIM > siftCntThreshold) {
+        if(flannIM > siftCntThreshold_) {
             CalcDeltaScaleOri(vnSiftMatched,
                               vnDeltaScale,
                               vnDeltaOri,
@@ -239,8 +241,8 @@ void Recognition::Activate(const Signal &signal)
             flannTP = 0;
         }
 
-        printf("%i %i %i %f %f\n",keyptsCnt, flannTP,siftCntThreshold, colorDistance, colorThreshold);
-        if (flannTP >= siftCntThreshold) {
+        printf("%i %i %i %f %f\n",keyptsCnt, flannTP,siftCntThreshold_, colorDistance, colorThreshold_);
+        if (flannTP >= siftCntThreshold_) {
             matchFlag_ = 1;
         } else {
             matchFlag_ = 0;
