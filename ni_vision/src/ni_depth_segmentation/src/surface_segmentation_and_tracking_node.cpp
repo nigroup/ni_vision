@@ -129,6 +129,7 @@ public:
                 LayerConfig cfg;
 
                 PTree p;
+                p.put(SurfaceTracking::PARAM_HIST_BINS,   8);
                 p.put(SurfaceTracking::PARAM_WEIGHT_COLOR,  msg.colorFactor);
                 p.put(SurfaceTracking::PARAM_WEIGHT_POS,    msg.positionFactor);
                 p.put(SurfaceTracking::PARAM_WEIGHT_SIZE,   msg.sizeFactor);
