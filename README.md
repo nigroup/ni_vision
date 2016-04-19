@@ -1,5 +1,30 @@
 # The NI Vision Libraries and Packages #
 
+This project implemets the methods described in [A computer vision system for rapid search inspired by surface-based attention mechanisms from human perception](http://www.ncbi.nlm.nih.gov/pubmed/25241349)
+as [ROS](http://wiki.ros.org/) nodes in C++.
+
+## Original Contributors
+
+Jong-han Park, Fritjof Wolf, Johannes Mohr
+
+## License and Citation
+
+The code for this project is released under the [BSD 2-Clause license](https://github.com/BVLC/caffe/blob/master/LICENSE).
+
+Please cite the ni_vision project in your publications if it helps your research:
+
+    @article{Mohr2014,
+      author = {Mohr, Johannes and Park, Jong-han and Obermayer, Klaus},
+      doi = {10.1016/j.neunet.2014.08.010},
+      issn = {0893-6080},
+      journal = {Neural Networks},
+      pages = {182--193},
+      title = {{A computer vision system for rapid search inspired by surface-based attention mechanisms from human perception}},
+      url = {http://dx.doi.org/10.1016/j.neunet.2014.08.010},
+      volume = {60},
+      year = {2014}
+    }
+
 ## Getting your build up and running ##
 
 ### Prepwork ###
@@ -44,7 +69,7 @@ For earlier versions of CMake:
 
 * make -j2
 
-Building the NI Vision Libraries and packages:
+### Building the NI Vision Libraries and packages: ###
 
 * mkdir ~/catkin_ws 	# Create a catkin workspace
 * mkdir ~/catkin_ws/src 		# Create a src sub directory
