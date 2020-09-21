@@ -1,0 +1,10 @@
+/home/ni/ros_overlays/zzz_packages/libsiftfast/lib/siftfastpy.so
+/home/ni/ros_overlays/zzz_packages/libsiftfast/include/siftfast/siftfast.h
+/home/ni/ros_overlays/zzz_packages/libsiftfast/bin/siftfast
+/home/ni/ros_overlays/zzz_packages/libsiftfast/lib/libsiftfast.so.1.3.0
+/home/ni/ros_overlays/zzz_packages/libsiftfast/lib/libsiftfast.so.1
+/home/ni/ros_overlays/zzz_packages/libsiftfast/lib/libsiftfast.so
+/home/ni/ros_overlays/zzz_packages/libsiftfast/share/siftfast/examples/test2.jpg
+/home/ni/ros_overlays/zzz_packages/libsiftfast/share/siftfast/examples/test0.jpg
+/home/ni/ros_overlays/zzz_packages/libsiftfast/share/siftfast/examples/test1.jpg
+/home/ni/ros_overlays/zzz_packages/libsiftfast/share/siftfast/examples/testsiftfast.py

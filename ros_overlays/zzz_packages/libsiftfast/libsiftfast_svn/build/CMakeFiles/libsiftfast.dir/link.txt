@@ -1,0 +1,1 @@
+/usr/bin/c++  -fPIC -O2 -g   -shared -Wl,-soname,libsiftfast.so.1 -o libsiftfast.so.1.3.0 CMakeFiles/libsiftfast.dir/libsiftfast.o -lm -lstdc++ -lgomp 

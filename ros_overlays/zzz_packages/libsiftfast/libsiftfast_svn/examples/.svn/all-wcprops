@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svnroot/libsift/!svn/ver/49/trunk/examples
+END
+test1.jpg
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svnroot/libsift/!svn/ver/34/trunk/examples/test1.jpg
+END
+test2.jpg
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svnroot/libsift/!svn/ver/34/trunk/examples/test2.jpg
+END
+testsiftfast.py
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svnroot/libsift/!svn/ver/49/trunk/examples/testsiftfast.py
+END
+test0.jpg
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svnroot/libsift/!svn/ver/34/trunk/examples/test0.jpg
+END

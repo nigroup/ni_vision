@@ -1,0 +1,5 @@
+/home/ni/ros_overlays/zzz_packages/libsiftfast/libsiftfast_svn/build/CMakeFiles/libsiftfast.dir
+/home/ni/ros_overlays/zzz_packages/libsiftfast/libsiftfast_svn/build/CMakeFiles/libsiftfast-static.dir
+/home/ni/ros_overlays/zzz_packages/libsiftfast/libsiftfast_svn/build/CMakeFiles/siftfast.dir
+/home/ni/ros_overlays/zzz_packages/libsiftfast/libsiftfast_svn/build/CMakeFiles/siftfastpy.dir
+/home/ni/ros_overlays/zzz_packages/libsiftfast/libsiftfast_svn/build/CMakeFiles/uninstall.dir

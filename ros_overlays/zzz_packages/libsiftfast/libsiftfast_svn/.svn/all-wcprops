@@ -1,0 +1,119 @@
+K 25
+svn:wc:ra_dav:version-url
+V 34
+/svnroot/libsift/!svn/ver/54/trunk
+END
+LICENSE
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svnroot/libsift/!svn/ver/26/trunk/LICENSE
+END
+AUTHORS
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svnroot/libsift/!svn/ver/4/trunk/AUTHORS
+END
+makerelease.sh
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svnroot/libsift/!svn/ver/50/trunk/makerelease.sh
+END
+libsiftfast.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svnroot/libsift/!svn/ver/54/trunk/libsiftfast.cpp
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svnroot/libsift/!svn/ver/43/trunk/README
+END
+cmake_uninstall.cmake.in
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svnroot/libsift/!svn/ver/4/trunk/cmake_uninstall.cmake.in
+END
+siftmex.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svnroot/libsift/!svn/ver/34/trunk/siftmex.cpp
+END
+FindOctave.cmake
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svnroot/libsift/!svn/ver/34/trunk/FindOctave.cmake
+END
+profiler.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svnroot/libsift/!svn/ver/26/trunk/profiler.cpp
+END
+siftfast.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svnroot/libsift/!svn/ver/37/trunk/siftfast.cpp
+END
+FindBoost.cmake
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svnroot/libsift/!svn/ver/34/trunk/FindBoost.cmake
+END
+INSTALL
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svnroot/libsift/!svn/ver/45/trunk/INSTALL
+END
+profiler.h
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svnroot/libsift/!svn/ver/26/trunk/profiler.h
+END
+runcmake.bat
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svnroot/libsift/!svn/ver/10/trunk/runcmake.bat
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svnroot/libsift/!svn/ver/15/trunk/Makefile
+END
+CMakeLists.txt
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svnroot/libsift/!svn/ver/50/trunk/CMakeLists.txt
+END
+siftfastpy.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svnroot/libsift/!svn/ver/53/trunk/siftfastpy.cpp
+END
+siftfast.h.in
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svnroot/libsift/!svn/ver/50/trunk/siftfast.h.in
+END
+siftfast.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svnroot/libsift/!svn/ver/29/trunk/siftfast.m
+END

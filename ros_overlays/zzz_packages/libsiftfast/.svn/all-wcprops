@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svnroot/cmu-ros-pkg/!svn/ver/299/trunk/3rdparty/libsiftfast
+END
+manifest.xml
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svnroot/cmu-ros-pkg/!svn/ver/159/trunk/3rdparty/libsiftfast/manifest.xml
+END
+libgomp.so.1
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svnroot/cmu-ros-pkg/!svn/ver/27/trunk/3rdparty/libsiftfast/libgomp.so.1
+END
+rospack_nosubdirs
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svnroot/cmu-ros-pkg/!svn/ver/142/trunk/3rdparty/libsiftfast/rospack_nosubdirs
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svnroot/cmu-ros-pkg/!svn/ver/299/trunk/3rdparty/libsiftfast/Makefile
+END

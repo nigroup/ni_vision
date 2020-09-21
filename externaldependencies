@@ -1,0 +1,19 @@
+-batch installieren
+
+pcl visualizaiton
+=================
+-ros_overlays/perception_pcl_addons/pcl_visualization/lib/libpcl_visualization.so
+-ros_overlays/perception_pcl_addons/pcl_visualization/include/pcl_visualization
+
+terminal tools
+==============
+-ros_overlays/perception_pcl_addons/terminal_tools/lib/libterminal_tools.so
+-ros_overlays/perception_pcl_addons/terminal_tools/include/terminal_tools
+
+zzz packages
+============
+-ros_overlays/zzz_packages
+
+pcl build
+=========
+-ros_overlays/perception_pcl_addons/pcl_visualization/build
